@@ -1,0 +1,7 @@
+commands:
+  player:
+    - "/home - Teleportiere dich zu deinem Zuhause"
+    - "/spawn - Gehe zum Spawn"
+  admin:
+    - "/ban <Spieler> - Bannt einen Spieler"
+    - "/kick <Spieler> - Kickt einen Spieler"

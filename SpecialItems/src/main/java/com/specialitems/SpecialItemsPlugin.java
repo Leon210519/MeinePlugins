@@ -98,5 +98,6 @@ public class SpecialItemsPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         Log.info("SpecialItems disabled.");
+        instance = null;
     }
 }
