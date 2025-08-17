@@ -2,8 +2,12 @@ package com.instancednodes.util;
 
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.Plugin;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Cfg {
 
@@ -23,6 +27,8 @@ public class Cfg {
 
     public static String[] VEIN_LORE;
     public static int VEIN_MAX_BLOCKS;
+
+    public static Set<Material> FARM_CROPS;
 
     public static void load(Plugin plugin) {
         plugin.saveDefaultConfig();
@@ -49,6 +55,15 @@ public class Cfg {
         FARM = fromSection(farm);
         MINE_defaultMat = mine.getString("default_mat", "COAL_ORE");
         FARM_defaultMat = farm.getString("default_mat", "WHEAT");
+
+        java.util.List<String> crops = plugin.getConfig().getStringList("farm.crops");
+        FARM_CROPS = new HashSet<>();
+        for (String c : crops) {
+            Material m = Material.matchMaterial(c);
+            if (m != null) {
+                FARM_CROPS.add(m);
+            }
+        }
     }
 
     private static RegionRect fromSection(ConfigurationSection s) {

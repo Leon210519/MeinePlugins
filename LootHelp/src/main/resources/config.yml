@@ -1,0 +1,17 @@
+commands:
+  player:
+    SpecialItems:
+      - "/si - Öffnet das SpecialItems-Menü"
+    LootFactory:
+      - "/lootfactory - Erhalte neue Items aus Fabriken" # Platzhalter
+    LootCrates:
+      - "/lootcrates - Öffne deine Kisten" # Platzhalter
+  admin:
+    FarmXMine:
+      - "/nodes <debug|reload> - Verwalte InstancedNodes"
+    SpecialItems:
+      - "/bin - Zeigt gelöschte SpecialItems"
+    LootFactory:
+      - "/lootfactoryadmin - Adminbefehle für LootFactory" # Platzhalter
+    LootCrates:
+      - "/lootcratesadmin - Adminbefehle für LootCrates" # Platzhalter
