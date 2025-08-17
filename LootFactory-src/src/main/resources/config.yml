@@ -1,0 +1,98 @@
+economy: { currency_symbol: "$" }
+xp: { seconds_per_level: 500 }
+leveling: { yield_multiplier_per_level: 1.08, speed_multiplier_per_level: 1.03, min_interval_seconds: 1.0}
+slots: { base: 5 }
+pickup:
+  button_slot: 4
+
+security:
+  admin_bypass: true
+  owner_only_gui: true
+
+# Optional: GUI button slot in a 27-slot inventory (0–26)
+pickup_button_slot: 15
+
+shop:
+  enabled: true
+  price: 10000.0
+  weights: { COMMON: 0.55, UNCOMMON: 0.26, RARE: 0.13, EPIC: 0.05, LEGENDARY: 0.01 }
+
+factories:
+  # ---------- COMMON (10) ----------
+  IRON_FOUNDRY:         { display: "Iron Foundry",         material: "FURNACE",         base_amount: 5.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 0,  speed_bonus_pct: 0  }
+  COAL_COMPACTOR:       { display: "Coal Compactor",       material: "BARREL",          base_amount: 6.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 2,  speed_bonus_pct: 0  }
+  LAPIS_LOOM:           { display: "Lapis Loom",           material: "LOOM",            base_amount: 6.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 5,  speed_bonus_pct: 0  }
+  SAND_SIFTER:          { display: "Sand Sifter",          material: "COMPOSTER",       base_amount: 6.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 0,  speed_bonus_pct: 4  }
+  CLAY_CASTER:          { display: "Clay Caster",          material: "FURNACE",         base_amount: 7.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 2,  speed_bonus_pct: 2  }
+  QUARTZ_KILN:          { display: "Quartz Kiln",          material: "BLAST_FURNACE",   base_amount: 7.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 0,  speed_bonus_pct: 5  }
+  STONE_POLISHER:       { display: "Stone Polisher",       material: "GRINDSTONE",      base_amount: 7.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 4,  speed_bonus_pct: 3  }
+  COPPER_COMPRESSOR:    { display: "Copper Compressor",    material: "STONECUTTER",     base_amount: 7.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 6,  speed_bonus_pct: 0  }
+  REDSTONE_REACTOR:     { display: "Redstone Reactor",     material: "REDSTONE_LAMP",   base_amount: 8.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 3,  speed_bonus_pct: 6  }
+  WHEAT_WINNOWER:       { display: "Wheat Winnower",       material: "LOOM",            base_amount: 8.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 6,  speed_bonus_pct: 2  }
+
+  # ---------- UNCOMMON (8) ----------
+  GOLD_FORGE:           { display: "Gold Forge",           material: "SMOKER",          base_amount: 10.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 10, speed_bonus_pct: 0  }
+  EMERALD_REFINERY:     { display: "Emerald Refinery",     material: "GRINDSTONE",      base_amount: 12.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 12, speed_bonus_pct: 0  }
+  BLAZE_SMELTER:        { display: "Blaze Smelter",        material: "FURNACE",         base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 0,  speed_bonus_pct: 12 }
+  GLOWSTONE_GRINDER:    { display: "Glowstone Grinder",    material: "STONECUTTER",     base_amount: 11.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 10, speed_bonus_pct: 5  }
+  PRISMARINE_PURIFIER:  { display: "Prismarine Purifier",  material: "SMOKER",          base_amount: 12.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 8,  speed_bonus_pct: 8  }
+  AMETHYST_ASSEMBLER:   { display: "Amethyst Assembler",   material: "SMITHING_TABLE",  base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 12, speed_bonus_pct: 6  }
+  SLIME_STABILIZER:     { display: "Slime Stabilizer",     material: "BREWING_STAND",   base_amount: 11.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 14, speed_bonus_pct: 5  }
+  HONEY_HARVESTER:      { display: "Honey Harvester",      material: "CARTOGRAPHY_TABLE", base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 10, speed_bonus_pct: 10 }
+
+  # ---------- RARE (5) ----------
+  OBSIDIAN_PRESS:       { display: "Obsidian Press",       material: "ANVIL",           base_amount: 15.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 12, speed_bonus_pct: 10 }
+  ENDER_INFUSER:        { display: "Ender Infuser",        material: "ENCHANTING_TABLE",base_amount: 16.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 12, speed_bonus_pct: 15 }
+  SHULKER_PRESS:        { display: "Shulker Press",        material: "ANVIL",           base_amount: 17.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 14, speed_bonus_pct: 12 }
+  CHORUS_CULTIVATOR:    { display: "Chorus Cultivator",    material: "FLETCHING_TABLE", base_amount: 17.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 16, speed_bonus_pct: 10 }
+  CRYO_QUARTZ_KILN:     { display: "Cryo Quartz Kiln",     material: "BLAST_FURNACE",   base_amount: 18.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 16, speed_bonus_pct: 14 }
+
+  # ---------- EPIC (4) ----------
+  DIAMOND_PROCESSOR:    { display: "Diamond Processor",    material: "SMITHING_TABLE",  base_amount: 20.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 18, speed_bonus_pct: 15 }
+  NETHER_STAR_FORGE:    { display: "Nether Star Forge",    material: "BEACON",          base_amount: 22.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 18, speed_bonus_pct: 18 }
+  DRAGON_GLASS_FORGE:   { display: "Dragon Glass Forge",   material: "BLAST_FURNACE",   base_amount: 23.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 20, speed_bonus_pct: 18 }
+  CELESTIAL_FOUNDRY:    { display: "Celestial Foundry",    material: "LODESTONE",       base_amount: 24.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 20, speed_bonus_pct: 22 }
+
+  # ---------- LEGENDARY (3) ----------
+  STARDUST_SYNTHESIZER: { display: "Stardust Synthesizer", material: "RESPAWN_ANCHOR",  base_amount: 25.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 22, speed_bonus_pct: 24 }
+  ANCIENT_DEBRIS_REFINER: { display: "Ancient Debris Refiner", material: "NETHERITE_BLOCK", base_amount: 28.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 24, speed_bonus_pct: 24 }
+  VOID_MATRIX:          { display: "Void Matrix",          material: "END_PORTAL_FRAME",     base_amount: 30.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 26, speed_bonus_pct: 28 }
+
+prestige:
+  perFactory:
+    requirementLevel: 100
+    baseCost: 1000000.0
+    costFactor: 3.0
+    prodMultiplierPerLevel: 0.15
+    speedBonusPerLevel: 0.05
+    rareDropChancePerLevel: 0.01
+    keepCosmetics: true
+    keepStoragePercent: 25
+    cooldownSeconds: 10
+    minTickIntervalTicks: 20
+
+  rewards:
+    key:
+      perFactoryPrestige: 1
+      material: TRIPWIRE_HOOK
+      name: "&6&lPrestige Key"
+      lore:
+        - "&7Opens: &ePrestige Crate"
+        - "&8Only obtainable via factory prestige"
+      customModelData: 10001
+      keyId: "lootfactory:prestige_key"
+      crateId: "PRESTIGE"            # MUST match your crate ID exactly
+      debug: true                    # show whether crate plugin or fallback was used
+      customCommand: 'crate givekey {player} {crate} {amount}'  # LootCrates default
+      # If you use a different crate plugin, replace the line above with exactly one of these:
+      # customCommand: 'lootcrates key give {player} {crate} {amount}'      # alt alias
+      # customCommand: 'cc give physical {player} {crate} {amount}'         # CrazyCrates
+      # customCommand: 'excellentcrates key give {player} {crate} {amount}' # ExcellentCrates
+      # customCommand: 'cr key give {player} {crate} {amount}'              # CrateReloaded (older)
+
+gui:
+  titles:
+    prestigeFactory: "&a&lFactory Prestige"
+
+permissions:
+  prestigeCommand: "lootfactory.prestige"
