@@ -133,7 +133,7 @@ public class NodeManager implements Listener {
         UUID uidSel = p.getUniqueId();
         String selName = InstancedNodesPlugin.get().data().getSelection(uidSel, "crop", Cfg.FARM_defaultMat);
         Material selected = Material.matchMaterial(selName);
-        if (selected == null) return false;
+        if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
         if (!isSelectedCropBlock(b.getType(), selected)) return false;
         if (!isMatureCrop(b)) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
 
@@ -288,12 +288,7 @@ public class NodeManager implements Listener {
     }
 
     private boolean isSelectedCropBlock(Material blockType, Material selected) {
-        return blockType == selected && (
-                blockType == Material.WHEAT || blockType == Material.CARROTS ||
-                blockType == Material.POTATOES || blockType == Material.BEETROOTS ||
-                blockType == Material.CHERRY_SAPLING || blockType == Material.ROSE_BUSH ||
-                blockType == Material.TUBE_CORAL || blockType == Material.FIRE_CORAL
-        );
+        return blockType == selected && Cfg.FARM_CROPS.contains(blockType);
     }
 
     private boolean isMatureCrop(Block b) {
