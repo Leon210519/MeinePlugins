@@ -1,6 +1,8 @@
 package com.specialitems.util;
 
 import com.specialitems.leveling.Keys;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -22,7 +24,21 @@ public final class Tagger {
         var keys = new Keys(plugin);
         if (!pdc.has(keys.SI_ID, PersistentDataType.STRING)) {
             pdc.set(keys.SI_ID, PersistentDataType.STRING, templateId == null ? "unknown" : templateId);
-            item.setItemMeta(meta);
         }
+        if (!pdc.has(keys.LEVEL, PersistentDataType.INTEGER)) {
+            pdc.set(keys.LEVEL, PersistentDataType.INTEGER, 1);
+        }
+        if (!pdc.has(keys.XP, PersistentDataType.DOUBLE)) {
+            pdc.set(keys.XP, PersistentDataType.DOUBLE, 0.0);
+        }
+
+        meta.setUnbreakable(true);
+        try { meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE, ItemFlag.HIDE_ENCHANTS); } catch (Throwable ignored) {}
+        if (meta.getEnchants().isEmpty()) {
+            try { meta.addEnchant(Enchantment.UNBREAKING, 1, true); } catch (Throwable ignored) {}
+        }
+
+        item.setItemMeta(meta);
+        ItemUtil.setLevelLore(item, 1);
     }
 }

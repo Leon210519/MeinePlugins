@@ -59,6 +59,17 @@ public final class ItemUtil {
         lore.removeIf(s -> ChatColor.stripColor(s).startsWith(sp));
     }
 
+    public static void setLevelLore(ItemStack item, int level) {
+        if (item == null) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        List<String> lore = meta.hasLore() ? new ArrayList<>(meta.getLore()) : new ArrayList<>();
+        removeLoreLinePrefix(lore, ChatColor.GOLD + "Level:");
+        lore.add(0, ChatColor.GOLD + "Level: " + ChatColor.YELLOW + level);
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+    }
+
     public static String roman(int n) {
         String[] r = {"","I","II","III","IV","V","VI","VII","VIII","IX","X"};
         if (n >= 0 && n < r.length) return r[n];

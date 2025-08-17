@@ -7,7 +7,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import com.specialitems.util.ItemUtil;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
@@ -24,11 +27,13 @@ public final class LevelingService {
     public double xpSwordKill = 5.0;
     public double xpSwordBossKill = 25.0;
     public double xpHoeHarvest = 2.0;
+    public double xpArmorDamage = 3.0;
 
     public double baseProcChance = 0.10; // 10%
     public double pityIncrement = 0.02;  // +2% per miss
     public boolean allowOverCapPickaxe = false;
     public boolean allowOverCapSword = false;
+    public boolean allowOverCapArmor = false;
 
     public LevelingService(Plugin plugin) {
         this.plugin = plugin;
@@ -52,6 +57,7 @@ public final class LevelingService {
         if (n.endsWith("_PICKAXE")) return ToolClass.PICKAXE;
         if (n.endsWith("_SWORD")) return ToolClass.SWORD;
         if (n.endsWith("_HOE")) return ToolClass.HOE;
+        if (n.endsWith("_HELMET") || n.endsWith("_CHESTPLATE") || n.endsWith("_LEGGINGS") || n.endsWith("_BOOTS")) return ToolClass.ARMOR;
         return ToolClass.OTHER;
     }
 
@@ -88,9 +94,19 @@ public final class LevelingService {
         ItemMeta meta = it.getItemMeta();
         if (meta == null) return;
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        if (!pdc.has(keys.LEVEL, PersistentDataType.INTEGER)) pdc.set(keys.LEVEL, PersistentDataType.INTEGER, 1);
-        if (!pdc.has(keys.XP, PersistentDataType.DOUBLE)) pdc.set(keys.XP, PersistentDataType.DOUBLE, 0.0);
-        it.setItemMeta(meta);
+        boolean changed = false;
+        if (!pdc.has(keys.LEVEL, PersistentDataType.INTEGER)) {
+            pdc.set(keys.LEVEL, PersistentDataType.INTEGER, 1);
+            changed = true;
+        }
+        if (!pdc.has(keys.XP, PersistentDataType.DOUBLE)) {
+            pdc.set(keys.XP, PersistentDataType.DOUBLE, 0.0);
+            changed = true;
+        }
+        if (changed) {
+            it.setItemMeta(meta);
+            ItemUtil.setLevelLore(it, 1);
+        }
     }
 
     private double applyRarityXpMult(ItemStack it, double base) {
@@ -98,12 +114,15 @@ public final class LevelingService {
         return base * r.xpMultiplier;
     }
 
-    public void grantXp(ItemStack it, double amount, ToolClass clazz) {
-        if (it == null || amount <= 0) return;
+    public record LevelUp(int level, boolean enchanted) {}
+
+    public List<LevelUp> grantXp(ItemStack it, double amount, ToolClass clazz) {
+        List<LevelUp> ups = new ArrayList<>();
+        if (it == null || amount <= 0) return ups;
         ensureInit(it);
 
         int level = getLevel(it);
-        if (level >= 100) return;
+        if (level >= 100) return ups;
 
         // apply rarity multiplier
         amount = applyRarityXpMult(it, amount);
@@ -125,6 +144,7 @@ public final class LevelingService {
                     case PICKAXE -> EnchantUtil.addOrIncrease(it, Enchantment.EFFICIENCY, 1, allowOverCapPickaxe);
                     case SWORD   -> EnchantUtil.addOrIncrease(it, Enchantment.SHARPNESS, 1, allowOverCapSword);
                     case HOE     -> setBonusYieldPct(it, getBonusYieldPct(it) + 10.0);
+                    case ARMOR   -> EnchantUtil.addOrIncrease(it, Enchantment.PROTECTION, 1, allowOverCapArmor);
                     default -> {}
                 }
                 PityCounter.reset(it, keys);
@@ -132,15 +152,18 @@ public final class LevelingService {
                 PityCounter.add(it, keys, pityIncrement);
             }
 
+            ups.add(new LevelUp(level, success));
             need = LevelMath.neededXpFor(level);
         }
 
         // persist
         ItemMeta meta = it.getItemMeta();
-        if (meta == null) return;
+        if (meta == null) return ups;
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.DOUBLE, Math.max(0.0, xp));
         it.setItemMeta(meta);
+        ItemUtil.setLevelLore(it, level);
+        return ups;
     }
 }

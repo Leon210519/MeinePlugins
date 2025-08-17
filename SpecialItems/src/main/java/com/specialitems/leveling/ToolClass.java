@@ -1,5 +1,5 @@
 package com.specialitems.leveling;
 
 public enum ToolClass {
-    PICKAXE, SWORD, HOE, OTHER
+    PICKAXE, SWORD, HOE, ARMOR, OTHER
 }
