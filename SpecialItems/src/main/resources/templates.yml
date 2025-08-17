@@ -1,0 +1,574 @@
+# SpecialItems templates (expanded)
+# Place into plugins/SpecialItems/templates.yml
+templates:
+
+  # ==== STARTER / EARLY GAME ====
+  stone_miner:
+    material: IRON_PICKAXE
+    name: "&7Stonebreaker"
+    lore: ["&7Small AoE for early mining."]
+    enchants: { areaminer: 1 }
+
+  novice_farmer:
+    material: DIAMOND_HOE
+    name: "&aSprout Hoe"
+    lore: ["&7Harvests a small area and replants."]
+    enchants: { harvester: 1, replant: 1 }
+
+  rookie_scout_boots:
+    material: IRON_BOOTS
+    name: "&bLightfoot Boots"
+    lore: ["&7A touch of speed and pull."]
+    enchants: { gears: 1, magnet: 1 }
+
+  cave_lantern_helm:
+    material: IRON_HELMET
+    name: "&eCave Lantern"
+    lore: ["&7Keeps your vision bright underground."]
+    enchants: { night_vision: 1 }
+
+  rookie_hunter:
+    material: IRON_SWORD
+    name: "&cCopper Fang"
+    lore: ["&7A hint of life drain."]
+    enchants: { lifesteal: 1 }
+
+  # ==== MINER LINE ====
+  miner_pick_t1:
+    material: DIAMOND_PICKAXE
+    name: "&6Vein Ripper I"
+    lore: ["&7Mines connected ores in a vein."]
+    enchants: { veinminer: 1 }
+
+  miner_pick_t2:
+    material: NETHERITE_PICKAXE
+    name: "&6Vein Ripper II"
+    lore: ["&7Bigger veins, faster progress.", "&7+ Telekinesis"]
+    enchants: { veinminer: 2, telekinesis: 1 }
+
+  miner_pick_t3:
+    material: NETHERITE_PICKAXE
+    name: "&6Vein Ripper III"
+    lore: ["&7Large vein range, autosmelt & vacuum."]
+    enchants: { veinminer: 3, autosmelt: 1, telekinesis: 1, haste_touch: 1 }
+
+  miner_aoe_pick:
+    material: NETHERITE_PICKAXE
+    name: "&9Quarry Claw"
+    lore: ["&73x3 mining for tunneling.", "&7Picks stone-like blocks."]
+    enchants: { areaminer: 2, haste_touch: 2, telekinesis: 1 }
+
+  tunnel_borer:
+    material: DIAMOND_PICKAXE
+    name: "&9Tunnel Borer"
+    lore: ["&7Reliable 3x3 shaft maker."]
+    enchants: { areaminer: 1, haste_touch: 1 }
+
+  smelt_vac:
+    material: DIAMOND_PICKAXE
+    name: "&6Smelt&7-&bVac"
+    lore: ["&7Smelts & picks up drops."]
+    enchants: { autosmelt: 1, telekinesis: 1 }
+
+  # ==== FARMER LINE ====
+  farmer_hoe_t1:
+    material: DIAMOND_HOE
+    name: "&aGreen Reaper I"
+    lore: ["&73x3 harvest & auto-replant."]
+    enchants: { harvester: 1, replant: 1 }
+
+  farmer_hoe_t2:
+    material: NETHERITE_HOE
+    name: "&aGreen Reaper II"
+    lore: ["&75x5 harvest & auto-replant."]
+    enchants: { harvester: 2, replant: 1, telekinesis: 1 }
+
+  farmer_hoe_t3:
+    material: NETHERITE_HOE
+    name: "&aGreen Reaper III"
+    lore: ["&75x5 harvest, replant & item vacuum.", "&7Haste for fast farming."]
+    enchants: { harvester: 3, replant: 1, telekinesis: 1, haste_touch: 1 }
+
+  orchard_hoe:
+    material: DIAMOND_HOE
+    name: "&aOrchard Keeper"
+    lore: ["&7Gentle farming & replant."]
+    enchants: { harvester: 1, replant: 1, telekinesis: 1 }
+
+  # ==== HUNTER / COMBAT ====
+  hunter_sword_t1:
+    material: DIAMOND_SWORD
+    name: "&cVampire Edge I"
+    lore: ["&7Siphons health from your foes."]
+    enchants: { lifesteal: 1 }
+
+  hunter_sword_t2:
+    material: NETHERITE_SWORD
+    name: "&cVampire Edge II"
+    lore: ["&7Lifesteal + chance for a second strike."]
+    enchants: { lifesteal: 2, doublestrike: 1 }
+
+  hunter_sword_t3:
+    material: NETHERITE_SWORD
+    name: "&cVampire Edge III"
+    lore: ["&7Greater lifesteal, frequent double-strikes.", "&7Occasional Wither."]
+    enchants: { lifesteal: 3, doublestrike: 2, wither: 1 }
+
+  frostbrand:
+    material: NETHERITE_SWORD
+    name: "&bFrostbrand"
+    lore: ["&7Slows enemies on hit."]
+    enchants: { frozen: 2, doublestrike: 1 }
+
+  wither_reaper:
+    material: NETHERITE_AXE
+    name: "&8Grim Splitter"
+    lore: ["&7Inflicts wither and heavy blows."]
+    enchants: { wither: 2, doublestrike: 2 }
+
+  raider_axe:
+    material: DIAMOND_AXE
+    name: "&6Pillager's Bite"
+    lore: ["&7Savage cleaver with chance for extra hit."]
+    enchants: { doublestrike: 1 }
+
+  # ==== SCOUT / UTILITY ====
+  scout_boots_t1:
+    material: DIAMOND_BOOTS
+    name: "&bWindrunner I"
+    lore: ["&7Light speed boost."]
+    enchants: { gears: 1 }
+
+  scout_boots_t2:
+    material: NETHERITE_BOOTS
+    name: "&bWindrunner II"
+    lore: ["&7Faster movement & item pull."]
+    enchants: { gears: 2, magnet: 1 }
+
+  scout_boots_t3:
+    material: NETHERITE_BOOTS
+    name: "&bWindrunner III"
+    lore: ["&7High speed, strong magnet."]
+    enchants: { gears: 3, magnet: 3 }
+
+  spelunker_helm:
+    material: NETHERITE_HELMET
+    name: "&eSpelunker Helm"
+    lore: ["&7Permanent night vision underground."]
+    enchants: { night_vision: 1 }
+
+  pack_magnet_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&bPack Harness"
+    lore: ["&7Pull scattered loot into place."]
+    enchants: { magnet: 2 }
+
+  xp_scholar_helm:
+    material: NETHERITE_HELMET
+    name: "&5Scholar Visor"
+    lore: ["&7Earn more experience from kills."]
+    enchants: { xp_boost: 3 }
+
+  # ==== THEMED SETS (FULL: helm/chest/legs/boots/weapon/tool) ====
+
+  # -- ARCTIC -- (slow/frozen theme)
+  set_arctic_helm:
+    material: NETHERITE_HELMET
+    name: "&bArctic Helm"
+    lore: ["&7Cold clarity."]
+    enchants: { night_vision: 1 }
+
+  set_arctic_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&bArctic Chestguard"
+    lore: ["&7Keeps you brisk."]
+    enchants: { magnet: 1 }
+
+  set_arctic_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&bArctic Leggings"
+    lore: ["&7Stride of the tundra."]
+    enchants: { gears: 1 }
+
+  set_arctic_boots:
+    material: NETHERITE_BOOTS
+    name: "&bArctic Boots"
+    lore: ["&7Swift on ice and snow."]
+    enchants: { gears: 2, magnet: 1 }
+
+  set_arctic_blade:
+    material: NETHERITE_SWORD
+    name: "&bArctic Blade"
+    lore: ["&7Frozen edge that slows foes."]
+    enchants: { frozen: 3, doublestrike: 1 }
+
+  set_arctic_pick:
+    material: NETHERITE_PICKAXE
+    name: "&bArctic Drill"
+    lore: ["&7Haste & telekinesis for crisp mining."]
+    enchants: { haste_touch: 2, telekinesis: 1, veinminer: 2 }
+
+  # -- EMBER -- (smelt/haste theme)
+  set_ember_helm:
+    material: NETHERITE_HELMET
+    name: "&6Ember Helm"
+    lore: ["&7Eyes like fire."]
+    enchants: { night_vision: 1 }
+
+  set_ember_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&6Ember Chestguard"
+    lore: ["&7Pulls drops to your core."]
+    enchants: { magnet: 2 }
+
+  set_ember_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&6Ember Leggings"
+    lore: ["&7Fleet as cinders."]
+    enchants: { gears: 2 }
+
+  set_ember_boots:
+    material: NETHERITE_BOOTS
+    name: "&6Ember Boots"
+    lore: ["&7Blazing speed."]
+    enchants: { gears: 3 }
+
+  set_ember_blade:
+    material: NETHERITE_AXE
+    name: "&6Ember Cleaver"
+    lore: ["&7Burning momentum with extra strikes."]
+    enchants: { doublestrike: 2, wither: 1 }
+
+  set_ember_pick:
+    material: NETHERITE_PICKAXE
+    name: "&6Ember Drill"
+    lore: ["&7Autosmelt, Haste and Telekinesis.", "&73x3 mining."]
+    enchants: { autosmelt: 1, haste_touch: 2, telekinesis: 1, areaminer: 2 }
+
+  # -- VERDANT -- (farming theme)
+  set_verdant_helm:
+    material: NETHERITE_HELMET
+    name: "&aVerdant Circlet"
+    lore: ["&7See growth clearly."]
+    enchants: { night_vision: 1 }
+
+  set_verdant_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&aVerdant Vest"
+    lore: ["&7Gather produce with ease."]
+    enchants: { magnet: 1 }
+
+  set_verdant_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&aVerdant Greaves"
+    lore: ["&7Stride through fields."]
+    enchants: { gears: 1 }
+
+  set_verdant_boots:
+    material: NETHERITE_BOOTS
+    name: "&aVerdant Boots"
+    lore: ["&7Swift harvester's pace."]
+    enchants: { gears: 2, magnet: 1 }
+
+  set_verdant_hoe:
+    material: NETHERITE_HOE
+    name: "&aVerdant Harvester"
+    lore: ["&75x5 harvest & replant with vacuum."]
+    enchants: { harvester: 3, replant: 1, telekinesis: 1, haste_touch: 1 }
+
+  set_verdant_sickle:
+    material: NETHERITE_SWORD
+    name: "&aLeafcutter"
+    lore: ["&7Light lifesteal in the grove."]
+    enchants: { lifesteal: 2 }
+
+  # -- ABYSS -- (wither/shadow theme)
+  set_abyss_helm:
+    material: NETHERITE_HELMET
+    name: "&8Abyssal Visor"
+    lore: ["&7Gaze into darkness."]
+    enchants: { night_vision: 1 }
+
+  set_abyss_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&8Abyssal Carapace"
+    lore: ["&7Gravity draws spoils to you."]
+    enchants: { magnet: 2 }
+
+  set_abyss_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&8Abyssal Treads"
+    lore: ["&7Silent stride."]
+    enchants: { gears: 1 }
+
+  set_abyss_boots:
+    material: NETHERITE_BOOTS
+    name: "&8Abyssal Boots"
+    lore: ["&7Fleet through void."]
+    enchants: { gears: 3 }
+
+  set_abyss_blade:
+    material: NETHERITE_SWORD
+    name: "&8Voidrender"
+    lore: ["&7Savage strikes and wither."]
+    enchants: { doublestrike: 3, wither: 3 }
+
+  set_abyss_pick:
+    material: NETHERITE_PICKAXE
+    name: "&8Void Auger"
+    lore: ["&7Veinminer & telekinesis to consume ores."]
+    enchants: { veinminer: 4, telekinesis: 1, haste_touch: 2 }
+
+  # -- STORM -- (speed/magnet/haste theme)
+  set_storm_helm:
+    material: NETHERITE_HELMET
+    name: "&bStorm Crown"
+    lore: ["&7Sight through the squall."]
+    enchants: { night_vision: 1 }
+
+  set_storm_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&bStorm Jacket"
+    lore: ["&7Pulls in the tempest's bounty."]
+    enchants: { magnet: 3 }
+
+  set_storm_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&bStorm Pants"
+    lore: ["&7Lightning legs."]
+    enchants: { gears: 2 }
+
+  set_storm_boots:
+    material: NETHERITE_BOOTS
+    name: "&bStorm Boots"
+    lore: ["&7Blinding pace."]
+    enchants: { gears: 3, magnet: 1 }
+
+  set_storm_blade:
+    material: NETHERITE_AXE
+    name: "&bTempest Chopper"
+    lore: ["&7Rapid follow-up hits."]
+    enchants: { doublestrike: 3 }
+
+  set_storm_pick:
+    material: NETHERITE_PICKAXE
+    name: "&bThunder Borer"
+    lore: ["&75x5 area mining with haste."]
+    enchants: { areaminer: 3, haste_touch: 3, telekinesis: 1 }
+
+  # -- SOLAR -- (xp/utility/smelt theme)
+  set_solar_helm:
+    material: NETHERITE_HELMET
+    name: "&eSolar Halo"
+    lore: ["&7Wisdom of the sun."]
+    enchants: { xp_boost: 3 }
+
+  set_solar_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&eSolar Aegis"
+    lore: ["&7Radiant pull."]
+    enchants: { magnet: 2 }
+
+  set_solar_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&eSolar Striders"
+    lore: ["&7Stride of brilliance."]
+    enchants: { gears: 2 }
+
+  set_solar_boots:
+    material: NETHERITE_BOOTS
+    name: "&eSolar Boots"
+    lore: ["&7Swift orbit."]
+    enchants: { gears: 3 }
+
+  set_solar_blade:
+    material: NETHERITE_SWORD
+    name: "&eSunflare"
+    lore: ["&7Cauterizing cuts."]
+    enchants: { wither: 2, doublestrike: 2 }
+
+  set_solar_pick:
+    material: NETHERITE_PICKAXE
+    name: "&eSun Drill"
+    lore: ["&7Autosmelt with clean pickup."]
+    enchants: { autosmelt: 1, telekinesis: 1, veinminer: 3 }
+
+  # -- TITAN -- (OP mixed theme)
+  set_titan_helm:
+    material: NETHERITE_HELMET
+    name: "&dTitan Crown"
+    lore: ["&7Colossal might."]
+    enchants: { xp_boost: 3, night_vision: 1 }
+
+  set_titan_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&dTitan Plate"
+    lore: ["&7A center of gravity."]
+    enchants: { magnet: 3 }
+
+  set_titan_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&dTitan Greaves"
+    lore: ["&7Stride of a giant."]
+    enchants: { gears: 2 }
+
+  set_titan_boots:
+    material: NETHERITE_BOOTS
+    name: "&dTitan Boots"
+    lore: ["&7The ground trembles."]
+    enchants: { gears: 3, magnet: 2 }
+
+  set_titan_blade:
+    material: NETHERITE_SWORD
+    name: "&dTitan Edge"
+    lore: ["&7Massive lifesteal and relentless blows."]
+    enchants: { lifesteal: 5, doublestrike: 3, wither: 2 }
+
+  set_titan_pick:
+    material: NETHERITE_PICKAXE
+    name: "&dTitan Extractor"
+    lore: ["&7Huge veins, autosmelt & vacuum.", "&7Maximum haste."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_touch: 3 }
+
+  # ==== HIGH-END / OP SINGLES ====
+  omega_pick:
+    material: NETHERITE_PICKAXE
+    name: "&dOmega Extractor"
+    lore: ["&7Huge veins, autosmelt & vacuum.", "&7Haste included."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_touch: 3 }
+
+  omega_sword:
+    material: NETHERITE_SWORD
+    name: "&dOmega Edge"
+    lore: ["&7Massive lifesteal, double-strikes.", "&7Occasional wither."]
+    enchants: { lifesteal: 5, doublestrike: 3, wither: 3 }
+
+  omega_farmer:
+    material: NETHERITE_HOE
+    name: "&dOmega Harvester"
+    lore: ["&75x5 harvest, instant replant, vacuum."]
+    enchants: { harvester: 3, replant: 1, telekinesis: 1, haste_touch: 2 }
+
+  omega_boots:
+    material: NETHERITE_BOOTS
+    name: "&dOmega Striders"
+    lore: ["&7Maximum speed and strongest pull."]
+    enchants: { gears: 3, magnet: 3 }
+
+  # ==== EXTRA VARIANTS (filling feature coverage) ====
+  silk_runner_boots:
+    material: DIAMOND_BOOTS
+    name: "&bCourier Boots"
+    lore: ["&7Fast courier pull."]
+    enchants: { gears: 2, magnet: 2 }
+
+  miner_support_chest:
+    material: DIAMOND_CHESTPLATE
+    name: "&9Rucksack Rig"
+    lore: ["&7Pull ores while mining."]
+    enchants: { magnet: 1 }
+
+  steady_helm:
+    material: DIAMOND_HELMET
+    name: "&7Foreman's Cap"
+    lore: ["&7See clearly in shafts."]
+    enchants: { night_vision: 1 }
+
+  expeditioner_legs:
+    material: DIAMOND_LEGGINGS
+    name: "&bTrailrunner Pants"
+    lore: ["&7Extra stride for travel."]
+    enchants: { gears: 1 }
+
+  swift_shovel:
+    material: NETHERITE_SHOVEL
+    name: "&eDust Devil"
+    lore: ["&7Cuts sand & soil quickly."]
+    enchants: { areaminer: 1, haste_touch: 2, telekinesis: 1 }
+
+  lumberjack_axe:
+    material: NETHERITE_AXE
+    name: "&6Timbermaw"
+    lore: ["&73x3 woodfelling (area)."]
+    enchants: { areaminer: 2, haste_touch: 2 }
+
+  arcane_dagger:
+    material: DIAMOND_SWORD
+    name: "&5Night Sting"
+    lore: ["&7Quick stabs, sometimes twice."]
+    enchants: { doublestrike: 2 }
+
+  chill_cleaver:
+    material: DIAMOND_AXE
+    name: "&bChill Cleaver"
+    lore: ["&7Chances to slow the foe."]
+    enchants: { frozen: 2 }
+
+  grim_scythe:
+    material: NETHERITE_HOE
+    name: "&8Grim Scythe"
+    lore: ["&7Harvests wide & replants instantly."]
+    enchants: { harvester: 3, replant: 1 }
+
+  scholar_blade:
+    material: DIAMOND_SWORD
+    name: "&eLorekeeper"
+    lore: ["&7Extra experience on kills."]
+    enchants: { xp_boost: 2, doublestrike: 1 }
+
+  # ==== ADDED: Bows per rarity ====
+
+  bow_common:
+    material: BOW
+    name: "&7Common Bow"
+    lore: ["&7A sturdy common bow with custom styling."]
+    enchants: { }
+
+
+  bow_uncommon:
+    material: BOW
+    name: "&aUncommon Bow"
+    lore: ["&7A sturdy uncommon bow with custom styling."]
+    enchants: { }
+
+
+  bow_rare:
+    material: BOW
+    name: "&bRare Bow"
+    lore: ["&7A sturdy rare bow with custom styling."]
+    enchants: { }
+
+
+  bow_epic:
+    material: BOW
+    name: "&dEpic Bow"
+    lore: ["&7A sturdy epic bow with custom styling."]
+    enchants: { }
+
+
+  bow_legendary:
+    material: BOW
+    name: "&6Legendary Bow"
+    lore: ["&7A sturdy legendary bow with custom styling."]
+    enchants: { }
+
+
+  bow_mythic:
+    material: BOW
+    name: "&5Mythic Bow"
+    lore: ["&7A sturdy mythic bow with custom styling."]
+    enchants: { }
+
+
+  bow_special:
+    material: BOW
+    name: "&8Special Bow"
+    lore: ["&7A sturdy special bow with custom styling."]
+    enchants: { }
+
+
+  bow_unique:
+    material: BOW
+    name: "&eUnique Bow"
+    lore: ["&7A sturdy unique bow with custom styling."]
+    enchants: { }
