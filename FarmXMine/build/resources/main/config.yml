@@ -1,0 +1,41 @@
+# --- InstancedNodes ---
+debug: false
+
+respawn_seconds: 30
+target_harvests: 3000000
+exponent: 1.6
+
+options:
+  play_sounds: false               # no sounds when harvesting (per request)
+  require_permissions: false       # if true, players need instancednodes.mine/farm
+  override_cancelled: true         # process even if other plugins cancel (e.g. WorldGuard)
+
+leveling:
+  xp_per_harvest:
+    mine: 3
+    farm: 1
+  mine_efficiency_penalty_per_level: 0.5
+  mine_min_xp: 1
+
+compat:
+  veinminer:
+    detect_lore: ["Veinminer","Vein Miner"]
+    max_blocks: 64
+
+mine:
+  world_replace: true
+
+farm:
+  crops: [WHEAT, CARROTS, POTATOES, BEETROOTS, CHERRY_SAPLING, ROSE_BUSH, TUBE_CORAL, FIRE_CORAL]
+
+regions:
+  mine:
+    world: "world"
+    pos1: { x: 0, y: 0, z: 0 }
+    pos2: { x: 0, y: 0, z: 0 }
+    default_mat: "COAL_ORE"
+  farm:
+    world: "world"
+    pos1: { x: 0, y: 0, z: 0 }
+    pos2: { x: 0, y: 0, z: 0 }
+    default_mat: "WHEAT"

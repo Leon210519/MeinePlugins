@@ -1,0 +1,18 @@
+name: InstancedNodes
+main: com.instancednodes.InstancedNodesPlugin
+version: 0.4.6
+api-version: '1.21'
+authors: [ 'MinehutHelper' ]
+commands:
+  nodes:
+    description: InstancedNodes admin commands
+    usage: /nodes <debug|reload>
+    permission: instancednodes.admin
+permissions:
+  instancednodes.admin:
+    default: op
+  instancednodes.mine:
+    default: true
+  instancednodes.farm:
+    default: true
+softdepend: [WorldGuard]
