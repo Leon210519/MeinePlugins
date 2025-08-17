@@ -1,6 +1,5 @@
 package com.specialitems.util;
 
-import com.specialitems.effects.Effects;
 import com.specialitems.SpecialItemsPlugin;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -39,17 +38,6 @@ public final class TemplateItems {
             List<String> lore = new ArrayList<>();
             for (String l : t.getStringList("lore")) lore.add(ChatColor.translateAlternateColorCodes('&', l));
 
-            var enchSec = t.getConfigurationSection("enchants");
-            if (enchSec != null && !enchSec.getKeys(false).isEmpty()) {
-                lore.add(ChatColor.DARK_GRAY + "" + ChatColor.STRIKETHROUGH + "----------------");
-                lore.add(ChatColor.GRAY + "Effects:");
-                for (String eid : enchSec.getKeys(false)) {
-                    int lvl = enchSec.getInt(eid, 1);
-                    var eff = Effects.get(eid);
-                    String disp = eff != null ? eff.displayName() : eid;
-                    lore.add(ChatColor.DARK_AQUA + " - " + ChatColor.AQUA + disp + " " + ItemUtil.roman(lvl));
-                }
-            }
             meta.setLore(lore);
             it.setItemMeta(meta);
         }
