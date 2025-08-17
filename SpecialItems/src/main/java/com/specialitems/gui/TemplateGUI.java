@@ -2,6 +2,8 @@ package com.specialitems.gui;
 
 import com.specialitems.util.TemplateItems;
 import com.specialitems.util.Configs;
+import com.specialitems.util.GuiItemUtil;
+import com.specialitems.SpecialItemsPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -30,7 +32,9 @@ public final class TemplateGUI {
         int end = Math.min(all.size(), start + PAGE_SIZE);
         int slot = 0;
         for (int i = start; i < end; i++) {
-            inv.setItem(slot++, all.get(i).stack().clone());
+            ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), all.get(i).stack());
+            if (display == null) display = all.get(i).stack().clone();
+            inv.setItem(slot++, display);
         }
         // nav bar
         inv.setItem(45, GuiIcons.navPrev(page > 0));

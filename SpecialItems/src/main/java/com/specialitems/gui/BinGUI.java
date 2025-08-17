@@ -2,6 +2,8 @@ package com.specialitems.gui;
 
 import com.specialitems.bin.Bin;
 import com.specialitems.util.Configs;
+import com.specialitems.util.GuiItemUtil;
+import com.specialitems.SpecialItemsPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -26,7 +28,9 @@ public final class BinGUI {
         int i = 0;
         for (ItemStack it : items) {
             if (i >= SIZE - 1) break;
-            inv.setItem(i++, it.clone());
+            ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), it);
+            if (display == null) display = it.clone();
+            inv.setItem(i++, display);
         }
         inv.setItem(SIZE - 1, GuiIcons.navClose());
         p.openInventory(inv);
