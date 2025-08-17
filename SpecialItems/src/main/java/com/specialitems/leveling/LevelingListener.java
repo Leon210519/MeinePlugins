@@ -1,5 +1,6 @@
 package com.specialitems.leveling;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
@@ -42,11 +43,15 @@ public final class LevelingListener implements Listener {
                         default -> 0.0;
                     };
                 }
-                if (add > 0) svc.grantXp(held, add, clazz);
+                if (add > 0) {
+                    var ups = svc.grantXp(held, add, clazz);
+                    sendMsgs(p, held, ups);
+                }
             }
             case HOE -> {
                 if (HarvestUtil.isCrop(m) && HarvestUtil.isMatureCrop(b)) {
-                    svc.grantXp(held, svc.xpHoeHarvest, clazz);
+                    var ups = svc.grantXp(held, svc.xpHoeHarvest, clazz);
+                    sendMsgs(p, held, ups);
                 }
             }
             default -> {}
@@ -66,7 +71,17 @@ public final class LevelingListener implements Listener {
         if (clazz != ToolClass.SWORD) return;
 
         double add = isBoss(dead.getType()) ? svc.xpSwordBossKill : svc.xpSwordKill;
-        svc.grantXp(held, add, clazz);
+        var ups = svc.grantXp(held, add, clazz);
+        sendMsgs(killer, held, ups);
+    }
+
+    private void sendMsgs(Player p, ItemStack item, java.util.List<LevelingService.LevelUp> ups) {
+        if (ups == null || ups.isEmpty()) return;
+        String name = (item.hasItemMeta() && item.getItemMeta().hasDisplayName()) ? item.getItemMeta().getDisplayName() : item.getType().name();
+        for (var up : ups) {
+            p.sendMessage(ChatColor.AQUA + name + ChatColor.GREEN + " reached level " + ChatColor.YELLOW + up.level() +
+                    (up.enchanted() ? ChatColor.GREEN + " and gained a bonus enchantment!" : ChatColor.GRAY + " without a bonus enchantment."));
+        }
     }
 
     private boolean isBoss(EntityType t) {

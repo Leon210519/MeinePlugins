@@ -1,11 +1,13 @@
 package com.specialitems;
 
 import com.specialitems.commands.SiCommand;
+import com.specialitems.commands.BinCommand;
 import com.specialitems.effects.Effects;
 import com.specialitems.listeners.BlockListener;
 import com.specialitems.listeners.CombatListener;
 import com.specialitems.listeners.PlayerListener;
 import com.specialitems.listeners.GuiListener;
+import com.specialitems.listeners.BinListener;
 import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
 import org.bukkit.Bukkit;
@@ -48,6 +50,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new CombatListener(), this);
             getServer().getPluginManager().registerEvents(new GuiListener(), this);
             getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+            getServer().getPluginManager().registerEvents(new BinListener(this), this);
         } catch (Throwable t) {
             Log.warn("Listener registration failed: " + t.getMessage());
         }
@@ -61,6 +64,15 @@ public class SpecialItemsPlugin extends JavaPlugin {
             }
         } else {
             Log.warn("Command 'si' not found in plugin.yml!");
+        }
+        if (getCommand("bin") != null) {
+            try {
+                getCommand("bin").setExecutor(new BinCommand());
+            } catch (Throwable t) {
+                Log.warn("Failed to set executor for /bin: " + t.getMessage());
+            }
+        } else {
+            Log.warn("Command 'bin' not found in plugin.yml!");
         }
 
         // --- Leveling system (NEW) ---

@@ -7,6 +7,10 @@ commands:
   si:
     description: SpecialItems command
     usage: /si
+  bin:
+    description: View deleted special items (admin)
+    usage: /bin
+    permission: specialitems.admin
 permissions:
   specialitems.admin:
     description: Allows using admin SpecialItems subcommands

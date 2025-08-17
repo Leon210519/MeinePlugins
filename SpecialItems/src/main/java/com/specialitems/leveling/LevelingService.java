@@ -8,6 +8,8 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
@@ -98,12 +100,15 @@ public final class LevelingService {
         return base * r.xpMultiplier;
     }
 
-    public void grantXp(ItemStack it, double amount, ToolClass clazz) {
-        if (it == null || amount <= 0) return;
+    public record LevelUp(int level, boolean enchanted) {}
+
+    public List<LevelUp> grantXp(ItemStack it, double amount, ToolClass clazz) {
+        List<LevelUp> ups = new ArrayList<>();
+        if (it == null || amount <= 0) return ups;
         ensureInit(it);
 
         int level = getLevel(it);
-        if (level >= 100) return;
+        if (level >= 100) return ups;
 
         // apply rarity multiplier
         amount = applyRarityXpMult(it, amount);
@@ -132,15 +137,17 @@ public final class LevelingService {
                 PityCounter.add(it, keys, pityIncrement);
             }
 
+            ups.add(new LevelUp(level, success));
             need = LevelMath.neededXpFor(level);
         }
 
         // persist
         ItemMeta meta = it.getItemMeta();
-        if (meta == null) return;
+        if (meta == null) return ups;
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.DOUBLE, Math.max(0.0, xp));
         it.setItemMeta(meta);
+        return ups;
     }
 }

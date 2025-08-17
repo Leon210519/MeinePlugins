@@ -162,11 +162,6 @@ public final class LevelOverviewGUI implements InventoryHolder, Listener {
         inv.clear();
         PlayerInventory pinv = target.getInventory();
         for (ItemStack it : pinv.getContents()) addIfSpecial(it);
-        addIfSpecial(pinv.getItemInOffHand());
-        addIfSpecial(pinv.getHelmet());
-        addIfSpecial(pinv.getChestplate());
-        addIfSpecial(pinv.getLeggings());
-        addIfSpecial(pinv.getBoots());
     }
 
     @EventHandler

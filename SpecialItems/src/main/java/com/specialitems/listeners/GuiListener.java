@@ -1,7 +1,8 @@
 package com.specialitems.listeners;
 
+import com.specialitems.bin.Bin;
+import com.specialitems.gui.BinGUI;
 import com.specialitems.gui.TemplateGUI;
-import com.specialitems.util.TemplateItems;
 import com.specialitems.util.Configs;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -18,7 +19,31 @@ public class GuiListener implements Listener {
     public void onClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player p)) return;
         String title = e.getView().getTitle();
-        if (title == null || !title.startsWith(ChatColor.AQUA + "SpecialItems Templates")) return;
+        if (title == null) return;
+
+        if (title.equals(BinGUI.TITLE)) {
+            e.setCancelled(true);
+            if (!p.hasPermission("specialitems.admin")) {
+                p.closeInventory();
+                p.sendMessage(ChatColor.translateAlternateColorCodes('&', Configs.msg.getString("no-permission","&cNo permission.")));
+                return;
+            }
+            int raw = e.getRawSlot();
+            if (raw < 0) return;
+            if (raw == e.getInventory().getSize() - 1) {
+                p.closeInventory();
+                return;
+            }
+            ItemStack removed = Bin.take(raw);
+            if (removed != null) {
+                p.getInventory().addItem(removed);
+                p.sendMessage(ChatColor.GREEN + "Recovered item.");
+                BinGUI.open(p);
+            }
+            return;
+        }
+
+        if (!title.startsWith(ChatColor.AQUA + "SpecialItems Templates")) return;
         e.setCancelled(true);
         if (!p.hasPermission("specialitems.admin")) {
             p.closeInventory();
