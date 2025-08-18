@@ -2,7 +2,6 @@ package com.lootfactory.gui;
 
 import com.lootfactory.factory.FactoryDef;
 import com.lootfactory.factory.FactoryManager;
-import com.lootfactory.util.Msg;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -10,16 +9,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.Material;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Read-only GUI that lists all available factory types.
@@ -44,20 +38,7 @@ public class FactoryTypesGUI {
         int slot = 0;
         for (FactoryDef def : defs){
             if (slot >= inv.getSize()) break;
-            ItemStack it = new ItemStack(def.material != null ? def.material : Material.CHEST);
-            ItemMeta im = it.getItemMeta();
-            String name = (def.display != null && !def.display.isEmpty()) ? def.display : def.id;
-            im.setDisplayName(Msg.color("&e" + name + " &7[" + ChatColor.GRAY + def.rarity.name() + "&7]"));
-            List<String> lore = new ArrayList<>();
-            lore.add(Msg.color("&7Type: &f" + def.id));
-            lore.add(Msg.color("&7Rarity: &f" + def.rarity.name()));
-            lore.add(Msg.color("&7Base: &f" + def.baseAmount + " &7per &f" + def.baseIntervalSec + "s"));
-            if (def.yieldBonusPct != 0 || def.speedBonusPct != 0){
-                lore.add(Msg.color("&7Perks: &a+" + (int)def.yieldBonusPct + "% Yield &7/ &a+" + (int)def.speedBonusPct + "% Speed"));
-            }
-            im.setLore(lore);
-            im.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-            it.setItemMeta(im);
+            ItemStack it = manager.createFactoryItem(def.id, 1, 0d, 0);
             inv.setItem(slot++, it);
         }
     }
