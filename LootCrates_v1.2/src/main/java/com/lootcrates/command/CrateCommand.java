@@ -23,6 +23,7 @@ public class CrateCommand implements CommandExecutor {
             sender.sendMessage("§e/crate givekey <player> <CRATE> <amount> §7(Admin)");
             sender.sendMessage("§e/crate list        §7List available crates");
             sender.sendMessage("§e/crate preview <CRATE> §7Preview rewards");
+            sender.sendMessage("§e/crate reload      §7(Admin) Reload config and crates");
             sender.sendMessage("§e/crate bind <CRATE> §7(Admin) Bind crate to targeted block");
             sender.sendMessage("§e/crate unbind      §7(Admin) Unbind targeted block");
             return true;
@@ -41,6 +42,11 @@ public class CrateCommand implements CommandExecutor {
                 String crateId = args[2];
                 int amount = Integer.parseInt(args[3]);
                 plugin.crates().giveKey(t, crateId, amount);
+            }
+            case "reload" -> {
+                if (!sender.hasPermission("lootcrates.admin")) { sender.sendMessage("§cNo permission."); return true; }
+                plugin.crates().reload();
+                sender.sendMessage("§aLootCrates reloaded.");
             }
             case "open" -> {
                 if (!(sender instanceof Player p)){ sender.sendMessage("§cPlayers only."); return true; }

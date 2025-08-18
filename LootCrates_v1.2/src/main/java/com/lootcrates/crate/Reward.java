@@ -56,7 +56,21 @@ public class Reward {
         }
 
         ConfigurationSection d = sec.getConfigurationSection("display");
-        r.display = d != null ? readItem(d) : new ItemStack(Material.PAPER);
+        if (d != null) {
+            r.display = readItem(d);
+        } else {
+            // Sensible defaults so previews/animations always show something useful
+            if (type == Type.ITEM) {
+                // Use the reward item itself as the display icon when none is provided
+                r.display = r.item != null ? r.item.clone() : new ItemStack(Material.PAPER);
+                if (r.display != null) r.display.setAmount(1); // ensure single item for GUI
+            } else if (type == Type.KEY) {
+                // Generic key icon
+                r.display = new ItemStack(Material.TRIPWIRE_HOOK);
+            } else {
+                r.display = new ItemStack(Material.PAPER);
+            }
+        }
         return r;
     }
 

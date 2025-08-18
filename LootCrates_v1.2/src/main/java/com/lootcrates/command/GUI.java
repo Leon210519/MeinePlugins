@@ -65,6 +65,12 @@ public class GUI {
         final Random rng = plugin.crates().rng();
         final Reward[] landed = new Reward[1];
 
+        // Fill initial items so the animation has something to scroll through
+        for (int s : slots) {
+            Reward rr = c.rewards.get(rng.nextInt(c.rewards.size()));
+            inv.setItem(s, rr.display.clone());
+        }
+
         new BukkitRunnable(){
             int ticks = 0;
             int gate = 2;   // ticks between shifts
@@ -79,13 +85,13 @@ public class GUI {
                 // decelerate every second up to a cap
                 if (ticks % 20 == 0 && gate < 8) gate++;
 
-                // shift items right
-                for (int i = slots.length-1; i > 0; i--){
-                    inv.setItem(slots[i], inv.getItem(slots[i-1]));
+                // shift items left (rightmost item moves out, new item enters on the right)
+                for (int i = 0; i < slots.length - 1; i++){
+                    inv.setItem(slots[i], inv.getItem(slots[i+1]));
                 }
-                // new random at left
+                // new random at right
                 Reward rr = c.rewards.get(rng.nextInt(c.rewards.size()));
-                inv.setItem(slots[0], rr.display.clone());
+                inv.setItem(slots[slots.length-1], rr.display.clone());
 
                 p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
 
