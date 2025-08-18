@@ -60,13 +60,35 @@ public class Reward {
             r.item = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
             r.itemAmount = sec.getInt("amount", 1);
             if (r.item != null) r.item.setAmount(Math.max(1, r.itemAmount));
-            r.display = r.item != null ? r.item.clone() : new ItemStack(Material.PAPER);
+            // Default display for SPECIAL_ITEM = the built item (clone). May be overridden by display-section below.
+            r.display = (r.item != null ? r.item.clone() : new ItemStack(Material.PAPER));
+            if (r.display != null) r.display.setAmount(1);
         }
 
-        if (type != Type.SPECIAL_ITEM) {
-            ConfigurationSection d = sec.getConfigurationSection("display");
-            r.display = d != null ? readItem(d) : new ItemStack(Material.PAPER);
+        // --- Unified display handling (conflict resolved) ---
+        ConfigurationSection d = sec.getConfigurationSection("display");
+        if (d != null) {
+            // Explicit override from config always wins
+            r.display = readItem(d);
+            if (r.display != null) r.display.setAmount(1);
+        } else {
+            // No explicit display provided → apply sensible defaults if not already set
+            if (r.display == null) {
+                if (type == Type.ITEM) {
+                    r.display = (r.item != null ? r.item.clone() : new ItemStack(Material.PAPER));
+                    if (r.display != null) r.display.setAmount(1);
+                } else if (type == Type.KEY) {
+                    r.display = new ItemStack(Material.TRIPWIRE_HOOK);
+                } else {
+                    r.display = new ItemStack(Material.PAPER);
+                }
+            } else {
+                // Ensure GUI shows a single item for SPECIAL_ITEM default too
+                if (r.display.getAmount() != 1) r.display.setAmount(1);
+            }
         }
+        // --- end unified display handling ---
+
         return r;
     }
 
