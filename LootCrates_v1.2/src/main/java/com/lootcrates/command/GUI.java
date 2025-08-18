@@ -27,7 +27,7 @@ public class GUI {
             if (m != null){
                 List<String> lore = m.hasLore() ? new ArrayList<>(m.getLore()) : new ArrayList<>();
                 lore.add(Color.cc("&7Weight: &f" + r.weight));
-                if (r.type == Reward.Type.ITEM && r.itemAmount > 1){
+                if ((r.type == Reward.Type.ITEM || r.type == Reward.Type.SPECIAL_ITEM) && r.itemAmount > 1){
                     lore.add(Color.cc("&7Amount: &fx" + r.itemAmount));
                 }
                 if (r.type == Reward.Type.KEY){
@@ -114,7 +114,7 @@ public class GUI {
     private static String describe(Reward r){
         return switch (r.type){
             case MONEY_XP -> "$" + (int) r.money + (r.xp>0 ? " + " + r.xp + " XP" : "");
-            case ITEM -> {
+            case ITEM, SPECIAL_ITEM -> {
                 String name = (r.item.getItemMeta()!=null && r.item.getItemMeta().hasDisplayName()) ? r.item.getItemMeta().getDisplayName() : r.item.getType().name();
                 yield (r.itemAmount>1 ? ("x"+r.itemAmount+" ") : "") + name;
             }

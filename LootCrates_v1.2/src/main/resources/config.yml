@@ -19,6 +19,7 @@ crates:
             - "&7Doubles your factory yield for 1 hour."
             - "&8Granted via permission."
           custom_model_data: 22001
+
       - id: "money_xp_bundle"
         weight: 25
         type: MONEY_XP
@@ -31,6 +32,7 @@ crates:
             - "&7Immediate deposit to your balance."
             - "&7And factory player XP."
           custom_model_data: 22002
+
       - id: "skin_pickaxe_t1"
         weight: 5
         type: ITEM
@@ -44,18 +46,7 @@ crates:
           enchantments:
             - "DURABILITY:3"
           flags: [HIDE_ENCHANTS]
-        - id: "prestige_key_x2"
-          weight: 8
-          type: KEY
-          key:
-            crate: "PRESTIGE"
-            amount: 2
-          display:
-            material: TRIPWIRE_HOOK
-            name: "&dPrestige Keys x2"
-            lore:
-              - "&7Open the Prestige Crate two more times!"
-            custom_model_data: 21001
+
   LEGENDARY:
     display: "&6&lLegendary Crate"
     key:
@@ -76,6 +67,7 @@ crates:
             - "&7A helpful boost to your balance."
             - "&7And some factory XP."
           custom_model_data: 22003
+
       - id: "legendary_sword"
         weight: 5
         type: ITEM
@@ -89,6 +81,20 @@ crates:
           enchantments:
             - "DAMAGE_ALL:5"
             - "DURABILITY:3"
+
+      - id: "prestige_key_x2"
+        weight: 8
+        type: KEY
+        key:
+          crate: "PRESTIGE"
+          amount: 2
+        display:
+          material: TRIPWIRE_HOOK
+          name: "&dPrestige Keys x2"
+          lore:
+            - "&7Open the Prestige Crate two more times!"
+          custom_model_data: 21001
+
       - id: "prestige_key"
         weight: 3
         type: KEY
@@ -101,6 +107,7 @@ crates:
           lore:
             - "&7Unlock the Prestige Crate!"
           custom_model_data: 21001
+
       - id: "fly_command"
         weight: 2
         type: COMMAND
@@ -112,6 +119,7 @@ crates:
           lore:
             - "&7Grants temporary flight ability."
           custom_model_data: 22004
+
   MYTHIC:
     display: "&5&lMythic Crate"
     key:
@@ -132,6 +140,7 @@ crates:
             - "&7A sizable deposit to your balance."
             - "&7And lots of factory XP."
           custom_model_data: 22005
+
       - id: "mythic_pickaxe"
         weight: 4
         type: ITEM
@@ -145,6 +154,7 @@ crates:
           enchantments:
             - "DURABILITY:5"
             - "DIG_SPEED:6"
+
       - id: "legendary_key"
         weight: 6
         type: KEY
@@ -157,6 +167,7 @@ crates:
           lore:
             - "&7Unlock the Legendary Crate!"
           custom_model_data: 21002
+
       - id: "rank_command"
         weight: 1
         type: COMMAND
@@ -168,6 +179,43 @@ crates:
           lore:
             - "&7Grants the &fNoble &7rank for 7 days."
           custom_model_data: 22006
+
+      - id: "money_voucher_100k"
+        weight: 5
+        type: MONEY_XP
+        money: 100000.0
+        display:
+          material: PAPER
+          name: "&a$100,000 Voucher"
+          lore:
+            - "&7Immediate deposit to your balance."
+          custom_model_data: 22003
+
+      # Examples of Special Items (from SpecialItems templates)
+      - id: "si_stone_miner"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "stone_miner"
+
+      - id: "si_novice_farmer"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "novice_farmer"
+
+      - id: "si_rookie_scout_boots"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "rookie_scout_boots"
+
+      - id: "si_cave_lantern_helm"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "cave_lantern_helm"
+
+      - id: "si_rookie_hunter"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "rookie_hunter"
 
 settings:
   default-gui-title: "&6Crates"

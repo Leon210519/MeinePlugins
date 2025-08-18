@@ -13,7 +13,7 @@ public class CrateOpener {
                 if (r.money > 0){ plugin.economy().depositPlayer(p, r.money); }
                 if (r.xp > 0){ p.giveExp(r.xp); }
             }
-            case ITEM -> {
+            case ITEM, SPECIAL_ITEM -> {
                 java.util.Map<Integer, org.bukkit.inventory.ItemStack> left = p.getInventory().addItem(r.item.clone());
                 for (org.bukkit.inventory.ItemStack it : left.values()) p.getWorld().dropItem(p.getLocation(), it);
             }
