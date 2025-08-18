@@ -44,18 +44,130 @@ crates:
           enchantments:
             - "DURABILITY:3"
           flags: [HIDE_ENCHANTS]
-      - id: "prestige_key_x2"
-        weight: 8
+        - id: "prestige_key_x2"
+          weight: 8
+          type: KEY
+          key:
+            crate: "PRESTIGE"
+            amount: 2
+          display:
+            material: TRIPWIRE_HOOK
+            name: "&dPrestige Keys x2"
+            lore:
+              - "&7Open the Prestige Crate two more times!"
+          custom_model_data: 21001
+  LEGENDARY:
+    display: "&6&lLegendary Crate"
+    key:
+      display: "&6Legendary Key"
+      material: TRIPWIRE_HOOK
+      custom_model_data: 21002
+    open-method: GUI # BLOCK or GUI
+    rewards:
+      - id: "small_money_bundle"
+        weight: 40
+        type: MONEY_XP
+        money: 10000.0
+        xp: 250
+        display:
+          material: GOLD_INGOT
+          name: "&e$10,000 &7+ &b250 XP"
+          lore:
+            - "&7A helpful boost to your balance."
+            - "&7And some factory XP."
+          custom_model_data: 22003
+      - id: "legendary_sword"
+        weight: 5
+        type: ITEM
+        amount: 1
+        item:
+          material: DIAMOND_SWORD
+          name: "&6&lLegendary Sword"
+          lore:
+            - "&7Forged for true champions."
+          custom_model_data: 31002
+          enchantments:
+            - "DAMAGE_ALL:5"
+            - "DURABILITY:3"
+      - id: "prestige_key"
+        weight: 3
         type: KEY
         key:
           crate: "PRESTIGE"
-          amount: 2
+          amount: 1
         display:
           material: TRIPWIRE_HOOK
-          name: "&dPrestige Keys x2"
+          name: "&dPrestige Key"
           lore:
-            - "&7Open the Prestige Crate two more times!"
+            - "&7Unlock the Prestige Crate!"
           custom_model_data: 21001
+      - id: "fly_command"
+        weight: 2
+        type: COMMAND
+        commands:
+          - "lp user {player} permission settemp essentials.fly true 1h"
+        display:
+          material: FEATHER
+          name: "&f&lFlight (1h)"
+          lore:
+            - "&7Grants temporary flight ability."
+          custom_model_data: 22004
+  MYTHIC:
+    display: "&5&lMythic Crate"
+    key:
+      display: "&5Mythic Key"
+      material: TRIPWIRE_HOOK
+      custom_model_data: 21003
+    open-method: BLOCK # BLOCK or GUI
+    rewards:
+      - id: "big_money_bundle"
+        weight: 30
+        type: MONEY_XP
+        money: 50000.0
+        xp: 1000
+        display:
+          material: EMERALD
+          name: "&a$50,000 &7+ &b1,000 XP"
+          lore:
+            - "&7A sizable deposit to your balance."
+            - "&7And lots of factory XP."
+          custom_model_data: 22005
+      - id: "mythic_pickaxe"
+        weight: 4
+        type: ITEM
+        amount: 1
+        item:
+          material: NETHERITE_PICKAXE
+          name: "&5&lMythic Pickaxe"
+          lore:
+            - "&7A pickaxe of mythical power."
+          custom_model_data: 31003
+          enchantments:
+            - "DURABILITY:5"
+            - "DIG_SPEED:6"
+      - id: "legendary_key"
+        weight: 6
+        type: KEY
+        key:
+          crate: "LEGENDARY"
+          amount: 1
+        display:
+          material: TRIPWIRE_HOOK
+          name: "&6Legendary Key"
+          lore:
+            - "&7Unlock the Legendary Crate!"
+          custom_model_data: 21002
+      - id: "rank_command"
+        weight: 1
+        type: COMMAND
+        commands:
+          - "lp user {player} group addtemp noble 7d"
+        display:
+          material: PAPER
+          name: "&f&lTemporary Noble Rank"
+          lore:
+            - "&7Grants the &fNoble &7rank for 7 days."
+          custom_model_data: 22006
 
 settings:
   default-gui-title: "&6Crates"
