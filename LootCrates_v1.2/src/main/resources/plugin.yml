@@ -7,7 +7,8 @@ depend: [Vault]
 commands:
   crate:
     description: Crate admin & player commands
-    usage: /crate <open|givekey|preview|list|bind|unbind>
+    usage: /crate <open|givekey|preview|list|reload|bind|unbind>
+    aliases: [lootcrates, lc]
     permission: lootcrates.use
 permissions:
   lootcrates.use:

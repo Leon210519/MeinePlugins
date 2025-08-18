@@ -30,9 +30,9 @@ public class CrateBlockListener implements Listener {
 
         e.setCancelled(true);
         Player p = e.getPlayer();
-        if (a == Action.LEFT_CLICK_BLOCK){
+        if (a == Action.RIGHT_CLICK_BLOCK){
             GUI.preview(p, c);
-        } else if (a == Action.RIGHT_CLICK_BLOCK){
+        } else if (a == Action.LEFT_CLICK_BLOCK){
             GUI.tryOpenWithKey(plugin, p, c);
         }
     }

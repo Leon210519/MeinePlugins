@@ -60,12 +60,12 @@ public class Reward {
             r.item = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
             r.itemAmount = sec.getInt("amount", 1);
             if (r.item != null) r.item.setAmount(Math.max(1, r.itemAmount));
-            // Default display for SPECIAL_ITEM = the built item (clone). May be overridden by display-section below.
+            // Default display for SPECIAL_ITEM = built item (clone). May be overridden by display-section below.
             r.display = (r.item != null ? r.item.clone() : new ItemStack(Material.PAPER));
             if (r.display != null) r.display.setAmount(1);
         }
 
-        // --- Unified display handling (conflict resolved) ---
+        // --- Unified display handling ---
         ConfigurationSection d = sec.getConfigurationSection("display");
         if (d != null) {
             // Explicit override from config always wins
@@ -83,7 +83,7 @@ public class Reward {
                     r.display = new ItemStack(Material.PAPER);
                 }
             } else {
-                // Ensure GUI shows a single item for SPECIAL_ITEM default too
+                // Ensure GUI shows a single item for any pre-set display
                 if (r.display.getAmount() != 1) r.display.setAmount(1);
             }
         }
