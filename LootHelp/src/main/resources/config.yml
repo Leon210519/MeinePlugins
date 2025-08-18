@@ -1,7 +1,24 @@
 commands:
   player:
-    - "/home - Teleportiere dich zu deinem Zuhause"
-    - "/spawn - Gehe zum Spawn"
+    General:
+      - "/home - Teleport to your home"
+      - "/spawn - Go to the spawn"
+    SpecialItems:
+      - "/si - Opens the SpecialItems menu"
+    LootFactory:
+      - "/lootfactory - Obtain new items from factories" # Placeholder
+    LootCrates:
+      - "/lootcrates - Open your crates" # Placeholder
+
   admin:
-    - "/ban <Spieler> - Bannt einen Spieler"
-    - "/kick <Spieler> - Kickt einen Spieler"
+    General:
+      - "/ban <player> - Bans a player"
+      - "/kick <player> - Kicks a player"
+    FarmXMine:
+      - "/nodes <debug|reload> - Manage InstancedNodes"
+    SpecialItems:
+      - "/bin - Shows deleted SpecialItems"
+    LootFactory:
+      - "/lootfactoryadmin - Admin commands for LootFactory" # Placeholder
+    LootCrates:
+      - "/lootcratesadmin - Admin commands for LootCrates" # Placeholder
