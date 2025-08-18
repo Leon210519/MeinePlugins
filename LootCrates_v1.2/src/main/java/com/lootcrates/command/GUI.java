@@ -13,10 +13,22 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class GUI {
+
+    private static final Map<UUID, Roll> rolls = new HashMap<>();
+
+    private static class Roll {
+        BukkitRunnable task;
+        Crate crate;
+        Reward landed;
+        LootCratesPlugin plugin;
+    }
 
     public static void preview(Player p, Crate c){
         Inventory inv = Bukkit.createInventory(null, 54, Color.cc("&8Preview: " + c.display));
@@ -63,7 +75,9 @@ public class GUI {
     private static void startRoll(LootCratesPlugin plugin, Player p, Inventory inv, Crate c){
         final int[] slots = new int[]{11,12,13,14,15}; // middle row 5 center
         final Random rng = plugin.crates().rng();
-        final Reward[] landed = new Reward[1];
+        Roll roll = new Roll();
+        roll.crate = c;
+        roll.plugin = plugin;
 
         // Fill initial items so the animation has something to scroll through
         for (int s : slots) {
@@ -71,19 +85,19 @@ public class GUI {
             inv.setItem(s, rr.display.clone());
         }
 
-        new BukkitRunnable(){
-            int ticks = 0;
+        BukkitRunnable task = new BukkitRunnable(){
+            int total = 0;
             int gate = 2;   // ticks between shifts
             int wait = 0;
 
             @Override public void run(){
+                total++;
                 wait++;
                 if (wait < gate) return;
                 wait = 0;
-                ticks++;
 
                 // decelerate every second up to a cap
-                if (ticks % 20 == 0 && gate < 8) gate++;
+                if (total % 20 == 0 && gate < 8) gate++;
 
                 // shift items left (rightmost item moves out, new item enters on the right)
                 for (int i = 0; i < slots.length - 1; i++){
@@ -95,20 +109,39 @@ public class GUI {
 
                 p.playSound(p.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
 
-                if (ticks >= 120){ // ~6s total
+                if (total >= 120){ // 6 seconds real time
                     Reward r = c.roll(rng);
                     inv.setItem(slots[2], r.display.clone()); // center
-                    landed[0] = r;
+                    roll.landed = r;
                     p.playSound(p.getLocation(), Sound.valueOf(plugin.getConfig().getString("settings.sounds.reward", "ENTITY_EXPERIENCE_ORB_PICKUP")), 1f, 1f);
+                    rolls.remove(p.getUniqueId());
                     new BukkitRunnable(){ @Override public void run(){
-                        CrateOpener.giveReward(plugin, p, c, landed[0]);
+                        CrateOpener.giveReward(plugin, p, c, roll.landed);
                         p.closeInventory();
-                        p.sendMessage("§aYou received: §f" + describe(landed[0]));
+                        p.sendMessage("§aYou received: §f" + describe(roll.landed));
                     }}.runTaskLater(plugin, 20L);
                     cancel();
                 }
             }
-        }.runTaskTimer(plugin, 0L, 1L);
+        };
+
+        roll.task = task;
+        rolls.put(p.getUniqueId(), roll);
+        task.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    public static void handleCloseDuringRoll(Player p){
+        Roll roll = rolls.remove(p.getUniqueId());
+        if (roll != null){
+            roll.task.cancel();
+            if (roll.landed == null){
+                Reward r = roll.crate.roll(roll.plugin.crates().rng());
+                roll.landed = r;
+                p.playSound(p.getLocation(), Sound.valueOf(roll.plugin.getConfig().getString("settings.sounds.reward", "ENTITY_EXPERIENCE_ORB_PICKUP")), 1f, 1f);
+                CrateOpener.giveReward(roll.plugin, p, roll.crate, r);
+                p.sendMessage("§aYou received: §f" + describe(r));
+            }
+        }
     }
 
     private static String describe(Reward r){
