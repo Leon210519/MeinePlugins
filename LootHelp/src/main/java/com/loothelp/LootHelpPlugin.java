@@ -21,19 +21,19 @@ public class LootHelpPlugin extends JavaPlugin {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!command.getName().equalsIgnoreCase("loothelp")) return false;
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Dieser Befehl kann nur von Spielern verwendet werden.");
+            sender.sendMessage("This command can only be used by players.");
             return true;
         }
 
         Player p = (Player) sender;
         boolean isAdmin = p.hasPermission("loothelp.admin") || p.isOp();
 
-        p.sendMessage("§aVerfügbare Befehle:");
+        p.sendMessage("§aAvailable Commands:");
 
-        // Spieler-Bereich: unterstützt entweder gruppierte Sektionen ODER eine einfache Liste
+        // Player section: supports grouped sections or a simple list
         ConfigurationSection playerSection = getConfig().getConfigurationSection("commands.player");
         if (playerSection != null && !playerSection.getKeys(false).isEmpty()) {
-            p.sendMessage("§eSpieler-Befehle:");
+            p.sendMessage("§ePlayer Commands:");
             List<String> plugins = new ArrayList<>(playerSection.getKeys(false));
             Collections.sort(plugins);
             for (String pluginName : plugins) {
@@ -45,18 +45,18 @@ public class LootHelpPlugin extends JavaPlugin {
         } else {
             List<String> playerCmds = getConfig().getStringList("commands.player");
             if (!playerCmds.isEmpty()) {
-                p.sendMessage("§eSpieler-Befehle:");
+                p.sendMessage("§ePlayer Commands:");
                 for (String line : playerCmds) {
                     p.sendMessage(" §7- " + line);
                 }
             }
         }
 
-        // Admin-Bereich (nur wenn Admin): ebenfalls beide Varianten unterstützt
+        // Admin section (only if admin): supports both variants as well
         if (isAdmin) {
             ConfigurationSection adminSection = getConfig().getConfigurationSection("commands.admin");
             if (adminSection != null && !adminSection.getKeys(false).isEmpty()) {
-                p.sendMessage("§cAdmin-Befehle:");
+                p.sendMessage("§cAdmin Commands:");
                 List<String> plugins = new ArrayList<>(adminSection.getKeys(false));
                 Collections.sort(plugins);
                 for (String pluginName : plugins) {
@@ -68,7 +68,7 @@ public class LootHelpPlugin extends JavaPlugin {
             } else {
                 List<String> adminCmds = getConfig().getStringList("commands.admin");
                 if (!adminCmds.isEmpty()) {
-                    p.sendMessage("§cAdmin-Befehle:");
+                    p.sendMessage("§cAdmin Commands:");
                     for (String line : adminCmds) {
                         p.sendMessage(" §7- " + line);
                     }
