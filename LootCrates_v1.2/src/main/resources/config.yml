@@ -56,6 +56,27 @@ crates:
           lore:
             - "&7Open the Prestige Crate two more times!"
           custom_model_data: 21001
+      # Examples of Special Items (from SpecialItems templates)
+      - id: "si_stone_miner"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "stone_miner"
+      - id: "si_novice_farmer"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "novice_farmer"
+      - id: "si_rookie_scout_boots"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "rookie_scout_boots"
+      - id: "si_cave_lantern_helm"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "cave_lantern_helm"
+      - id: "si_rookie_hunter"
+        weight: 15
+        type: SPECIAL_ITEM
+        template: "rookie_hunter"
 
 settings:
   default-gui-title: "&6Crates"

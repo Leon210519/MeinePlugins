@@ -1,5 +1,7 @@
 package com.lootcrates.crate;
 
+import com.specialitems.util.Configs;
+import com.specialitems.util.TemplateItems;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemFlag;
@@ -13,7 +15,7 @@ import java.util.Objects;
 import static com.lootcrates.util.Color.cc;
 
 public class Reward {
-    public enum Type { MONEY_XP, ITEM, COMMAND, KEY }
+    public enum Type { MONEY_XP, ITEM, COMMAND, KEY, SPECIAL_ITEM }
     public final String id;
     public final int weight;
     public final Type type;
@@ -53,10 +55,18 @@ public class Reward {
                 r.keyCrate = k.getString("crate");
                 r.keyAmount = k.getInt("amount", 1);
             }
+        } else if (type == Type.SPECIAL_ITEM) {
+            String tid = sec.getString("template");
+            r.item = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
+            r.itemAmount = sec.getInt("amount", 1);
+            if (r.item != null) r.item.setAmount(Math.max(1, r.itemAmount));
+            r.display = r.item != null ? r.item.clone() : new ItemStack(Material.PAPER);
         }
 
-        ConfigurationSection d = sec.getConfigurationSection("display");
-        r.display = d != null ? readItem(d) : new ItemStack(Material.PAPER);
+        if (type != Type.SPECIAL_ITEM) {
+            ConfigurationSection d = sec.getConfigurationSection("display");
+            r.display = d != null ? readItem(d) : new ItemStack(Material.PAPER);
+        }
         return r;
     }
 
