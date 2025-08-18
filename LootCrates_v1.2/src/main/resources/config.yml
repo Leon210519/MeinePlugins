@@ -8,7 +8,7 @@ crates:
     open-method: BLOCK # BLOCK or GUI
     rewards:
 
-      # ===== SCHWÄCHERE SPECIAL ITEMS (~7% je) =====
+        # ===== WEAKER SPECIAL ITEMS (~7% each) =====
       - id: "si_weak_stone_miner"
         weight: 7   # 7%
         type: COMMAND
@@ -53,7 +53,7 @@ crates:
           lore:
             - "&7Keeps your vision bright underground."
 
-      # ===== MITTELSTARKE SPECIAL ITEMS (~3% je) =====
+        # ===== MID-TIER SPECIAL ITEMS (~3% each) =====
       - id: "si_mid_miner_pick_t2"
         weight: 3   # 3%
         type: COMMAND
@@ -99,7 +99,7 @@ crates:
           lore:
             - "&7Faster movement & item pull."
 
-      # ===== 32 DIAMANTEN (~8%) =====
+        # ===== 32 DIAMONDS (~8%) =====
       - id: "diamonds_32"
         weight: 8   # 8%
         type: ITEM
@@ -110,7 +110,7 @@ crates:
           lore:
             - "&7A solid stack of wealth."
 
-      # ===== EXISTIERENDE & SICHERE REWARDS (REST = 47%) =====
+        # ===== EXISTING & SAFE REWARDS (REMAINING = 47%) =====
       - id: "money_boost_2x_1h"
         weight: 12  # 12%
         type: COMMAND

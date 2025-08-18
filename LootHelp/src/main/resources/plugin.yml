@@ -4,5 +4,5 @@ version: 1.0.0
 api-version: '1.20'
 commands:
   loothelp:
-    description: Zeigt verfügbare Befehle abhängig vom Rang.
+    description: Shows available commands based on rank.
     usage: /<command>
