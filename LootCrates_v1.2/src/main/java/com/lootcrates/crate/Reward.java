@@ -1,5 +1,7 @@
 package com.lootcrates.crate;
 
+import com.specialitems.util.Configs;
+import com.specialitems.util.TemplateItems;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemFlag;
@@ -13,7 +15,7 @@ import java.util.Objects;
 import static com.lootcrates.util.Color.cc;
 
 public class Reward {
-    public enum Type { MONEY_XP, ITEM, COMMAND, KEY }
+    public enum Type { MONEY_XP, ITEM, COMMAND, KEY, SPECIAL_ITEM }
     public final String id;
     public final int weight;
     public final Type type;
@@ -53,24 +55,40 @@ public class Reward {
                 r.keyCrate = k.getString("crate");
                 r.keyAmount = k.getInt("amount", 1);
             }
+        } else if (type == Type.SPECIAL_ITEM) {
+            String tid = sec.getString("template");
+            r.item = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
+            r.itemAmount = sec.getInt("amount", 1);
+            if (r.item != null) r.item.setAmount(Math.max(1, r.itemAmount));
+            // Default display for SPECIAL_ITEM = built item (clone). May be overridden by display-section below.
+            r.display = (r.item != null ? r.item.clone() : new ItemStack(Material.PAPER));
+            if (r.display != null) r.display.setAmount(1);
         }
 
+        // --- Unified display handling ---
         ConfigurationSection d = sec.getConfigurationSection("display");
         if (d != null) {
+            // Explicit override from config always wins
             r.display = readItem(d);
+            if (r.display != null) r.display.setAmount(1);
         } else {
-            // Sensible defaults so previews/animations always show something useful
-            if (type == Type.ITEM) {
-                // Use the reward item itself as the display icon when none is provided
-                r.display = r.item != null ? r.item.clone() : new ItemStack(Material.PAPER);
-                if (r.display != null) r.display.setAmount(1); // ensure single item for GUI
-            } else if (type == Type.KEY) {
-                // Generic key icon
-                r.display = new ItemStack(Material.TRIPWIRE_HOOK);
+            // No explicit display provided → apply sensible defaults if not already set
+            if (r.display == null) {
+                if (type == Type.ITEM) {
+                    r.display = (r.item != null ? r.item.clone() : new ItemStack(Material.PAPER));
+                    if (r.display != null) r.display.setAmount(1);
+                } else if (type == Type.KEY) {
+                    r.display = new ItemStack(Material.TRIPWIRE_HOOK);
+                } else {
+                    r.display = new ItemStack(Material.PAPER);
+                }
             } else {
-                r.display = new ItemStack(Material.PAPER);
+                // Ensure GUI shows a single item for any pre-set display
+                if (r.display.getAmount() != 1) r.display.setAmount(1);
             }
         }
+        // --- end unified display handling ---
+
         return r;
     }
 
