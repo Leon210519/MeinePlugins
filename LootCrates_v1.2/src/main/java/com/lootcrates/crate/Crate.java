@@ -1,13 +1,16 @@
 package com.lootcrates.crate;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 
 import static com.lootcrates.util.Color.cc;
@@ -56,12 +59,14 @@ public class Crate {
         String method = sec.getString("open-method", "BLOCK");
         Crate c = new Crate(id.toUpperCase(Locale.ROOT), display, kd, method);
         if (sec.isList("rewards")){
-            List<?> list = sec.getList("rewards");
-            if (list != null){
-                for (Object o : list){
-                    if (o instanceof ConfigurationSection rSec){
-                        c.rewards.add(Reward.fromConfig(rSec));
-                    }
+            List<Map<?, ?>> list = sec.getMapList("rewards");
+            for (Map<?, ?> map : list){
+                try {
+                    MemoryConfiguration tmp = new MemoryConfiguration();
+                    ConfigurationSection rSec = tmp.createSection("reward", map);
+                    c.rewards.add(Reward.fromConfig(rSec));
+                } catch (Exception ex){
+                    Bukkit.getLogger().warning("Failed to load reward in crate " + id + ": " + ex.getMessage());
                 }
             }
         } else if (sec.isConfigurationSection("rewards")) {
