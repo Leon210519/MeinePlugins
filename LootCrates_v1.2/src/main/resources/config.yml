@@ -56,6 +56,16 @@ crates:
           lore:
             - "&7Open the Prestige Crate two more times!"
           custom_model_data: 21001
+      - id: "money_voucher_100k"
+        weight: 5
+        type: MONEY_XP
+        money: 100000.0
+        display:
+          material: PAPER
+          name: "&a$100,000 Voucher"
+          lore:
+            - "&7Immediate deposit to your balance."
+          custom_model_data: 22003
 
 settings:
   default-gui-title: "&6Crates"
