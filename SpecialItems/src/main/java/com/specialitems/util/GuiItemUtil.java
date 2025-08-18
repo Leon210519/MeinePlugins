@@ -5,6 +5,9 @@ import com.specialitems.effects.CustomEffect;
 import com.specialitems.effects.Effects;
 import com.specialitems.leveling.LevelMath;
 import com.specialitems.leveling.ToolClass;
+import com.specialitems.leveling.Keys;
+import com.specialitems.leveling.Rarity;
+import com.specialitems.leveling.RarityUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -52,6 +55,7 @@ public final class GuiItemUtil {
         int lvl = svc.getLevel(it);
         double xp = svc.getXp(it);
         double need = LevelMath.neededXpFor(lvl);
+        Rarity rarity = RarityUtil.get(it, new Keys(plugin));
 
         ItemStack display = it.clone();
         ItemMeta meta = display.getItemMeta();
@@ -61,6 +65,7 @@ public final class GuiItemUtil {
             List<String> lore = new ArrayList<>();
             lore.add(ChatColor.GOLD + "Level: " + ChatColor.YELLOW + lvl);
             lore.add(ChatColor.GOLD + "XP: " + ChatColor.YELLOW + String.format("%.1f", xp) + ChatColor.GRAY + " / " + ChatColor.YELLOW + String.format("%.1f", need));
+            lore.add(ChatColor.GOLD + "Rarity: " + rarity.displayName());
             if (svc.detectToolClass(it) == ToolClass.HOE) {
                 double by = svc.getBonusYieldPct(it);
                 lore.add(ChatColor.GOLD + "Bonus Yield: " + ChatColor.YELLOW + String.format("%.0f%%", by));
