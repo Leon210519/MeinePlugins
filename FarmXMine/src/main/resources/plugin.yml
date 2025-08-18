@@ -8,11 +8,17 @@ commands:
     description: InstancedNodes admin commands
     usage: /nodes <debug|reload>
     permission: instancednodes.admin
+  prestige:
+    description: Prestige to increase income multiplier
+    usage: /prestige
+    permission: instancednodes.prestige
 permissions:
   instancednodes.admin:
     default: op
   instancednodes.mine:
     default: true
   instancednodes.farm:
+    default: true
+  instancednodes.prestige:
     default: true
 softdepend: [WorldGuard]

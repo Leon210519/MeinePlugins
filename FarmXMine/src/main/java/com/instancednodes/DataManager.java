@@ -46,4 +46,37 @@ public class DataManager {
         save();
         return v;
     }
+
+    // --- Level & Prestige data helpers ---
+
+    private String base(UUID uuid, String key) {
+        return "players." + uuid + "." + key;
+    }
+
+    public double getXp(UUID uuid) {
+        return data.getDouble(base(uuid, "xp"), 0.0);
+    }
+
+    public void setXp(UUID uuid, double xp) {
+        data.set(base(uuid, "xp"), xp);
+        save();
+    }
+
+    public int getLevel(UUID uuid) {
+        return data.getInt(base(uuid, "level"), 1);
+    }
+
+    public void setLevel(UUID uuid, int level) {
+        data.set(base(uuid, "level"), Math.max(1, level));
+        save();
+    }
+
+    public int getPrestige(UUID uuid) {
+        return data.getInt(base(uuid, "prestige"), 0);
+    }
+
+    public void setPrestige(UUID uuid, int prestige) {
+        data.set(base(uuid, "prestige"), Math.max(0, prestige));
+        save();
+    }
 }

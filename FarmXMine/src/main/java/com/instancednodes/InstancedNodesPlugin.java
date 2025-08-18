@@ -1,6 +1,7 @@
 package com.instancednodes;
 
 import com.instancednodes.command.NodesCommand;
+import com.instancednodes.command.PrestigeCommand;
 import com.instancednodes.leveling.LevelManager;
 import com.instancednodes.nodes.NodeManager;
 import com.instancednodes.util.Cfg;
@@ -30,6 +31,7 @@ public class InstancedNodesPlugin extends JavaPlugin {
         this.levelManager = new LevelManager(this);
         getServer().getPluginManager().registerEvents(new NodeManager(this), this);
         if (getCommand("nodes") != null) getCommand("nodes").setExecutor(new NodesCommand(this));
+        if (getCommand("prestige") != null) getCommand("prestige").setExecutor(new PrestigeCommand(this));
         getLogger().info("InstancedNodes enabled v" + getDescription().getVersion());
     }
 
