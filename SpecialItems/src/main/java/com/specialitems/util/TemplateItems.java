@@ -1,6 +1,9 @@
 package com.specialitems.util;
 
 import com.specialitems.SpecialItemsPlugin;
+import com.specialitems.leveling.Keys;
+import com.specialitems.leveling.Rarity;
+import com.specialitems.leveling.RarityUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -64,6 +67,14 @@ public final class TemplateItems {
         try {
             Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), it, id);
         } catch (Throwable ignored) {}
+
+        String rar = t.getString("rarity");
+        if (rar != null) {
+            try {
+                Rarity r = Rarity.fromString(rar);
+                RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
+            } catch (Throwable ignored) {}
+        }
 
         return it;
     }

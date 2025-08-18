@@ -2,6 +2,252 @@
 # Place into plugins/SpecialItems/templates.yml
 templates:
 
+  # ==== RARITY SETS ====
+  common_helm:
+    material: IRON_HELMET
+    name: "&7Common Helm"
+    lore: ["&7Basic protection."]
+    enchants: { night_vision: 1 }
+    rarity: COMMON
+  common_chest:
+    material: IRON_CHESTPLATE
+    name: "&7Common Chestplate"
+    lore: ["&7Weak magnet."]
+    enchants: { magnet: 1 }
+    rarity: COMMON
+  common_legs:
+    material: IRON_LEGGINGS
+    name: "&7Common Leggings"
+    lore: ["&7Slight speed."]
+    enchants: { gears: 1 }
+    rarity: COMMON
+  common_boots:
+    material: IRON_BOOTS
+    name: "&7Common Boots"
+    lore: ["&7Minor speed & pull."]
+    enchants: { gears: 1, magnet: 1 }
+    rarity: COMMON
+  common_sword:
+    material: IRON_SWORD
+    name: "&7Common Blade"
+    lore: ["&7Light lifesteal."]
+    enchants: { lifesteal: 1 }
+    rarity: COMMON
+  common_pick:
+    material: IRON_PICKAXE
+    name: "&7Common Pick"
+    lore: ["&7Small vein miner."]
+    enchants: { veinminer: 1 }
+    rarity: COMMON
+  common_axe:
+    material: IRON_AXE
+    name: "&7Common Axe"
+    lore: ["&7Chance for double strike."]
+    enchants: { doublestrike: 1 }
+    rarity: COMMON
+  common_hoe:
+    material: IRON_HOE
+    name: "&7Common Hoe"
+    lore: ["&7Tiny harvest."]
+    enchants: { harvester: 1, replant: 1 }
+    rarity: COMMON
+
+  uncommon_helm:
+    material: DIAMOND_HELMET
+    name: "&aUncommon Helm"
+    lore: ["&7Keeps vision underground."]
+    enchants: { night_vision: 1 }
+    rarity: UNCOMMON
+  uncommon_chest:
+    material: DIAMOND_CHESTPLATE
+    name: "&aUncommon Chestplate"
+    lore: ["&7Better magnet."]
+    enchants: { magnet: 2 }
+    rarity: UNCOMMON
+  uncommon_legs:
+    material: DIAMOND_LEGGINGS
+    name: "&aUncommon Leggings"
+    lore: ["&7Faster stride."]
+    enchants: { gears: 2 }
+    rarity: UNCOMMON
+  uncommon_boots:
+    material: DIAMOND_BOOTS
+    name: "&aUncommon Boots"
+    lore: ["&7Speed and pull."]
+    enchants: { gears: 2, magnet: 1 }
+    rarity: UNCOMMON
+  uncommon_sword:
+    material: DIAMOND_SWORD
+    name: "&aUncommon Blade"
+    lore: ["&7Improved lifesteal."]
+    enchants: { lifesteal: 2 }
+    rarity: UNCOMMON
+  uncommon_pick:
+    material: DIAMOND_PICKAXE
+    name: "&aUncommon Pick"
+    lore: ["&7Vein miner with telekinesis."]
+    enchants: { veinminer: 2, telekinesis: 1 }
+    rarity: UNCOMMON
+  uncommon_axe:
+    material: DIAMOND_AXE
+    name: "&aUncommon Axe"
+    lore: ["&7Double strike."]
+    enchants: { doublestrike: 2 }
+    rarity: UNCOMMON
+  uncommon_hoe:
+    material: DIAMOND_HOE
+    name: "&aUncommon Hoe"
+    lore: ["&7Wider harvest."]
+    enchants: { harvester: 2, replant: 1 }
+    rarity: UNCOMMON
+
+  rare_helm:
+    material: NETHERITE_HELMET
+    name: "&9Rare Helm"
+    lore: ["&7Night vision and XP."]
+    enchants: { night_vision: 1, xp_boost: 1 }
+    rarity: RARE
+  rare_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&9Rare Chestplate"
+    lore: ["&7Strong magnet."]
+    enchants: { magnet: 2 }
+    rarity: RARE
+  rare_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&9Rare Leggings"
+    lore: ["&7Quick stride."]
+    enchants: { gears: 3 }
+    rarity: RARE
+  rare_boots:
+    material: NETHERITE_BOOTS
+    name: "&9Rare Boots"
+    lore: ["&7Speed and pull."]
+    enchants: { gears: 3, magnet: 2 }
+    rarity: RARE
+  rare_sword:
+    material: NETHERITE_SWORD
+    name: "&9Rare Blade"
+    lore: ["&7Lifesteal and double strike."]
+    enchants: { lifesteal: 3, doublestrike: 1 }
+    rarity: RARE
+  rare_pick:
+    material: NETHERITE_PICKAXE
+    name: "&9Rare Pick"
+    lore: ["&73x3 vein miner."]
+    enchants: { veinminer: 3, telekinesis: 1 }
+    rarity: RARE
+  rare_axe:
+    material: NETHERITE_AXE
+    name: "&9Rare Axe"
+    lore: ["&7Heavy double strike."]
+    enchants: { doublestrike: 2, wither: 1 }
+    rarity: RARE
+  rare_hoe:
+    material: NETHERITE_HOE
+    name: "&9Rare Hoe"
+    lore: ["&75x5 harvest."]
+    enchants: { harvester: 3, replant: 1, telekinesis: 1 }
+    rarity: RARE
+
+  epic_helm:
+    material: NETHERITE_HELMET
+    name: "&dEpic Helm"
+    lore: ["&7Clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 2 }
+    rarity: EPIC
+  epic_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&dEpic Chestplate"
+    lore: ["&7Powerful magnet."]
+    enchants: { magnet: 3 }
+    rarity: EPIC
+  epic_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&dEpic Leggings"
+    lore: ["&7Sprint like the wind."]
+    enchants: { gears: 3 }
+    rarity: EPIC
+  epic_boots:
+    material: NETHERITE_BOOTS
+    name: "&dEpic Boots"
+    lore: ["&7Fast with strong pull."]
+    enchants: { gears: 3, magnet: 3 }
+    rarity: EPIC
+  epic_sword:
+    material: NETHERITE_SWORD
+    name: "&dEpic Blade"
+    lore: ["&7High lifesteal and strikes."]
+    enchants: { lifesteal: 4, doublestrike: 2, wither: 1 }
+    rarity: EPIC
+  epic_pick:
+    material: NETHERITE_PICKAXE
+    name: "&dEpic Pick"
+    lore: ["&7Huge veins and smelt."]
+    enchants: { veinminer: 4, autosmelt: 1, telekinesis: 1 }
+    rarity: EPIC
+  epic_axe:
+    material: NETHERITE_AXE
+    name: "&dEpic Axe"
+    lore: ["&7Devastating blows."]
+    enchants: { doublestrike: 3, wither: 2 }
+    rarity: EPIC
+  epic_hoe:
+    material: NETHERITE_HOE
+    name: "&dEpic Hoe"
+    lore: ["&7Mass harvest & haste."]
+    enchants: { harvester: 4, replant: 1, telekinesis: 1, haste_touch: 1 }
+    rarity: EPIC
+
+  legendary_helm:
+    material: NETHERITE_HELMET
+    name: "&6Legendary Helm"
+    lore: ["&7Ultimate clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 3 }
+    rarity: LEGENDARY
+  legendary_chest:
+    material: NETHERITE_CHESTPLATE
+    name: "&6Legendary Chestplate"
+    lore: ["&7Ultimate magnet."]
+    enchants: { magnet: 4 }
+    rarity: LEGENDARY
+  legendary_legs:
+    material: NETHERITE_LEGGINGS
+    name: "&6Legendary Leggings"
+    lore: ["&7Supreme speed."]
+    enchants: { gears: 4 }
+    rarity: LEGENDARY
+  legendary_boots:
+    material: NETHERITE_BOOTS
+    name: "&6Legendary Boots"
+    lore: ["&7Fastest with strongest pull."]
+    enchants: { gears: 4, magnet: 4 }
+    rarity: LEGENDARY
+  legendary_sword:
+    material: NETHERITE_SWORD
+    name: "&6Legendary Blade"
+    lore: ["&7Extreme lifesteal, strikes and wither."]
+    enchants: { lifesteal: 5, doublestrike: 3, wither: 3 }
+    rarity: LEGENDARY
+  legendary_pick:
+    material: NETHERITE_PICKAXE
+    name: "&6Legendary Pick"
+    lore: ["&7Max vein miner & smelt."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_touch: 1 }
+    rarity: LEGENDARY
+  legendary_axe:
+    material: NETHERITE_AXE
+    name: "&6Legendary Axe"
+    lore: ["&7Crushing strikes."]
+    enchants: { doublestrike: 4, wither: 3 }
+    rarity: LEGENDARY
+  legendary_hoe:
+    material: NETHERITE_HOE
+    name: "&6Legendary Hoe"
+    lore: ["&7Ultimate harvest."]
+    enchants: { harvester: 5, replant: 1, telekinesis: 1, haste_touch: 2 }
+    rarity: LEGENDARY
+
   # ==== STARTER / EARLY GAME ====
   stone_miner:
     material: IRON_PICKAXE
@@ -436,24 +682,28 @@ templates:
     name: "&dOmega Extractor"
     lore: ["&7Huge veins, autosmelt & vacuum.", "&7Haste included."]
     enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_touch: 3 }
+    rarity: EPIC
 
   omega_sword:
     material: NETHERITE_SWORD
     name: "&dOmega Edge"
     lore: ["&7Massive lifesteal, double-strikes.", "&7Occasional wither."]
     enchants: { lifesteal: 5, doublestrike: 3, wither: 3 }
+    rarity: EPIC
 
   omega_farmer:
     material: NETHERITE_HOE
     name: "&dOmega Harvester"
     lore: ["&75x5 harvest, instant replant, vacuum."]
     enchants: { harvester: 3, replant: 1, telekinesis: 1, haste_touch: 2 }
+    rarity: EPIC
 
   omega_boots:
     material: NETHERITE_BOOTS
     name: "&dOmega Striders"
     lore: ["&7Maximum speed and strongest pull."]
     enchants: { gears: 3, magnet: 3 }
+    rarity: EPIC
 
   # ==== EXTRA VARIANTS (filling feature coverage) ====
   silk_runner_boots:

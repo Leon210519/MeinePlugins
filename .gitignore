@@ -1,2 +1,3 @@
-SpecialItems/.gradle/
-SpecialItems/build/
+# Ignore Gradle build directories across all submodules
+*/.gradle/
+*/build/

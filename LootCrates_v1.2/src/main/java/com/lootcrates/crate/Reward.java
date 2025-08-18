@@ -89,6 +89,25 @@ public class Reward {
         }
         // --- end unified display handling ---
 
+        // Ensure SPECIAL_ITEM displays retain their special enchantment lore
+        if (type == Type.SPECIAL_ITEM && r.item != null && r.display != null) {
+            ItemMeta itemMeta = r.item.getItemMeta();
+            ItemMeta displayMeta = r.display.getItemMeta();
+            if (itemMeta != null && displayMeta != null) {
+                // Merge lore from the actual item into the display item
+                List<String> baseLore = itemMeta.getLore();
+                if (baseLore != null && !baseLore.isEmpty()) {
+                    List<String> lore = displayMeta.hasLore() ? new ArrayList<>(displayMeta.getLore()) : new ArrayList<>();
+                    // Prepend effect lore so additional lines like weight stay at the bottom
+                    lore.addAll(0, baseLore);
+                    displayMeta.setLore(lore);
+                }
+                // Copy item flags to keep enchantment glint or hidden attributes
+                displayMeta.addItemFlags(itemMeta.getItemFlags().toArray(new ItemFlag[0]));
+                r.display.setItemMeta(displayMeta);
+            }
+        }
+
         return r;
     }
 
