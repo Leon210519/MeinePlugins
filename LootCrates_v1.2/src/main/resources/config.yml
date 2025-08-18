@@ -7,8 +7,112 @@ crates:
       custom_model_data: 21001
     open-method: BLOCK # BLOCK or GUI
     rewards:
+
+      # ===== SCHWÄCHERE SPECIAL ITEMS (~7% je) =====
+      - id: "si_weak_stone_miner"
+        weight: 7   # 7%
+        type: COMMAND
+        commands:
+          - "si give {player} stone_miner"
+        display:
+          material: IRON_PICKAXE
+          name: "&7Stonebreaker"
+          lore:
+            - "&7Small AoE for early mining."
+
+      - id: "si_weak_novice_farmer"
+        weight: 7   # 7%
+        type: COMMAND
+        commands:
+          - "si give {player} novice_farmer"
+        display:
+          material: DIAMOND_HOE
+          name: "&aSprout Hoe"
+          lore:
+            - "&7Harvests a small area and replants."
+
+      - id: "si_weak_rookie_boots"
+        weight: 7   # 7%
+        type: COMMAND
+        commands:
+          - "si give {player} rookie_scout_boots"
+        display:
+          material: IRON_BOOTS
+          name: "&bLightfoot Boots"
+          lore:
+            - "&7A touch of speed and pull."
+
+      - id: "si_weak_cave_lantern"
+        weight: 7   # 7%
+        type: COMMAND
+        commands:
+          - "si give {player} cave_lantern_helm"
+        display:
+          material: IRON_HELMET
+          name: "&eCave Lantern"
+          lore:
+            - "&7Keeps your vision bright underground."
+
+      # ===== MITTELSTARKE SPECIAL ITEMS (~3% je) =====
+      - id: "si_mid_miner_pick_t2"
+        weight: 3   # 3%
+        type: COMMAND
+        commands:
+          - "si give {player} miner_pick_t2"
+        display:
+          material: NETHERITE_PICKAXE
+          name: "&6Vein Ripper II"
+          lore:
+            - "&7Bigger veins, faster progress."
+            - "&7+ Telekinesis"
+
+      - id: "si_mid_farmer_hoe_t2"
+        weight: 3   # 3%
+        type: COMMAND
+        commands:
+          - "si give {player} farmer_hoe_t2"
+        display:
+          material: NETHERITE_HOE
+          name: "&aGreen Reaper II"
+          lore:
+            - "&75x5 harvest & auto-replant."
+
+      - id: "si_mid_hunter_sword_t2"
+        weight: 3   # 3%
+        type: COMMAND
+        commands:
+          - "si give {player} hunter_sword_t2"
+        display:
+          material: NETHERITE_SWORD
+          name: "&cVampire Edge II"
+          lore:
+            - "&7Lifesteal + chance for a second strike."
+
+      - id: "si_mid_scout_boots_t2"
+        weight: 3   # 3%
+        type: COMMAND
+        commands:
+          - "si give {player} scout_boots_t2"
+        display:
+          material: NETHERITE_BOOTS
+          name: "&bWindrunner II"
+          lore:
+            - "&7Faster movement & item pull."
+
+      # ===== 32 DIAMANTEN (~8%) =====
+      - id: "diamonds_32"
+        weight: 8   # 8%
+        type: ITEM
+        amount: 32
+        item:
+          material: DIAMOND
+          name: "&b32x Diamonds"
+          lore:
+            - "&7A solid stack of wealth."
+
+      # ===== EXISTIERENDE & SICHERE REWARDS (REST = 47%) =====
       - id: "money_boost_2x_1h"
-        weight: 10
+        weight: 12  # 12%
         type: COMMAND
         commands:
           - "lp user {player} permission settemp lootfactory.boost.yield.2x true 1h"
@@ -21,7 +125,7 @@ crates:
           custom_model_data: 22001
 
       - id: "money_xp_bundle"
-        weight: 25
+        weight: 25  # 25%
         type: MONEY_XP
         money: 25000.0
         xp: 500
@@ -33,19 +137,28 @@ crates:
             - "&7And factory player XP."
           custom_model_data: 22002
 
-      - id: "skin_pickaxe_t1"
-        weight: 5
-        type: ITEM
-        amount: 1
-        item:
-          material: DIAMOND_PICKAXE
-          name: "&b&lSkinned Pickaxe T1"
+      - id: "prestige_key_x2"
+        weight: 8   # 8%
+        type: KEY
+        key:
+          crate: "PRESTIGE"
+          amount: 2
+        display:
+          material: TRIPWIRE_HOOK
+          name: "&dPrestige Keys x2"
           lore:
-            - "&7A cosmetic pickaxe with custom skin."
-          custom_model_data: 31001
-          enchantments:
-            - "DURABILITY:3"
-          flags: [HIDE_ENCHANTS]
+            - "&7Open the Prestige Crate two more times!"
+          custom_model_data: 21001
+
+      - id: "emeralds_16"
+        weight: 2   # 2%
+        type: ITEM
+        amount: 16
+        item:
+          material: EMERALD
+          name: "&a16x Emeralds"
+          lore:
+            - "&7Useful for trading."
 
   LEGENDARY:
     display: "&6&lLegendary Crate"
