@@ -8,6 +8,7 @@ import com.instancednodes.util.Log;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -23,6 +24,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 
@@ -149,6 +152,7 @@ public class NodeManager implements Listener {
 
         long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, selected.name());
         int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
+        yield = applyYieldBonuses(p, p.getInventory().getItem(EquipmentSlot.HAND), yield);
 
         ItemStack drop = new ItemStack(materialToDrop(selected), yield);
         Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
@@ -193,6 +197,7 @@ public class NodeManager implements Listener {
 
         long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, oreType.name());
         int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
+        yield = applyYieldBonuses(p, p.getInventory().getItem(EquipmentSlot.HAND), yield);
         ItemStack drop = new ItemStack(materialToDrop(oreType), yield);
         Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
         if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
@@ -339,6 +344,29 @@ public class NodeManager implements Listener {
             case FIRE_CORAL: return Material.FIRE_CORAL;
             default: return selected;
         }
+    }
+
+    private int applyYieldBonuses(Player p, ItemStack tool, int base) {
+        double mult = InstancedNodesPlugin.get().level().getIncomeMultiplier(p.getUniqueId());
+
+        if (tool != null) {
+            int fortune = tool.getEnchantmentLevel(Enchantment.FORTUNE);
+            if (fortune > 0) {
+                mult *= 1.0 + InstancedNodesPlugin.get().getRandom().nextInt(fortune + 1);
+            }
+            Plugin spec = Bukkit.getPluginManager().getPlugin("SpecialItems");
+            if (spec != null) {
+                ItemMeta meta = tool.getItemMeta();
+                if (meta != null) {
+                    NamespacedKey key = new NamespacedKey(spec, "si_bonus_yield_pct");
+                    Double pct = meta.getPersistentDataContainer().get(key, PersistentDataType.DOUBLE);
+                    if (pct != null) mult *= 1.0 + (pct / 100.0);
+                }
+            }
+        }
+
+        int result = (int)Math.round(base * mult);
+        return result < 1 ? 1 : result;
     }
 
     private static class BlockVector {
