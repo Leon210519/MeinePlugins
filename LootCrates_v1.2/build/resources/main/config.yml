@@ -1,0 +1,64 @@
+crates:
+  PRESTIGE:
+    display: "&d&lPrestige Crate"
+    key:
+      display: "&dPrestige Key"
+      material: TRIPWIRE_HOOK
+      custom_model_data: 21001
+    open-method: BLOCK # BLOCK or GUI
+    rewards:
+      - id: "money_boost_2x_1h"
+        weight: 10
+        type: COMMAND
+        commands:
+          - "lp user {player} permission settemp lootfactory.boost.yield.2x true 1h"
+        display:
+          material: GOLD_INGOT
+          name: "&6&l2x Yield Booster (1h)"
+          lore:
+            - "&7Doubles your factory yield for 1 hour."
+            - "&8Granted via permission."
+          custom_model_data: 22001
+      - id: "money_xp_bundle"
+        weight: 25
+        type: MONEY_XP
+        money: 25000.0
+        xp: 500
+        display:
+          material: EMERALD
+          name: "&a$25,000 &7+ &b500 XP"
+          lore:
+            - "&7Immediate deposit to your balance."
+            - "&7And factory player XP."
+          custom_model_data: 22002
+      - id: "skin_pickaxe_t1"
+        weight: 5
+        type: ITEM
+        amount: 1
+        item:
+          material: DIAMOND_PICKAXE
+          name: "&b&lSkinned Pickaxe T1"
+          lore:
+            - "&7A cosmetic pickaxe with custom skin."
+          custom_model_data: 31001
+          enchantments:
+            - "DURABILITY:3"
+          flags: [HIDE_ENCHANTS]
+      - id: "prestige_key_x2"
+        weight: 8
+        type: KEY
+        key:
+          crate: "PRESTIGE"
+          amount: 2
+        display:
+          material: TRIPWIRE_HOOK
+          name: "&dPrestige Keys x2"
+          lore:
+            - "&7Open the Prestige Crate two more times!"
+          custom_model_data: 21001
+
+settings:
+  default-gui-title: "&6Crates"
+  sounds:
+    open: UI_TOAST_CHALLENGE_COMPLETE
+    reward: ENTITY_EXPERIENCE_ORB_PICKUP
