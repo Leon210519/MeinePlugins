@@ -24,4 +24,5 @@ dependencies {
         exclude(group = "org.bukkit", module = "bukkit")
         isTransitive = false
     }
+    compileOnly(files("../SpecialItems/build/libs/SpecialItems-1.2.0.jar"))
 }
