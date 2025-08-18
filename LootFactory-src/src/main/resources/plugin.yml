@@ -13,11 +13,14 @@ commands:
     permission: lootfactory.admin
   factoryshop:
     permission: lootfactory.shop
+  factories:
+    permission: lootfactory.list
 
 permissions:
   lootfactory.prestige:
     default: true
   lootfactory.admin: { default: op }
   lootfactory.shop: { default: true }
+  lootfactory.list: { default: true }
   lootfactory.place: { default: true }
   lootfactory.use: { default: true }
