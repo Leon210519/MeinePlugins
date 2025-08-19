@@ -96,6 +96,46 @@ public final class CustomModels {
         ID_TO_CMD.put("bow_mythic", 6001);
         ID_TO_CMD.put("bow_special", 7000);
         ID_TO_CMD.put("bow_unique", 8000);
+        ID_TO_CMD.put("common_helm", 9001);
+        ID_TO_CMD.put("common_chest", 9002);
+        ID_TO_CMD.put("common_legs", 9003);
+        ID_TO_CMD.put("common_boots", 9004);
+        ID_TO_CMD.put("common_sword", 9005);
+        ID_TO_CMD.put("common_pick", 9006);
+        ID_TO_CMD.put("common_axe", 9007);
+        ID_TO_CMD.put("common_hoe", 9008);
+        ID_TO_CMD.put("uncommon_helm", 9009);
+        ID_TO_CMD.put("uncommon_chest", 9010);
+        ID_TO_CMD.put("uncommon_legs", 9011);
+        ID_TO_CMD.put("uncommon_boots", 9012);
+        ID_TO_CMD.put("uncommon_sword", 9013);
+        ID_TO_CMD.put("uncommon_pick", 9014);
+        ID_TO_CMD.put("uncommon_axe", 9015);
+        ID_TO_CMD.put("uncommon_hoe", 9016);
+        ID_TO_CMD.put("rare_helm", 9017);
+        ID_TO_CMD.put("rare_chest", 9018);
+        ID_TO_CMD.put("rare_legs", 9019);
+        ID_TO_CMD.put("rare_boots", 9020);
+        ID_TO_CMD.put("rare_sword", 9021);
+        ID_TO_CMD.put("rare_pick", 9022);
+        ID_TO_CMD.put("rare_axe", 9023);
+        ID_TO_CMD.put("rare_hoe", 9024);
+        ID_TO_CMD.put("epic_helm", 9025);
+        ID_TO_CMD.put("epic_chest", 9026);
+        ID_TO_CMD.put("epic_legs", 9027);
+        ID_TO_CMD.put("epic_boots", 9028);
+        ID_TO_CMD.put("epic_sword", 9029);
+        ID_TO_CMD.put("epic_pick", 9030);
+        ID_TO_CMD.put("epic_axe", 9031);
+        ID_TO_CMD.put("epic_hoe", 9032);
+        ID_TO_CMD.put("legendary_helm", 9033);
+        ID_TO_CMD.put("legendary_chest", 9034);
+        ID_TO_CMD.put("legendary_legs", 9035);
+        ID_TO_CMD.put("legendary_boots", 9036);
+        ID_TO_CMD.put("legendary_sword", 9037);
+        ID_TO_CMD.put("legendary_pick", 9038);
+        ID_TO_CMD.put("legendary_axe", 9039);
+        ID_TO_CMD.put("legendary_hoe", 9040);
     }
     private CustomModels() {}
     public static int cmdFor(String id, String rawName) {

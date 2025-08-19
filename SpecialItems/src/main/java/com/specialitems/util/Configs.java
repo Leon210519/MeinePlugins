@@ -25,6 +25,8 @@ public final class Configs {
 
     public static void load(Plugin pl) {
         pl.saveDefaultConfig();
+        ensureResource(pl, "messages.yml");
+        ensureResource(pl, "templates.yml");
         cfg = pl.getConfig();
         msg = YamlConfiguration.loadConfiguration(new File(pl.getDataFolder(), "messages.yml"));
         templates = YamlConfiguration.loadConfiguration(new File(pl.getDataFolder(), "templates.yml"));
