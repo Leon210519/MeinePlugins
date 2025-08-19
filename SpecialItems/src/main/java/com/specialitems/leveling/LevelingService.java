@@ -26,6 +26,7 @@ public final class LevelingService {
     public double xpSwordKill = 5.0;
     public double xpSwordBossKill = 25.0;
     public double xpHoeHarvest = 2.0;
+    public double xpAxeWood = 1.0;
 
     public double baseProcChance = 0.10; // 10%
     public double pityIncrement = 0.02;  // +2% per miss
@@ -54,6 +55,7 @@ public final class LevelingService {
         if (n.endsWith("_PICKAXE")) return ToolClass.PICKAXE;
         if (n.endsWith("_SWORD")) return ToolClass.SWORD;
         if (n.endsWith("_HOE")) return ToolClass.HOE;
+        if (n.endsWith("_AXE")) return ToolClass.AXE;
         return ToolClass.OTHER;
     }
 
@@ -130,6 +132,7 @@ public final class LevelingService {
                     case PICKAXE -> EnchantUtil.addOrIncrease(it, Enchantment.EFFICIENCY, 1, allowOverCapPickaxe);
                     case SWORD   -> EnchantUtil.addOrIncrease(it, Enchantment.SHARPNESS, 1, allowOverCapSword);
                     case HOE     -> setBonusYieldPct(it, getBonusYieldPct(it) + 10.0);
+                    case AXE     -> EnchantUtil.addOrIncrease(it, Enchantment.EFFICIENCY, 1, allowOverCapPickaxe);
                     default -> {}
                 }
                 PityCounter.reset(it, keys);
