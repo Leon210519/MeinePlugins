@@ -7,6 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -49,8 +50,8 @@ public class FactoryTypesGUI {
         public TypesView(FactoryManager manager){ this.manager = manager; }
         @Override public Inventory getInventory(){ return Bukkit.createInventory(this, 54); }
         public void onClick(InventoryClickEvent e){
-            // Make it strictly read-only in the top inventory
-            if (e.getClickedInventory() != null && e.getView().getTopInventory().equals(e.getClickedInventory())){
+            if (e.getView().getTopInventory().equals(e.getClickedInventory())
+                    || e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                 e.setCancelled(true);
             }
         }

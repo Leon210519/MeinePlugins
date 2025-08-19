@@ -2,6 +2,7 @@ package com.lootfactory;
 
 import com.lootfactory.command.FactoryCommand;
 import com.lootfactory.command.FactoryShopCommand;
+import com.lootfactory.command.FactoriesCommand;
 import com.lootfactory.economy.Eco;
 import com.lootfactory.factory.FactoryManager;
 import com.lootfactory.gui.GUIListener;
@@ -100,6 +101,9 @@ public class LootFactoryPlugin extends JavaPlugin {
         }
         if (getCommand("factoryshop") != null) {
             getCommand("factoryshop").setExecutor(new FactoryShopCommand(factoryManager));
+        }
+        if (getCommand("factories") != null) {
+            getCommand("factories").setExecutor(new FactoriesCommand(factoryManager));
         }
         if (getCommand("prestige") != null) {
             getCommand("prestige").setExecutor(new FactoryPrestigeCommand(prestigeManager, keyItemService, factoryGateway));
