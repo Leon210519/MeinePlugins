@@ -5,6 +5,9 @@ import com.specialitems.effects.CustomEffect;
 import com.specialitems.effects.Effects;
 import com.specialitems.util.Configs;
 import com.specialitems.util.ItemUtil;
+import com.specialitems.effects.impl.AutoSmelt;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,6 +21,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -47,6 +51,8 @@ public class BlockListener implements Listener {
         ItemStack tool = p.getInventory().getItemInMainHand();
         if (tool == null || tool.getType() == Material.AIR) return;
 
+        if (handleSpecialHarvest(p, tool, e)) return;
+
         if (Effects.size() == 0) {
             try { Effects.registerDefaults(); } catch (Throwable ignored) {}
         }
@@ -62,5 +68,53 @@ public class BlockListener implements Listener {
             if (level <= 0) continue;
             eff.onBlockBreak(p, tool, e, Math.min(level, eff.maxLevel()));
         }
+    }
+
+    private boolean handleSpecialHarvest(Player p, ItemStack tool, BlockBreakEvent e) {
+        Block b = e.getBlock();
+        Material type = b.getType();
+        boolean isCrop = b.getBlockData() instanceof Ageable;
+        boolean isOre = type.name().endsWith("_ORE");
+        if (!isCrop && !isOre) return false;
+
+        if (isCrop) {
+            Ageable age = (Ageable) b.getBlockData();
+            if (age.getAge() < age.getMaximumAge()) {
+                e.setCancelled(true);
+                return true;
+            }
+        }
+
+        e.setDropItems(false);
+        Collection<ItemStack> drops = isCrop ? b.getDrops(new ItemStack(Material.WOODEN_HOE))
+                : b.getDrops(new ItemStack(Material.WOODEN_PICKAXE));
+        int enchLevel = ItemUtil.getEffectLevel(tool, isCrop ? "harvester" : "veinminer");
+        double scale = Configs.cfg.getDouble(isCrop ? "specialitems.harvester_scale" : "specialitems.vein_scale", 0.0);
+        double enchMul = 1.0 + scale * enchLevel;
+        double yieldBonus = 1.0 + ItemUtil.getToolYieldBonus(tool);
+        boolean minFloor = Configs.cfg.getBoolean("specialitems.min_total_floor", true);
+        boolean smelt = ItemUtil.getEffectLevel(tool, "autosmelt") > 0;
+        boolean direct = Configs.cfg.getBoolean("farmxmine.direct_to_inventory", true);
+
+        for (ItemStack drop : drops) {
+            ItemStack give = drop.clone();
+            if (smelt) {
+                Material out = AutoSmelt.SMELTS.get(give.getType());
+                if (out != null) give.setType(out);
+            }
+            int base = give.getAmount();
+            int total = (int) Math.floor(base * enchMul * yieldBonus);
+            if (minFloor && base > 0 && total < 1) total = 1;
+            give.setAmount(total);
+            if (direct) {
+                var leftover = p.getInventory().addItem(give);
+                for (ItemStack it : leftover.values()) {
+                    p.getWorld().dropItemNaturally(p.getLocation(), it);
+                }
+            } else {
+                p.getWorld().dropItemNaturally(b.getLocation(), give);
+            }
+        }
+        return true;
     }
 }

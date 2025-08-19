@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 // Leveling imports
 import com.specialitems.leveling.LevelingService;
 import com.specialitems.leveling.LevelingListener;
-import com.specialitems.leveling.YieldApplier;
 
 public class SpecialItemsPlugin extends JavaPlugin {
 
@@ -78,7 +77,6 @@ public class SpecialItemsPlugin extends JavaPlugin {
         // --- Leveling system (NEW) ---
         this.leveling = new LevelingService(this);
         getServer().getPluginManager().registerEvents(new LevelingListener(leveling), this);
-        getServer().getPluginManager().registerEvents(new YieldApplier(leveling), this);
 
         // Ticker (kept from your original)
         try {

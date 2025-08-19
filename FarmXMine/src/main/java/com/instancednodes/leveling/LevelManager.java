@@ -23,6 +23,7 @@ public class LevelManager {
     private final int xpMine;
     private final int xpFarm;
     private final Map<UUID, BossBar> bars = new HashMap<>();
+    private final Map<UUID, Long> lastHud = new HashMap<>();
 
     public LevelManager(InstancedNodesPlugin plugin) {
         this.plugin = plugin;
@@ -64,11 +65,15 @@ public class LevelManager {
 
         BossBar bar = bars.computeIfAbsent(uid, k -> Bukkit.createBossBar("", BarColor.BLUE, BarStyle.SOLID));
         bar.setColor(kind == Kind.MINE ? BarColor.BLUE : BarColor.GREEN);
-        bar.setTitle((kind == Kind.MINE ? "Mining" : "Farming") + " XP +" + add);
-        double progress = Math.min(1.0, xp / needed);
-        bar.setProgress(progress);
+        bar.setTitle((kind == Kind.MINE ? "Mine" : "Farm") + " Lv. " + level);
+        long now = System.currentTimeMillis();
+        Long last = lastHud.get(uid);
+        if (last == null || now - last >= 1000L) {
+            double progress = Math.min(1.0, xp / needed);
+            bar.setProgress(progress);
+            lastHud.put(uid, now);
+        }
         bar.addPlayer(p);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> bar.removePlayer(p), 40L);
     }
 
     /**

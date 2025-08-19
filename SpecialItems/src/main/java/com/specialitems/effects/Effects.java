@@ -32,7 +32,6 @@ public final class Effects {
         register(new com.specialitems.effects.impl.HasteTouch());
         register(new com.specialitems.effects.impl.NightVision());
         register(new com.specialitems.effects.impl.Magnet());
-        register(new com.specialitems.effects.impl.Replant());
         register(new com.specialitems.effects.impl.Harvester());
         register(new com.specialitems.effects.impl.XpBoost());
     }
