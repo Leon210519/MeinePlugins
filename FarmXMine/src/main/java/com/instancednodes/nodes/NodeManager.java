@@ -83,12 +83,22 @@ public class NodeManager implements Listener {
     }
 
 
-    // Cancel early so protection plugins like WorldGuard skip these events entirely
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
-    public void preCancelInteract(PlayerInteractEvent e) {
+    public void suppressInteract(PlayerInteractEvent e) {
+
         if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
         Block b = e.getClickedBlock();
         if (b == null) return;
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
+    }
+
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void preCancelBreak(BlockBreakEvent e) {
+        Block b = e.getBlock();
         Location loc = b.getLocation();
         if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
             e.setCancelled(true);
