@@ -29,6 +29,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.ChatColor;
+
+import com.instancednodes.integration.SpecialItemsApi;
+import com.instancednodes.integration.RegionType;
 
 import java.util.*;
 
@@ -192,16 +196,10 @@ public class NodeManager implements Listener {
                 e.setCancelled(true);
                 e.getItems().clear();
                 processMineFinal(p, b, stateType);
-            } else if (!bypass) {
-                e.setCancelled(true);
-                e.getItems().clear();
             }
         } else {
             boolean processed = processFarmHarvestState(p, b, e.getBlockState(), bypass);
             if (processed) {
-                e.setCancelled(true);
-                e.getItems().clear();
-            } else if (!bypass) {
                 e.setCancelled(true);
                 e.getItems().clear();
             }
@@ -294,6 +292,7 @@ public class NodeManager implements Listener {
         }
 
         InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
+        grantSpecialXp(p, p.getInventory().getItem(EquipmentSlot.HAND), false);
 
         p.sendBlockChange(loc, Bukkit.createBlockData(Material.AIR));
         if (Cfg.PLAY_SOUNDS) p.playSound(loc, Sound.BLOCK_STONE_BREAK, 0.7f, 1.2f);
@@ -346,6 +345,7 @@ public class NodeManager implements Listener {
         }
 
         InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
+        grantSpecialXp(p, p.getInventory().getItem(EquipmentSlot.HAND), false);
 
         BlockData grown = state.getBlockData();
         Bukkit.getScheduler().runTask(InstancedNodesPlugin.get(), () -> b.setBlockData(grown, false));
@@ -396,6 +396,7 @@ public class NodeManager implements Listener {
             for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
         }
 
+        grantSpecialXp(p, p.getInventory().getItem(EquipmentSlot.HAND), true);
         int baseMine = InstancedNodesPlugin.get().getConfig().getInt("leveling.xp_per_harvest.mine", 3);
         double penalty = InstancedNodesPlugin.get().getConfig().getDouble("leveling.mine_efficiency_penalty_per_level", 0.5);
         int minXp = InstancedNodesPlugin.get().getConfig().getInt("leveling.mine_min_xp", 1);
@@ -561,6 +562,18 @@ public class NodeManager implements Listener {
 
         int result = (int)Math.round(base * mult);
         return result < 1 ? 1 : result;
+    }
+
+    private void grantSpecialXp(Player player, ItemStack tool, boolean mine) {
+        try {
+            SpecialItemsApi api = Bukkit.getServer().getServicesManager().load(SpecialItemsApi.class);
+            if (api == null || tool == null) return;
+            if (!api.isSpecialItem(tool)) return;
+            int amount = InstancedNodesPlugin.get().getConfig().getInt(
+                    mine ? "leveling.xp_per_harvest.mine" : "leveling.xp_per_harvest.farm", 1);
+            if (amount <= 0) return;
+            api.grantHarvestXp(player, tool, mine ? RegionType.MINE : RegionType.FARM, amount);
+        } catch (Throwable ignored) {}
     }
 
     private static class BlockVector {
