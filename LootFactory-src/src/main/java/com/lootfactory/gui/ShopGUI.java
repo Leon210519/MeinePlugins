@@ -31,7 +31,7 @@ public class ShopGUI {
     m1.setDisplayName(Msg.color("&aBuy Random Factory"));
     List<String> lore1 = new ArrayList<>();
     lore1.add(Msg.color("&7Price: &e" + cur + String.format("%.2f", price)));
-    lore1.add(Msg.color("&8Legendary factories are very rare!"));
+    lore1.add(Msg.color("&8Legendary factories are very rare! &dInsane &8factories are extremely rare!"));
     m1.setLore(lore1);
     buy1.setItemMeta(m1);
     inv.setItem(13, buy1);
@@ -46,6 +46,13 @@ public class ShopGUI {
     m10.setLore(lore10);
     buy10.setItemMeta(m10);
     inv.setItem(15, buy10);
+
+    // Back (slot 26)
+    ItemStack back = new ItemStack(Material.ARROW);
+    ItemMeta bm = back.getItemMeta();
+    bm.setDisplayName(Msg.color("&cBack"));
+    back.setItemMeta(bm);
+    inv.setItem(26, back);
   }
 }
 
@@ -97,6 +104,11 @@ class ShopView implements InventoryHolder {
       }
       p.sendMessage(Msg.prefix() + Msg.color("&aYou bought &e10 &afactories for &e" + cur + String.format("%.2f", total) + "&a."));
       return; // keep GUI open
+    }
+
+    // Back button
+    if(e.getSlot() == 26){
+      FactoriesGUI.open(p, manager);
     }
   }
 
