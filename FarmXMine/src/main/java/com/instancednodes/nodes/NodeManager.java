@@ -100,6 +100,8 @@ public class NodeManager implements Listener {
     public void preCancelBreak(BlockBreakEvent e) {
         Block b = e.getBlock();
         Location loc = b.getLocation();
+        Player p = e.getPlayer();
+        if (p != null && p.hasPermission("farmxmine.bypass")) return;
         if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
             e.setCancelled(true);
         }
@@ -118,7 +120,7 @@ public class NodeManager implements Listener {
         if (!isFarm) return;
         if (Cfg.REQUIRE_PERMS && !e.getPlayer().hasPermission("instancednodes.farm")) return;
 
-        boolean processed = processFarmHarvest(e.getPlayer(), b);
+        boolean processed = processFarmHarvest(e.getPlayer(), b, e.getPlayer().hasPermission("farmxmine.bypass"));
         if (processed) {
             e.setCancelled(true);
         }
@@ -133,22 +135,24 @@ public class NodeManager implements Listener {
         boolean isFarm = !isMine && Cfg.FARM.contains(loc);
         if (!isMine && !isFarm) return;
 
+        Player player = e.getPlayer();
+        boolean bypass = player.hasPermission("farmxmine.bypass");
         if (isMine) {
-            if (Cfg.REQUIRE_PERMS && !e.getPlayer().hasPermission("instancednodes.mine")) return;
+            if (Cfg.REQUIRE_PERMS && !player.hasPermission("instancednodes.mine")) return;
 
-            // If not an ore -> block it cleanly
             if (!isOre(b.getType())) {
-                e.setCancelled(true);
-                e.setDropItems(false);
-                e.setExpToDrop(0);
-                e.getPlayer().sendMessage(Msg.get("mine_only_ores"));
-                Log.d("Blocked non-ore: " + b.getType() + " at " + Log.loc(loc));
+                if (!bypass) {
+                    e.setCancelled(true);
+                    e.setDropItems(false);
+                    e.setExpToDrop(0);
+                    player.sendMessage(Msg.get("mine_only_ores"));
+                    Log.d("Blocked non-ore: " + b.getType() + " at " + Log.loc(loc));
+                }
                 return;
             }
 
-            // Veinminer detection via lore (fallback for implementations that don't fire break events for every block)
-            if (hasVeinminerLore(e.getPlayer().getInventory().getItem(EquipmentSlot.HAND))) {
-                int processed = processVein(purify(e.getPlayer()), b);
+            if (hasVeinminerLore(player.getInventory().getItem(EquipmentSlot.HAND))) {
+                int processed = processVein(purify(player), b);
                 e.setCancelled(true);
                 e.setDropItems(false);
                 e.setExpToDrop(0);
@@ -156,14 +160,14 @@ public class NodeManager implements Listener {
                 return;
             }
 
-            boolean processed = processMineHarvest(e.getPlayer(), e);
+            boolean processed = processMineHarvest(player, e);
             if (processed) {
                 e.setCancelled(true);
                 e.setDropItems(false);
                 e.setExpToDrop(0);
             }
         } else {
-            boolean processed = processFarmHarvest(e.getPlayer(), e.getBlock());
+            boolean processed = processFarmHarvest(player, e.getBlock(), bypass);
             if (processed) {
                 e.setCancelled(true);
                 e.setDropItems(false);
@@ -181,12 +185,26 @@ public class NodeManager implements Listener {
         if (!isMine && !isFarm) return;
         Player p = e.getPlayer();
         if (p == null) return;
-        e.setCancelled(true);
-        e.getItems().clear();
+        boolean bypass = p.hasPermission("farmxmine.bypass");
+        Material stateType = e.getBlockState().getType();
         if (isMine) {
-            processMineFinal(p, b, e.getBlockState().getType());
+            if (isOre(stateType)) {
+                e.setCancelled(true);
+                e.getItems().clear();
+                processMineFinal(p, b, stateType);
+            } else if (!bypass) {
+                e.setCancelled(true);
+                e.getItems().clear();
+            }
         } else {
-            processFarmHarvestState(p, b, e.getBlockState());
+            boolean processed = processFarmHarvestState(p, b, e.getBlockState(), bypass);
+            if (processed) {
+                e.setCancelled(true);
+                e.getItems().clear();
+            } else if (!bypass) {
+                e.setCancelled(true);
+                e.getItems().clear();
+            }
         }
     }
 
@@ -241,17 +259,17 @@ public class NodeManager implements Listener {
         } catch (Throwable ignored) {}
     }
 
-    private boolean processFarmHarvest(Player p, Block b) {
+    private boolean processFarmHarvest(Player p, Block b, boolean silent) {
         Location loc = b.getLocation();
         if (!Cfg.FARM.contains(loc)) return false;
-        if (!hasTool(p, "HOE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
+        if (!hasTool(p, "HOE")) { if (!silent) p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
 
         UUID uidSel = p.getUniqueId();
         String selName = InstancedNodesPlugin.get().data().getSelection(uidSel, "crop", Cfg.FARM_defaultMat);
         Material selected = Material.matchMaterial(selName);
         if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
         if (!isSelectedCropBlock(b.getType(), selected)) return false;
-        if (!isMatureCrop(b)) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+        if (!isMatureCrop(b)) { if (!silent) p.sendMessage(Msg.get("crop_not_mature")); return false; }
 
         triggerSpecialEffects(p, b);
 
@@ -271,7 +289,9 @@ public class NodeManager implements Listener {
 
         ItemStack drop = new ItemStack(materialToDrop(selected), yield);
         Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
-        if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        if (!left.isEmpty() && !Cfg.VOID_OVERFLOW) {
+            for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        }
 
         InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
 
@@ -289,10 +309,10 @@ public class NodeManager implements Listener {
         return true;
     }
 
-    private boolean processFarmHarvestState(Player p, Block b, BlockState state) {
+    private boolean processFarmHarvestState(Player p, Block b, BlockState state, boolean silent) {
         Location loc = b.getLocation();
         if (!Cfg.FARM.contains(loc)) return false;
-        if (!hasTool(p, "HOE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
+        if (!hasTool(p, "HOE")) { if (!silent) p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
 
         UUID uidSel = p.getUniqueId();
         String selName = InstancedNodesPlugin.get().data().getSelection(uidSel, "crop", Cfg.FARM_defaultMat);
@@ -302,7 +322,7 @@ public class NodeManager implements Listener {
         BlockData data = state.getBlockData();
         if (data instanceof Ageable) {
             Ageable ag = (Ageable) data;
-            if (ag.getAge() < ag.getMaximumAge()) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+            if (ag.getAge() < ag.getMaximumAge()) { if (!silent) p.sendMessage(Msg.get("crop_not_mature")); return false; }
         }
 
         UUID uid = p.getUniqueId();
@@ -321,7 +341,9 @@ public class NodeManager implements Listener {
 
         ItemStack drop = new ItemStack(materialToDrop(selected), yield);
         Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
-        if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        if (!left.isEmpty() && !Cfg.VOID_OVERFLOW) {
+            for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        }
 
         InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
 
@@ -370,7 +392,9 @@ public class NodeManager implements Listener {
         yield = applyYieldBonuses(p, p.getInventory().getItem(EquipmentSlot.HAND), yield);
         ItemStack drop = new ItemStack(materialToDrop(oreType), yield);
         Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
-        if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        if (!left.isEmpty() && !Cfg.VOID_OVERFLOW) {
+            for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+        }
 
         int baseMine = InstancedNodesPlugin.get().getConfig().getInt("leveling.xp_per_harvest.mine", 3);
         double penalty = InstancedNodesPlugin.get().getConfig().getDouble("leveling.mine_efficiency_penalty_per_level", 0.5);

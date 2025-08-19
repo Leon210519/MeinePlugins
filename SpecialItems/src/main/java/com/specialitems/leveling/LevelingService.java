@@ -7,6 +7,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.NamespacedKey;
+import org.bukkit.ChatColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,14 +78,25 @@ public final class LevelingService {
     public double getBonusYieldPct(ItemStack it) {
         ItemMeta meta = it.getItemMeta();
         if (meta == null) return 0.0;
-        Double v = meta.getPersistentDataContainer().get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+        String keyName = com.specialitems.util.Configs.cfg.getString("specialitems.yield_bonus_attr_key", "si.yield_bonus");
+        NamespacedKey key = new NamespacedKey(plugin, keyName);
+        Double v = meta.getPersistentDataContainer().get(key, PersistentDataType.DOUBLE);
         return v == null ? 0.0 : v;
     }
 
     public void setBonusYieldPct(ItemStack it, double pct) {
         ItemMeta meta = it.getItemMeta();
         if (meta == null) return;
-        meta.getPersistentDataContainer().set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, Math.max(0.0, pct));
+        pct = Math.max(0.0, pct);
+        String keyName = com.specialitems.util.Configs.cfg.getString("specialitems.yield_bonus_attr_key", "si.yield_bonus");
+        NamespacedKey key = new NamespacedKey(plugin, keyName);
+        meta.getPersistentDataContainer().set(key, PersistentDataType.DOUBLE, pct);
+
+        List<String> lore = meta.getLore();
+        if (lore == null) lore = new ArrayList<>();
+        com.specialitems.util.ItemUtil.removeLoreLinePrefix(lore, ChatColor.GRAY + "Yield Bonus:");
+        lore.add(ChatColor.GRAY + "Yield Bonus: +" + pct + "%");
+        meta.setLore(lore);
         it.setItemMeta(meta);
     }
 
@@ -129,7 +142,7 @@ public final class LevelingService {
 
             if (success) {
                 switch (clazz) {
-                    case PICKAXE -> EnchantUtil.addOrIncrease(it, Enchantment.EFFICIENCY, 1, allowOverCapPickaxe);
+                    case PICKAXE -> setBonusYieldPct(it, getBonusYieldPct(it) + 10.0);
                     case SWORD   -> EnchantUtil.addOrIncrease(it, Enchantment.SHARPNESS, 1, allowOverCapSword);
                     case HOE     -> setBonusYieldPct(it, getBonusYieldPct(it) + 10.0);
                     case AXE     -> EnchantUtil.addOrIncrease(it, Enchantment.EFFICIENCY, 1, allowOverCapPickaxe);

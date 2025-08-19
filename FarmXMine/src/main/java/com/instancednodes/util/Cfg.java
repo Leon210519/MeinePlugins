@@ -23,13 +23,17 @@ public class Cfg {
 
     public static boolean PLAY_SOUNDS;
     public static boolean REQUIRE_PERMS;
-    public static boolean OVERRIDE_CANCELLED;
+      public static boolean OVERRIDE_CANCELLED;
 
     public static boolean INTEGRATE_SPECIALITEMS;
     public static boolean DISABLE_REPLANT_IN_FARM;
-    public static boolean DIRECT_TO_INVENTORY;
+      public static boolean DIRECT_TO_INVENTORY;
+      public static boolean VOID_OVERFLOW;
     public static int HARVESTER_MAX_BLOCKS;
     public static int HARVESTER_MAX_RADIUS;
+
+    public static int XP_MINE;
+    public static int XP_FARM;
 
     public static String[] VEIN_LORE;
     public static int VEIN_MAX_BLOCKS;
@@ -44,9 +48,13 @@ public class Cfg {
 
         INTEGRATE_SPECIALITEMS = plugin.getConfig().getBoolean("farmxmine.integrate_specialitems", true);
         DISABLE_REPLANT_IN_FARM = plugin.getConfig().getBoolean("farmxmine.disable_replant_in_farm", true);
-        DIRECT_TO_INVENTORY = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
+          DIRECT_TO_INVENTORY = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
+          VOID_OVERFLOW = plugin.getConfig().getBoolean("inventory.void_overflow", true);
         HARVESTER_MAX_BLOCKS = plugin.getConfig().getInt("harvester.max_blocks", 32);
         HARVESTER_MAX_RADIUS = plugin.getConfig().getInt("harvester.max_radius", 5);
+
+        XP_MINE = plugin.getConfig().getInt("leveling.xp_per_harvest.mine", 3);
+        XP_FARM = plugin.getConfig().getInt("leveling.xp_per_harvest.farm", 1);
 
         PLAY_SOUNDS = plugin.getConfig().getBoolean("options.play_sounds", false);
         REQUIRE_PERMS = plugin.getConfig().getBoolean("options.require_permissions", false);

@@ -43,6 +43,16 @@ public class BlockListener implements Listener {
         return ids;
     }
 
+    private Material mainCropDrop(Material crop) {
+        switch (crop) {
+            case WHEAT: return Material.WHEAT;
+            case CARROTS: return Material.CARROT;
+            case POTATOES: return Material.POTATO;
+            case BEETROOTS: return Material.BEETROOT;
+            default: return crop;
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent e) {
         Player p = e.getPlayer();
@@ -86,15 +96,23 @@ public class BlockListener implements Listener {
         }
 
         e.setDropItems(false);
-        Collection<ItemStack> drops = isCrop ? b.getDrops(new ItemStack(Material.WOODEN_HOE))
-                : b.getDrops(new ItemStack(Material.WOODEN_PICKAXE));
+        Collection<ItemStack> drops = new java.util.ArrayList<>(
+                isCrop ? b.getDrops(new ItemStack(Material.WOODEN_HOE))
+                        : b.getDrops(new ItemStack(Material.WOODEN_PICKAXE)));
+        if (isCrop) {
+            Material main = mainCropDrop(type);
+            drops.removeIf(it -> it.getType() != main);
+        }
+
         int enchLevel = ItemUtil.getEffectLevel(tool, isCrop ? "harvester" : "veinminer");
         double scale = Configs.cfg.getDouble(isCrop ? "specialitems.harvester_scale" : "specialitems.vein_scale", 0.0);
-        double enchMul = 1.0 + scale * enchLevel;
-        double yieldBonus = 1.0 + ItemUtil.getToolYieldBonus(tool);
+        String mode = Configs.cfg.getString("specialitems.scaling_mode", "linear");
+        double enchMul = "exp".equalsIgnoreCase(mode) ? Math.pow(1.0 + scale, enchLevel) : 1.0 + scale * enchLevel;
+        double yieldBonus = ItemUtil.getToolYieldBonus(tool);
         boolean minFloor = Configs.cfg.getBoolean("specialitems.min_total_floor", true);
         boolean smelt = ItemUtil.getEffectLevel(tool, "autosmelt") > 0;
         boolean direct = Configs.cfg.getBoolean("farmxmine.direct_to_inventory", true);
+        boolean voidOverflow = Configs.cfg.getBoolean("inventory.void_overflow", true);
 
         for (ItemStack drop : drops) {
             ItemStack give = drop.clone();
@@ -103,13 +121,15 @@ public class BlockListener implements Listener {
                 if (out != null) give.setType(out);
             }
             int base = give.getAmount();
-            int total = (int) Math.floor(base * enchMul * yieldBonus);
+            int total = (int) Math.floor(base * enchMul * (1.0 + yieldBonus));
             if (minFloor && base > 0 && total < 1) total = 1;
             give.setAmount(total);
             if (direct) {
                 var leftover = p.getInventory().addItem(give);
-                for (ItemStack it : leftover.values()) {
-                    p.getWorld().dropItemNaturally(p.getLocation(), it);
+                if (!voidOverflow) {
+                    for (ItemStack it : leftover.values()) {
+                        p.getWorld().dropItemNaturally(p.getLocation(), it);
+                    }
                 }
             } else {
                 p.getWorld().dropItemNaturally(b.getLocation(), give);

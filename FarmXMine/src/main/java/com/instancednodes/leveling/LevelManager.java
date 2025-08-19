@@ -24,11 +24,24 @@ public class LevelManager {
     private final int xpFarm;
     private final Map<UUID, BossBar> bars = new HashMap<>();
     private final Map<UUID, Long> lastHud = new HashMap<>();
+    private final Map<UUID, Long> lastProgress = new HashMap<>();
 
     public LevelManager(InstancedNodesPlugin plugin) {
         this.plugin = plugin;
         this.xpMine = plugin.getConfig().getInt("leveling.xp_per_harvest.mine", 3);
         this.xpFarm = plugin.getConfig().getInt("leveling.xp_per_harvest.farm", 1);
+
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            long now = System.currentTimeMillis();
+            for (Map.Entry<UUID, Long> en : new HashMap<>(lastProgress).entrySet()) {
+                if (now - en.getValue() >= 10_000L) {
+                    BossBar bar = bars.get(en.getKey());
+                    if (bar != null) {
+                        bar.removeAll();
+                    }
+                }
+            }
+        }, 10L, 10L);
     }
 
     private int levelCap(int prestige) {
@@ -67,6 +80,7 @@ public class LevelManager {
         bar.setColor(kind == Kind.MINE ? BarColor.BLUE : BarColor.GREEN);
         bar.setTitle((kind == Kind.MINE ? "Mine" : "Farm") + " Lv. " + level);
         long now = System.currentTimeMillis();
+        lastProgress.put(uid, now);
         Long last = lastHud.get(uid);
         if (last == null || now - last >= 1000L) {
             double progress = Math.min(1.0, xp / needed);
