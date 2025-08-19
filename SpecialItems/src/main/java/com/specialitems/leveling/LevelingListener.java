@@ -54,6 +54,13 @@ public final class LevelingListener implements Listener {
                     sendMsgs(p, held, ups);
                 }
             }
+            case AXE -> {
+                String name = m.name();
+                if (name.endsWith("_LOG") || name.endsWith("_WOOD") || name.endsWith("_STEM") || name.endsWith("_HYPHAE")) {
+                    var ups = svc.grantXp(held, svc.xpAxeWood, clazz);
+                    sendMsgs(p, held, ups);
+                }
+            }
             default -> {}
         }
     }
@@ -68,7 +75,7 @@ public final class LevelingListener implements Listener {
         if (!svc.isSpecialItem(held)) return;
 
         var clazz = svc.detectToolClass(held);
-        if (clazz != ToolClass.SWORD) return;
+        if (clazz != ToolClass.SWORD && clazz != ToolClass.AXE) return;
 
         double add = isBoss(dead.getType()) ? svc.xpSwordBossKill : svc.xpSwordKill;
         var ups = svc.grantXp(held, add, clazz);

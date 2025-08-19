@@ -2,8 +2,10 @@ package com.lootfactory.gui;
 
 import com.lootfactory.factory.FactoryInstance;
 import com.lootfactory.factory.FactoryManager;
+import com.lootfactory.util.Msg;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -11,6 +13,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +39,16 @@ public class FactoryListGUI {
         int slot = 0;
         List<FactoryInstance> list = new ArrayList<>(manager.getFactories(owner));
         for(FactoryInstance fi : list){
-            if(slot >= inv.getSize()) break;
+            if(slot >= inv.getSize() - 1) break;
             ItemStack it = manager.createFactoryItem(fi.typeId, fi.level, fi.xpSeconds, fi.prestige);
             inv.setItem(slot++, it);
         }
+
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta bm = back.getItemMeta();
+        bm.setDisplayName(Msg.color("&cBack"));
+        back.setItemMeta(bm);
+        inv.setItem(inv.getSize() - 1, back);
     }
 
     public static class ListView implements InventoryHolder {
@@ -58,10 +67,14 @@ public class FactoryListGUI {
                     || e.getAction() == InventoryAction.COLLECT_TO_CURSOR){
                 e.setCancelled(true);
                 if(e.getWhoClicked() instanceof Player){
+                    Player p = (Player)e.getWhoClicked();
                     int slot = e.getRawSlot();
-                    if(slot >= 0 && slot < list.size()){
+                    int last = e.getView().getTopInventory().getSize() - 1;
+                    if(slot == last){
+                        FactoriesGUI.open(p, manager);
+                    } else if(slot >= 0 && slot < list.size()){
                         FactoryInstance fi = list.get(slot);
-                        FactoryGUI.open((Player)e.getWhoClicked(), manager, fi);
+                        FactoryGUI.open(p, manager, fi);
                     }
                 }
             }

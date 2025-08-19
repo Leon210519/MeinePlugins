@@ -56,6 +56,32 @@ public class NodeManager implements Listener {
         String nb = b.name().replace("DEEPSLATE_", "");
         return na.equals(nb);
     }
+  
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void uncancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        boolean isMine = Cfg.MINE.contains(loc);
+        boolean isFarm = !isMine && Cfg.FARM.contains(loc);
+        if (!isMine && !isFarm) return;
+        e.setCancelled(false);
+    }
+
+
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void preCancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
+    }
+
 
     // Cancel early so protection plugins like WorldGuard skip these events entirely
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
@@ -69,14 +95,6 @@ public class NodeManager implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
-    public void preCancelBreak(BlockBreakEvent e) {
-        Block b = e.getBlock();
-        Location loc = b.getLocation();
-        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
-            e.setCancelled(true);
-        }
-    }
 
     // FARM: handle left-click harvest even if other plugins cancel the event
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
