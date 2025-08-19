@@ -23,5 +23,5 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.jar {
-    archiveFileName.set("InstancedNodes-${project.version}.jar")
+    archiveFileName.set("FarmxMine-${project.version}.jar")
 }
