@@ -36,6 +36,14 @@ effects:
   haste_touch: { enabled: true, haste-amplifier-per-level: 0 }
   night_vision: { enabled: true }
   magnet: { enabled: true, range-per-level: 3, max-range: 10 }
-  replant: { enabled: true }
-  harvester: { enabled: true, radius: 1 }
   xp_boost: { enabled: true, multiplier-per-level: 0.25 }
+
+specialitems:
+  harvester_scale: 0.25
+  vein_scale: 0.20
+  min_total_floor: true
+  fortune_interaction: "ignore"
+  yield_bonus_attr_key: "si.yield_bonus"
+
+farmxmine:
+  direct_to_inventory: true

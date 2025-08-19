@@ -2,6 +2,7 @@ package com.specialitems.util;
 
 import com.specialitems.SpecialItemsPlugin;
 import com.specialitems.effects.Effects;
+import com.specialitems.util.Configs;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemFlag;
@@ -51,6 +52,22 @@ public final class ItemUtil {
                 new NamespacedKey(SpecialItemsPlugin.getInstance(), "ench_" + effectId),
                 PersistentDataType.INTEGER);
         return (lvl == null ? 0 : Math.max(0, lvl));
+    }
+
+    public static double getToolYieldBonus(ItemStack item) {
+        if (item == null) return 0.0;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return 0.0;
+        String keyName = Configs.cfg.getString("specialitems.yield_bonus_attr_key", "si.yield_bonus");
+        NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), keyName);
+        Double v = meta.getPersistentDataContainer().get(key, PersistentDataType.DOUBLE);
+        if (v != null) return v;
+        double per = Configs.cfg.getDouble("specialitems.level_to_yield", 0.0);
+        try {
+            int lvl = SpecialItemsPlugin.getInstance().leveling().getLevel(item);
+            return lvl * per;
+        } catch (Throwable ignored) {}
+        return 0.0;
     }
 
     public static void removeLoreLinePrefix(List<String> lore, String prefix) {
