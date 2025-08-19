@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
@@ -20,6 +21,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -69,6 +71,19 @@ public class NodeManager implements Listener {
 
 
 
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void preCancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
+    }
+
+
+    // Cancel early so protection plugins like WorldGuard skip these events entirely
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
     public void preCancelInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
@@ -144,6 +159,24 @@ public class NodeManager implements Listener {
                 e.setDropItems(false);
                 e.setExpToDrop(0);
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onDrop(BlockDropItemEvent e) {
+        Block b = e.getBlock();
+        Location loc = b.getLocation();
+        boolean isMine = Cfg.MINE.contains(loc);
+        boolean isFarm = !isMine && Cfg.FARM.contains(loc);
+        if (!isMine && !isFarm) return;
+        Player p = e.getPlayer();
+        if (p == null) return;
+        e.setCancelled(true);
+        e.getItems().clear();
+        if (isMine) {
+            processMineFinal(p, b, e.getBlockState().getType());
+        } else {
+            processFarmHarvestState(p, b, e.getBlockState());
         }
     }
 
@@ -246,15 +279,71 @@ public class NodeManager implements Listener {
         return true;
     }
 
+    private boolean processFarmHarvestState(Player p, Block b, BlockState state) {
+        Location loc = b.getLocation();
+        if (!Cfg.FARM.contains(loc)) return false;
+        if (!hasTool(p, "HOE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
+
+        UUID uidSel = p.getUniqueId();
+        String selName = InstancedNodesPlugin.get().data().getSelection(uidSel, "crop", Cfg.FARM_defaultMat);
+        Material selected = Material.matchMaterial(selName);
+        if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
+        if (!isSelectedCropBlock(state.getType(), selected)) return false;
+        BlockData data = state.getBlockData();
+        if (data instanceof Ageable) {
+            Ageable ag = (Ageable) data;
+            if (ag.getAge() < ag.getMaximumAge()) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+        }
+
+        UUID uid = p.getUniqueId();
+        BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        Map<BlockVector, Long> map = cooldowns.computeIfAbsent(uid, k -> new HashMap<>());
+        long now = System.currentTimeMillis();
+        Long until = map.get(key);
+        if (until != null && until > now) {
+            if (Cfg.PLAY_SOUNDS) p.playSound(loc, Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.8f);
+            return true;
+        }
+
+        long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, selected.name());
+        int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
+        yield = applyYieldBonuses(p, p.getInventory().getItem(EquipmentSlot.HAND), yield);
+
+        ItemStack drop = new ItemStack(materialToDrop(selected), yield);
+        Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
+        if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+
+        InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
+
+        BlockData grown = state.getBlockData();
+        Bukkit.getScheduler().runTask(InstancedNodesPlugin.get(), () -> b.setBlockData(grown, false));
+        p.sendBlockChange(loc, Bukkit.createBlockData(Material.AIR));
+        if (Cfg.PLAY_SOUNDS) p.playSound(loc, Sound.BLOCK_STONE_BREAK, 0.7f, 1.2f);
+        map.put(key, now + Cfg.RESPAWN_SECONDS * 1000L);
+
+        Bukkit.getScheduler().runTaskLater(InstancedNodesPlugin.get(), () -> {
+            if (p.isOnline()) {
+                p.sendBlockChange(loc, grown);
+            }
+        }, Cfg.RESPAWN_SECONDS * 20L);
+
+        Log.d("FARM harvest by " + p.getName() + " at " + Log.loc(loc) + " yield=" + yield + " sel=" + selected);
+        return true;
+    }
+
     private boolean processMineHarvest(Player p, BlockBreakEvent e) {
         Block b = e.getBlock();
         if (!Cfg.MINE.contains(b.getLocation())) return false;
         if (!hasTool(p, "PICKAXE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "pickaxe")); return false; }
         if (!isOre(b.getType())) return false;
-        return processMineFinal(p, b);
+        return processMineFinal(p, b, b.getType());
     }
 
     private boolean processMineFinal(Player p, Block b) {
+        return processMineFinal(p, b, b.getType());
+    }
+
+    private boolean processMineFinal(Player p, Block b, Material oreType) {
         Location loc = b.getLocation();
         BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         RespawnInfo existing = respawns.get(key);
@@ -265,7 +354,6 @@ public class NodeManager implements Listener {
         }
 
         UUID uid = p.getUniqueId();
-        Material oreType = b.getType();
 
         long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, oreType.name());
         int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
