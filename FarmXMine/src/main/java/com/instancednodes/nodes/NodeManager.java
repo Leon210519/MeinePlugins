@@ -53,6 +53,19 @@ public class NodeManager implements Listener {
         String nb = b.name().replace("DEEPSLATE_", "");
         return na.equals(nb);
     }
+  
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void uncancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        boolean isMine = Cfg.MINE.contains(loc);
+        boolean isFarm = !isMine && Cfg.FARM.contains(loc);
+        if (!isMine && !isFarm) return;
+        e.setCancelled(false);
+    }
+
 
     // FARM: handle left-click harvest even if other plugins cancel the event
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
