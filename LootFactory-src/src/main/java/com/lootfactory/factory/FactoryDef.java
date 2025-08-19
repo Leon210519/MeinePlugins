@@ -11,7 +11,7 @@ public class FactoryDef {
     public final Material material;
     public final double baseAmount;
     public final double baseIntervalSec;
-    public final FactoryRarity rarity;       // COMMON / UNCOMMON / RARE / EPIC / LEGENDARY
+    public final FactoryRarity rarity;       // COMMON / UNCOMMON / RARE / EPIC / LEGENDARY / INSANE
     public final double yieldBonusPct;       // e.g. 20.0 for +20% yield
     public final double speedBonusPct;       // e.g. 15.0 for +15% speed
 

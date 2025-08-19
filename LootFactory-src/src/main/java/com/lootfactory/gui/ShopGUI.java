@@ -31,7 +31,7 @@ public class ShopGUI {
     m1.setDisplayName(Msg.color("&aBuy Random Factory"));
     List<String> lore1 = new ArrayList<>();
     lore1.add(Msg.color("&7Price: &e" + cur + String.format("%.2f", price)));
-    lore1.add(Msg.color("&8Legendary factories are very rare!"));
+    lore1.add(Msg.color("&8Legendary factories are very rare! &dInsane &8factories are extremely rare!"));
     m1.setLore(lore1);
     buy1.setItemMeta(m1);
     inv.setItem(13, buy1);
