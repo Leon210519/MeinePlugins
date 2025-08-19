@@ -7,6 +7,10 @@ import com.instancednodes.nodes.NodeManager;
 import com.instancednodes.util.Cfg;
 import com.instancednodes.util.Log;
 import com.instancednodes.util.Msg;
+import com.instancednodes.integration.RegionService;
+import com.instancednodes.integration.SpecialItemsApi;
+import com.instancednodes.integration.HarvestService;
+import com.instancednodes.integration.SpecialItemsIntegrationListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Random;
@@ -30,6 +34,15 @@ public class InstancedNodesPlugin extends JavaPlugin {
         this.dataManager = new DataManager(this);
         this.levelManager = new LevelManager(this);
         getServer().getPluginManager().registerEvents(new NodeManager(this), this);
+        if (Cfg.INTEGRATE_SPECIALITEMS) {
+            RegionService regionService = getServer().getServicesManager().load(RegionService.class);
+            SpecialItemsApi specialApi = getServer().getServicesManager().load(SpecialItemsApi.class);
+            HarvestService harvestService = getServer().getServicesManager().load(HarvestService.class);
+            if (regionService != null && specialApi != null && harvestService != null) {
+                getServer().getPluginManager().registerEvents(
+                        new SpecialItemsIntegrationListener(regionService, specialApi, harvestService), this);
+            }
+        }
         if (getCommand("nodes") != null) getCommand("nodes").setExecutor(new NodesCommand(this));
         if (getCommand("prestige") != null) getCommand("prestige").setExecutor(new PrestigeCommand(this));
         getLogger().info("InstancedNodes enabled v" + getDescription().getVersion());

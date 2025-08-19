@@ -25,6 +25,12 @@ public class Cfg {
     public static boolean REQUIRE_PERMS;
     public static boolean OVERRIDE_CANCELLED;
 
+    public static boolean INTEGRATE_SPECIALITEMS;
+    public static boolean DISABLE_REPLANT_IN_FARM;
+    public static boolean DIRECT_TO_INVENTORY;
+    public static int HARVESTER_MAX_BLOCKS;
+    public static int HARVESTER_MAX_RADIUS;
+
     public static String[] VEIN_LORE;
     public static int VEIN_MAX_BLOCKS;
 
@@ -35,6 +41,12 @@ public class Cfg {
         RESPAWN_SECONDS = plugin.getConfig().getInt("respawn_seconds", 30);
         TARGET_HARVESTS = plugin.getConfig().getLong("target_harvests", 3000000L);
         EXPONENT = plugin.getConfig().getDouble("exponent", 1.6);
+
+        INTEGRATE_SPECIALITEMS = plugin.getConfig().getBoolean("farmxmine.integrate_specialitems", true);
+        DISABLE_REPLANT_IN_FARM = plugin.getConfig().getBoolean("farmxmine.disable_replant_in_farm", true);
+        DIRECT_TO_INVENTORY = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
+        HARVESTER_MAX_BLOCKS = plugin.getConfig().getInt("harvester.max_blocks", 32);
+        HARVESTER_MAX_RADIUS = plugin.getConfig().getInt("harvester.max_radius", 5);
 
         PLAY_SOUNDS = plugin.getConfig().getBoolean("options.play_sounds", false);
         REQUIRE_PERMS = plugin.getConfig().getBoolean("options.require_permissions", false);

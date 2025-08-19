@@ -5,6 +5,15 @@ respawn_seconds: 30
 target_harvests: 3000000
 exponent: 1.6
 
+farmxmine:
+  integrate_specialitems: true
+  disable_replant_in_farm: true
+  direct_to_inventory: true
+
+harvester:
+  max_blocks: 32
+  max_radius: 5
+
 options:
   play_sounds: false               # no sounds when harvesting (per request)
   require_permissions: false       # if true, players need instancednodes.mine/farm
