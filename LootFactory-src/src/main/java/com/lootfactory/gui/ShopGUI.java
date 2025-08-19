@@ -46,6 +46,13 @@ public class ShopGUI {
     m10.setLore(lore10);
     buy10.setItemMeta(m10);
     inv.setItem(15, buy10);
+
+    // Back (slot 26)
+    ItemStack back = new ItemStack(Material.ARROW);
+    ItemMeta bm = back.getItemMeta();
+    bm.setDisplayName(Msg.color("&cBack"));
+    back.setItemMeta(bm);
+    inv.setItem(26, back);
   }
 }
 
@@ -97,6 +104,11 @@ class ShopView implements InventoryHolder {
       }
       p.sendMessage(Msg.prefix() + Msg.color("&aYou bought &e10 &afactories for &e" + cur + String.format("%.2f", total) + "&a."));
       return; // keep GUI open
+    }
+
+    // Back button
+    if(e.getSlot() == 26){
+      FactoriesGUI.open(p, manager);
     }
   }
 
