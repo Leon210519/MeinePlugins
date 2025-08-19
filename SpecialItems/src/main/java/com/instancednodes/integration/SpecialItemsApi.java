@@ -37,4 +37,3 @@ public interface SpecialItemsApi {
      */
     void grantHarvestXp(Player player, ItemStack item, RegionType regionType, int amount);
 }
-

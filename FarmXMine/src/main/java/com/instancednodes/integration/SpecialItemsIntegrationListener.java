@@ -37,6 +37,7 @@ public class SpecialItemsIntegrationListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBlockBreak(BlockBreakEvent e) {
+        if (e.isCancelled()) return;
         Block block = e.getBlock();
         Player player = e.getPlayer();
 
@@ -54,9 +55,23 @@ public class SpecialItemsIntegrationListener implements Listener {
             return;
         }
 
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        String toolName = hand.getType().name();
+        boolean isHoe = toolName.endsWith("_HOE");
+        boolean isPickaxe = toolName.endsWith("_PICKAXE");
+
+        if (rt == RegionType.FARM) {
+            if (!isHoe || !harvestService.isMatureCrop(block)) {
+                return;
+            }
+        } else if (rt == RegionType.MINE) {
+            if (!isPickaxe) {
+                return;
+            }
+        }
+
         e.setDropItems(false);
 
-        ItemStack hand = player.getInventory().getItemInMainHand();
         boolean special = specialApi.isSpecialItem(hand);
         Set<SpecialItemsApi.Effect> effects = special
                 ? new HashSet<>(specialApi.getEffects(hand))
@@ -67,26 +82,30 @@ public class SpecialItemsIntegrationListener implements Listener {
             effects.remove(SpecialItemsApi.Effect.REPLANT);
         }
 
+        int blocksProcessed = 0;
         if (special && effects.contains(SpecialItemsApi.Effect.HARVESTER)) {
             List<Block> targets = harvestService.findAoeTargets(block, rt, Cfg.HARVESTER_MAX_BLOCKS, Cfg.HARVESTER_MAX_RADIUS);
             for (Block t : targets) {
+                if (!regionService.isWhitelisted(rt, t.getType())) continue;
                 if (rt == RegionType.FARM && !harvestService.isMatureCrop(t)) continue;
                 HarvestService.HarvestResult r = harvestService.harvestSingle(player, t, rt, yieldMul);
+                if (rt == RegionType.FARM) filterFarmDrops(t.getType(), r.drops);
                 giveDirectToInventory(player, r.drops);
                 addXp(player, r.xp);
+                blocksProcessed++;
             }
-            e.setCancelled(true);
-            return;
+        } else {
+            HarvestService.HarvestResult r = harvestService.harvestSingle(player, block, rt, yieldMul);
+            if (rt == RegionType.FARM) filterFarmDrops(block.getType(), r.drops);
+            giveDirectToInventory(player, r.drops);
+            addXp(player, r.xp);
+            blocksProcessed = 1;
         }
 
-        if (rt == RegionType.FARM && !harvestService.isMatureCrop(block)) {
-            e.setCancelled(true);
-            return;
+        if (blocksProcessed > 0) {
+            int xp = (rt == RegionType.FARM ? Cfg.XP_FARM : Cfg.XP_MINE) * blocksProcessed;
+            specialApi.grantHarvestXp(player, hand, rt, xp);
         }
-
-        HarvestService.HarvestResult r = harvestService.harvestSingle(player, block, rt, yieldMul);
-        giveDirectToInventory(player, r.drops);
-        addXp(player, r.xp);
         e.setCancelled(true);
     }
 
@@ -110,6 +129,18 @@ public class SpecialItemsIntegrationListener implements Listener {
 
     private void addXp(Player player, int xp) {
         player.giveExp(xp);
+    }
+
+    private void filterFarmDrops(org.bukkit.Material blockType, List<ItemStack> drops) {
+        org.bukkit.Material main = switch (blockType) {
+            case WHEAT -> org.bukkit.Material.WHEAT;
+            case BEETROOTS -> org.bukkit.Material.BEETROOT;
+            case CARROTS -> org.bukkit.Material.CARROT;
+            case POTATOES -> org.bukkit.Material.POTATO;
+            default -> null;
+        };
+        if (main == null) return;
+        drops.removeIf(it -> it.getType() != main);
     }
 }
 

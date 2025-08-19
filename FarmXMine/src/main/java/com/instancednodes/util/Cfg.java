@@ -32,6 +32,9 @@ public class Cfg {
     public static int HARVESTER_MAX_BLOCKS;
     public static int HARVESTER_MAX_RADIUS;
 
+    public static int XP_MINE;
+    public static int XP_FARM;
+
     public static String[] VEIN_LORE;
     public static int VEIN_MAX_BLOCKS;
 
@@ -49,6 +52,9 @@ public class Cfg {
           VOID_OVERFLOW = plugin.getConfig().getBoolean("inventory.void_overflow", true);
         HARVESTER_MAX_BLOCKS = plugin.getConfig().getInt("harvester.max_blocks", 32);
         HARVESTER_MAX_RADIUS = plugin.getConfig().getInt("harvester.max_radius", 5);
+
+        XP_MINE = plugin.getConfig().getInt("leveling.xp_per_harvest.mine", 3);
+        XP_FARM = plugin.getConfig().getInt("leveling.xp_per_harvest.farm", 1);
 
         PLAY_SOUNDS = plugin.getConfig().getBoolean("options.play_sounds", false);
         REQUIRE_PERMS = plugin.getConfig().getBoolean("options.require_permissions", false);
