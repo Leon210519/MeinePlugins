@@ -53,8 +53,7 @@ public class NodeManager implements Listener {
         String nb = b.name().replace("DEEPSLATE_", "");
         return na.equals(nb);
     }
-
-    // Allow other plugins like SpecialItems to see interactions in protected regions
+  
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void uncancelInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
@@ -67,14 +66,6 @@ public class NodeManager implements Listener {
         e.setCancelled(false);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
-    public void uncancelBreak(BlockBreakEvent e) {
-        Block b = e.getBlock();
-        Location loc = b.getLocation();
-        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
-            e.setCancelled(false);
-        }
-    }
 
     // FARM: handle left-click harvest even if other plugins cancel the event
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)

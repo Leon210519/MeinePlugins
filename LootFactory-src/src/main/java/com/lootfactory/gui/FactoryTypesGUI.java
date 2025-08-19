@@ -41,13 +41,16 @@ public class FactoryTypesGUI {
             grouped.computeIfAbsent(def.rarity, r -> new ArrayList<>()).add(def);
         }
 
-        for (FactoryRarity r : FactoryRarity.values()) {
+        FactoryRarity[] order = FactoryRarity.values();
+        for (int idx = 0; idx < order.length; idx++) {
+            FactoryRarity r = order[idx];
             List<FactoryDef> list = grouped.getOrDefault(r, Collections.emptyList());
             list.sort(Comparator.comparing(d -> d.display != null ? d.display : d.id, String.CASE_INSENSITIVE_ORDER));
 
-            int start = r.ordinal() * 9 + (9 - list.size()) / 2;
+            int row = order.length - 1 - idx;
+            int start = row * 9 + (9 - list.size()) / 2;
             for (FactoryDef def : list) {
-                if (start >= (r.ordinal() + 1) * 9) break;
+                if (start >= (row + 1) * 9) break;
                 ItemStack it = manager.createFactoryItem(def.id, 1, 0d, 0);
                 ItemMeta meta = it.getItemMeta();
                 if (meta != null && meta.hasLore()) {
