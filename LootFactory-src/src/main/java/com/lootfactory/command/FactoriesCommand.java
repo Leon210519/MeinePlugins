@@ -2,9 +2,8 @@ package com.lootfactory.command;
 
 import com.lootfactory.factory.FactoryDef;
 import com.lootfactory.factory.FactoryManager;
-import com.lootfactory.gui.FactoryTypesGUI;
+import com.lootfactory.gui.FactoriesGUI;
 import com.lootfactory.util.Msg;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -30,7 +29,7 @@ public class FactoriesCommand implements CommandExecutor {
                 p.sendMessage(Msg.prefix() + Msg.color("&cNo permission."));
                 return true;
             }
-            FactoryTypesGUI.open(p, manager);
+            FactoriesGUI.open(p, manager);
             return true;
         }
 

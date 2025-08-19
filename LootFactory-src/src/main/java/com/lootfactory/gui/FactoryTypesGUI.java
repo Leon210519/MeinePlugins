@@ -51,7 +51,10 @@ public class FactoryTypesGUI {
         @Override public Inventory getInventory(){ return Bukkit.createInventory(this, 54); }
         public void onClick(InventoryClickEvent e){
             if (e.getView().getTopInventory().equals(e.getClickedInventory())
-                    || e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                    || e.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY
+                    || e.getAction() == InventoryAction.HOTBAR_SWAP
+                    || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
+                    || e.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
                 e.setCancelled(true);
             }
         }

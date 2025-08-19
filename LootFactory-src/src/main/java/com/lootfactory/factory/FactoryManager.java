@@ -195,6 +195,10 @@ public class FactoryManager {
     public int countPlaced(UUID player) { return (int) byOwner.getOrDefault(player, Collections.emptySet()).stream().filter(fi -> fi.location != null).count(); }
     public boolean canPlace(UUID player) { return countPlaced(player) < calcMaxSlots(player); }
 
+    public Collection<FactoryInstance> getFactories(UUID owner) {
+        return Collections.unmodifiableCollection(byOwner.getOrDefault(owner, Collections.emptySet()));
+    }
+
     /* ====== Item creation / reading ====== */
 
     public ItemStack createFactoryItem(String typeId, int level, double xpSeconds, int prestige) {
