@@ -30,7 +30,7 @@ factories:
   REDSTONE_REACTOR:     { display: "Redstone Reactor",     material: "REDSTONE_LAMP",   base_amount: 8.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 3,  speed_bonus_pct: 6  }
   WHEAT_WINNOWER:       { display: "Wheat Winnower",       material: "LOOM",            base_amount: 8.0,  base_interval_seconds: 10.0, rarity: "COMMON",    yield_bonus_pct: 6,  speed_bonus_pct: 2  }
 
-  # ---------- UNCOMMON (8) ----------
+  # ---------- UNCOMMON (9) ----------
   GOLD_FORGE:           { display: "Gold Forge",           material: "SMOKER",          base_amount: 10.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 10, speed_bonus_pct: 0  }
   EMERALD_REFINERY:     { display: "Emerald Refinery",     material: "GRINDSTONE",      base_amount: 12.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 12, speed_bonus_pct: 0  }
   BLAZE_SMELTER:        { display: "Blaze Smelter",        material: "FURNACE",         base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 0,  speed_bonus_pct: 12 }
@@ -39,19 +39,23 @@ factories:
   AMETHYST_ASSEMBLER:   { display: "Amethyst Assembler",   material: "SMITHING_TABLE",  base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 12, speed_bonus_pct: 6  }
   SLIME_STABILIZER:     { display: "Slime Stabilizer",     material: "BREWING_STAND",   base_amount: 11.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 14, speed_bonus_pct: 5  }
   HONEY_HARVESTER:      { display: "Honey Harvester",      material: "CARTOGRAPHY_TABLE", base_amount: 13.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 10, speed_bonus_pct: 10 }
+  CORAL_CRUSHER:        { display: "Coral Crusher",        material: "STONECUTTER",     base_amount: 12.0, base_interval_seconds: 10.0, rarity: "UNCOMMON",  yield_bonus_pct: 11, speed_bonus_pct: 7  }
 
-  # ---------- RARE (5) ----------
+  # ---------- RARE (7) ----------
   OBSIDIAN_PRESS:       { display: "Obsidian Press",       material: "ANVIL",           base_amount: 15.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 12, speed_bonus_pct: 10 }
   ENDER_INFUSER:        { display: "Ender Infuser",        material: "ENCHANTING_TABLE",base_amount: 16.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 12, speed_bonus_pct: 15 }
   SHULKER_PRESS:        { display: "Shulker Press",        material: "ANVIL",           base_amount: 17.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 14, speed_bonus_pct: 12 }
   CHORUS_CULTIVATOR:    { display: "Chorus Cultivator",    material: "FLETCHING_TABLE", base_amount: 17.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 16, speed_bonus_pct: 10 }
   CRYO_QUARTZ_KILN:     { display: "Cryo Quartz Kiln",     material: "BLAST_FURNACE",   base_amount: 18.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 16, speed_bonus_pct: 14 }
+  WITHER_WORKSHOP:      { display: "Wither Workshop",      material: "SMITHING_TABLE",  base_amount: 18.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 16, speed_bonus_pct: 14 }
+  PHANTOM_DISTILLERY:   { display: "Phantom Distillery",   material: "BREWING_STAND",    base_amount: 17.0, base_interval_seconds: 10.0, rarity: "RARE",      yield_bonus_pct: 15, speed_bonus_pct: 13 }
 
-  # ---------- EPIC (4) ----------
+  # ---------- EPIC (5) ----------
   DIAMOND_PROCESSOR:    { display: "Diamond Processor",    material: "SMITHING_TABLE",  base_amount: 20.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 18, speed_bonus_pct: 15 }
   NETHER_STAR_FORGE:    { display: "Nether Star Forge",    material: "BEACON",          base_amount: 22.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 18, speed_bonus_pct: 18 }
   DRAGON_GLASS_FORGE:   { display: "Dragon Glass Forge",   material: "BLAST_FURNACE",   base_amount: 23.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 20, speed_bonus_pct: 18 }
   CELESTIAL_FOUNDRY:    { display: "Celestial Foundry",    material: "LODESTONE",       base_amount: 24.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 20, speed_bonus_pct: 22 }
+  ECHO_EXTRACTOR:       { display: "Echo Extractor",       material: "SCULK_CATALYST",  base_amount: 21.0, base_interval_seconds: 10.0, rarity: "EPIC",      yield_bonus_pct: 19, speed_bonus_pct: 17 }
 
   # ---------- LEGENDARY (3) ----------
   STARDUST_SYNTHESIZER: { display: "Stardust Synthesizer", material: "RESPAWN_ANCHOR",  base_amount: 25.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 22, speed_bonus_pct: 24 }
