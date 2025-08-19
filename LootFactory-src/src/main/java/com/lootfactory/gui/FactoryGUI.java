@@ -184,6 +184,12 @@ public class FactoryGUI {
         pickMeta.setLore(pl);
         pick.setItemMeta(pickMeta);
         inv.setItem(pickupSlot, pick);
+
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta backMeta = back.getItemMeta();
+        backMeta.setDisplayName(Msg.color("&cBack"));
+        back.setItemMeta(backMeta);
+        inv.setItem(8, back);
     }
 
     public static double calcInstantCostLevels(FactoryManager manager, FactoryInstance fi, int levels) {
@@ -316,6 +322,11 @@ class FactoryView implements InventoryHolder {
         e.setCancelled(true);
         if (!(e.getWhoClicked() instanceof Player)) return;
         Player p = (Player) e.getWhoClicked();
+
+        if (e.getSlot() == 8) {
+            FactoriesGUI.open(p, manager);
+            return;
+        }
 
         // +25 (slot 17)
         if (e.getSlot() == 17) {

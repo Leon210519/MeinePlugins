@@ -3,8 +3,10 @@ package com.lootfactory.gui;
 import com.lootfactory.factory.FactoryDef;
 import com.lootfactory.factory.FactoryManager;
 import com.lootfactory.factory.FactoryRarity;
+import com.lootfactory.util.Msg;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -62,6 +64,12 @@ public class FactoryTypesGUI {
                 inv.setItem(start++, it);
             }
         }
+
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta bm = back.getItemMeta();
+        bm.setDisplayName(Msg.color("&cBack"));
+        back.setItemMeta(bm);
+        inv.setItem(8, back);
     }
 
     /** InventoryHolder for the types view (read-only). */
@@ -76,6 +84,9 @@ public class FactoryTypesGUI {
                     || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
                     || e.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
                 e.setCancelled(true);
+                if(e.getWhoClicked() instanceof Player && e.getRawSlot() == 8){
+                    FactoriesGUI.open((Player)e.getWhoClicked(), manager);
+                }
             }
         }
         public void onClose(InventoryCloseEvent e){
