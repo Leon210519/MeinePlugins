@@ -36,6 +36,7 @@ public class FactoryGUI {
             else if ("RARE".equals(rn))     rarityCode = "&9";
             else if ("EPIC".equals(rn))     rarityCode = "&5";
             else if ("LEGENDARY".equals(rn))rarityCode = "&6";
+            else if ("INSANE".equals(rn))   rarityCode = "&d";
             else                             rarityCode = "&7"; // COMMON or fallback
         }
         String title = Msg.color(rarityCode + PrestigeStars.withStarsLegacy(baseTitle, prestige));
