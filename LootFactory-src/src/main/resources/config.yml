@@ -65,6 +65,7 @@ factories:
   # ---------- INSANE (1) ----------
   INFINITY_CRYSTALIZER: { display: "Infinity Crystalizer", material: "SCULK",          base_amount: 40.0, base_interval_seconds: 10.0, rarity: "INSANE", yield_bonus_pct: 35, speed_bonus_pct: 35 }
 
+
 prestige:
   perFactory:
     requirementLevel: 100
