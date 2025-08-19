@@ -15,7 +15,7 @@ pickup_button_slot: 15
 shop:
   enabled: true
   price: 10000.0
-  weights: { COMMON: 0.55, UNCOMMON: 0.26, RARE: 0.13, EPIC: 0.05, LEGENDARY: 0.01 }
+  weights: { COMMON: 0.55, UNCOMMON: 0.26, RARE: 0.13, EPIC: 0.05, LEGENDARY: 0.009, INSANE: 0.001 }
 
 factories:
   # ---------- COMMON (10) ----------
@@ -61,6 +61,9 @@ factories:
   STARDUST_SYNTHESIZER: { display: "Stardust Synthesizer", material: "RESPAWN_ANCHOR",  base_amount: 25.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 22, speed_bonus_pct: 24 }
   ANCIENT_DEBRIS_REFINER: { display: "Ancient Debris Refiner", material: "NETHERITE_BLOCK", base_amount: 28.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 24, speed_bonus_pct: 24 }
   VOID_MATRIX:          { display: "Void Matrix",          material: "END_PORTAL_FRAME",     base_amount: 30.0, base_interval_seconds: 10.0, rarity: "LEGENDARY", yield_bonus_pct: 26, speed_bonus_pct: 28 }
+
+  # ---------- INSANE (1) ----------
+  INFINITY_CRYSTALIZER: { display: "Infinity Crystalizer", material: "END_CRYSTAL",     base_amount: 40.0, base_interval_seconds: 10.0, rarity: "INSANE", yield_bonus_pct: 35, speed_bonus_pct: 35 }
 
 prestige:
   perFactory:
