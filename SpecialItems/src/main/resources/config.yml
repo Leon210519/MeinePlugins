@@ -39,11 +39,15 @@ effects:
   xp_boost: { enabled: true, multiplier-per-level: 0.25 }
 
 specialitems:
-  harvester_scale: 0.25
-  vein_scale: 0.20
+  harvester_scale: 0.35
+  vein_scale: 0.30
+  scaling_mode: "exp"
   min_total_floor: true
   fortune_interaction: "ignore"
   yield_bonus_attr_key: "si.yield_bonus"
 
 farmxmine:
   direct_to_inventory: true
+
+inventory:
+  void_overflow: true

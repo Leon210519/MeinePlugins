@@ -10,6 +10,9 @@ farmxmine:
   disable_replant_in_farm: true
   direct_to_inventory: true
 
+inventory:
+  void_overflow: true
+
 harvester:
   max_blocks: 32
   max_radius: 5
