@@ -3,8 +3,10 @@ package com.lootfactory.gui;
 import com.lootfactory.factory.FactoryDef;
 import com.lootfactory.factory.FactoryManager;
 import com.lootfactory.factory.FactoryRarity;
+import com.lootfactory.util.Msg;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -41,13 +43,16 @@ public class FactoryTypesGUI {
             grouped.computeIfAbsent(def.rarity, r -> new ArrayList<>()).add(def);
         }
 
-        for (FactoryRarity r : FactoryRarity.values()) {
+        FactoryRarity[] order = FactoryRarity.values();
+        for (int idx = 0; idx < order.length; idx++) {
+            FactoryRarity r = order[idx];
             List<FactoryDef> list = grouped.getOrDefault(r, Collections.emptyList());
             list.sort(Comparator.comparing(d -> d.display != null ? d.display : d.id, String.CASE_INSENSITIVE_ORDER));
 
-            int start = r.ordinal() * 9 + (9 - list.size()) / 2;
+            int row = order.length - 1 - idx;
+            int start = row * 9 + (9 - list.size()) / 2;
             for (FactoryDef def : list) {
-                if (start >= (r.ordinal() + 1) * 9) break;
+                if (start >= (row + 1) * 9) break;
                 ItemStack it = manager.createFactoryItem(def.id, 1, 0d, 0);
                 ItemMeta meta = it.getItemMeta();
                 if (meta != null && meta.hasLore()) {
@@ -59,6 +64,12 @@ public class FactoryTypesGUI {
                 inv.setItem(start++, it);
             }
         }
+
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta bm = back.getItemMeta();
+        bm.setDisplayName(Msg.color("&cBack"));
+        back.setItemMeta(bm);
+        inv.setItem(8, back);
     }
 
     /** InventoryHolder for the types view (read-only). */
@@ -73,6 +84,9 @@ public class FactoryTypesGUI {
                     || e.getAction() == InventoryAction.HOTBAR_MOVE_AND_READD
                     || e.getAction() == InventoryAction.COLLECT_TO_CURSOR) {
                 e.setCancelled(true);
+                if(e.getWhoClicked() instanceof Player && e.getRawSlot() == 8){
+                    FactoriesGUI.open((Player)e.getWhoClicked(), manager);
+                }
             }
         }
         public void onClose(InventoryCloseEvent e){
