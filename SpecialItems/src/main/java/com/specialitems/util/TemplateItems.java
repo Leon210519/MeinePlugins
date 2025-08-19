@@ -23,9 +23,11 @@ public final class TemplateItems {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         var sec = Configs.templates.getConfigurationSection("templates");
         if (sec == null) return list;
-        for (String id : sec.getKeys(false)) {
-            ItemStack it = buildFrom(id, sec.getConfigurationSection(id));
-            if (it != null) list.add(new TemplateItem(id, it));
+        for (String key : sec.getKeys(false)) {
+            ConfigurationSection tsec = sec.getConfigurationSection(key);
+            String tid = (tsec == null ? key : tsec.getString("id", key));
+            ItemStack it = buildFrom(tid, tsec);
+            if (it != null) list.add(new TemplateItem(tid, it));
         }
         return list;
     }
