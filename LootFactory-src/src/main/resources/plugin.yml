@@ -10,7 +10,7 @@ commands:
     description: Prestige a factory
     permission: lootfactory.prestige
   factory:
-    permission: lootfactory.admin
+    description: Factory utilities
   factoryshop:
     permission: lootfactory.shop
   factories:
