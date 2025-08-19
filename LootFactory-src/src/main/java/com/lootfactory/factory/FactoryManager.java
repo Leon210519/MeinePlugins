@@ -320,8 +320,9 @@ public class FactoryManager {
             case COMMON: return "&7";
             case UNCOMMON: return "&a";
             case RARE: return "&9";
-            case EPIC: return "&d";
+            case EPIC: return "&5";
             case LEGENDARY: return "&6";
+            case INSANE: return "&d";
             default: return "&f";
         }
     }
