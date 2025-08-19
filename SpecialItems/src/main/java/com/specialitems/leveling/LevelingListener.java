@@ -10,6 +10,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -63,6 +65,23 @@ public final class LevelingListener implements Listener {
             }
             default -> {}
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInteract(PlayerInteractEvent e) {
+        if (!e.isCancelled()) return;
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Player p = e.getPlayer();
+        ItemStack held = hand(p);
+        if (!svc.isSpecialItem(held)) return;
+        var clazz = svc.detectToolClass(held);
+        if (clazz != ToolClass.HOE) return;
+        Material m = b.getType();
+        if (!HarvestUtil.isCrop(m) || !HarvestUtil.isMatureCrop(b)) return;
+        var ups = svc.grantXp(held, svc.xpHoeHarvest, clazz);
+        sendMsgs(p, held, ups);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
