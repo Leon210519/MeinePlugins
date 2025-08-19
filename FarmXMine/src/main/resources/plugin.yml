@@ -1,4 +1,4 @@
-name: InstancedNodes
+name: FarmxMine
 main: com.instancednodes.InstancedNodesPlugin
 version: 0.4.6
 api-version: '1.21'
