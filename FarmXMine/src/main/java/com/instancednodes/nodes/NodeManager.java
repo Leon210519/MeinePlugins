@@ -54,8 +54,30 @@ public class NodeManager implements Listener {
         return na.equals(nb);
     }
 
-    // FARM: handle left-click harvest
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // Allow other plugins like SpecialItems to see interactions in protected regions
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void uncancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        boolean isMine = Cfg.MINE.contains(loc);
+        boolean isFarm = !isMine && Cfg.FARM.contains(loc);
+        if (!isMine && !isFarm) return;
+        e.setCancelled(false);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void uncancelBreak(BlockBreakEvent e) {
+        Block b = e.getBlock();
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(false);
+        }
+    }
+
+    // FARM: handle left-click harvest even if other plugins cancel the event
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onLeftClick(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
         Block b = e.getClickedBlock();
@@ -72,8 +94,8 @@ public class NodeManager implements Listener {
         }
     }
 
-    // MINE: process even if cancelled by other plugins (WG)
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // MINE: process even if cancelled by other plugins (e.g. WorldGuard)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent e) {
         Block b = e.getBlock();
         Location loc = b.getLocation();
