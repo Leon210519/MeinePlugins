@@ -91,13 +91,8 @@ public final class LevelingService {
         String keyName = com.specialitems.util.Configs.cfg.getString("specialitems.yield_bonus_attr_key", "si.yield_bonus");
         NamespacedKey key = new NamespacedKey(plugin, keyName);
         meta.getPersistentDataContainer().set(key, PersistentDataType.DOUBLE, pct);
-
-        List<String> lore = meta.getLore();
-        if (lore == null) lore = new ArrayList<>();
-        com.specialitems.util.ItemUtil.removeLoreLinePrefix(lore, ChatColor.GRAY + "Yield Bonus:");
-        lore.add(ChatColor.GRAY + "Yield Bonus: +" + pct + "%");
-        meta.setLore(lore);
         it.setItemMeta(meta);
+        updateToolLore(it);
     }
 
     public void ensureInit(ItemStack it) {
@@ -108,6 +103,7 @@ public final class LevelingService {
         if (!pdc.has(keys.LEVEL, PersistentDataType.INTEGER)) pdc.set(keys.LEVEL, PersistentDataType.INTEGER, 1);
         if (!pdc.has(keys.XP, PersistentDataType.DOUBLE)) pdc.set(keys.XP, PersistentDataType.DOUBLE, 0.0);
         it.setItemMeta(meta);
+        updateToolLore(it);
     }
 
     private double applyRarityXpMult(ItemStack it, double base) {
@@ -164,6 +160,20 @@ public final class LevelingService {
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.DOUBLE, Math.max(0.0, xp));
         it.setItemMeta(meta);
+        updateToolLore(it);
         return ups;
+    }
+
+    public void updateToolLore(ItemStack it) {
+        if (it == null) return;
+        ItemMeta meta = it.getItemMeta();
+        if (meta == null) return;
+        double pct = getBonusYieldPct(it);
+        List<String> lore = meta.getLore();
+        if (lore == null) lore = new ArrayList<>();
+        com.specialitems.util.ItemUtil.removeLoreLinePrefix(lore, ChatColor.GREEN + "Yield Bonus:");
+        lore.add(ChatColor.GREEN + "Yield Bonus: +" + String.format("%.0f", pct) + "%");
+        meta.setLore(lore);
+        it.setItemMeta(meta);
     }
 }
