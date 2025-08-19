@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
@@ -64,6 +65,19 @@ public class NodeManager implements Listener {
         boolean isFarm = !isMine && Cfg.FARM.contains(loc);
         if (!isMine && !isFarm) return;
         e.setCancelled(false);
+    }
+
+
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void preCancelInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
     }
 
 
@@ -141,6 +155,49 @@ public class NodeManager implements Listener {
         return processMineFinal(p, b);
     }
 
+    @SuppressWarnings("unchecked")
+    private void triggerSpecialEffects(Player player, Block block) {
+        Plugin spec = Bukkit.getPluginManager().getPlugin("SpecialItems");
+        if (spec == null) return;
+        ItemStack tool = player.getInventory().getItem(EquipmentSlot.HAND);
+        if (tool == null || tool.getType() == Material.AIR) return;
+        try {
+            java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+            ItemMeta meta = tool.getItemMeta();
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                if (pdc != null) for (NamespacedKey key : pdc.getKeys()) {
+                    String k = key.getKey();
+                    if (k != null && k.startsWith("ench_")) {
+                        ids.add(k.substring("ench_".length()));
+                    }
+                }
+            }
+
+            ClassLoader cl = spec.getClass().getClassLoader();
+            Class<?> effectsCls = Class.forName("com.specialitems.effects.Effects", true, cl);
+            ids.addAll((java.util.Set<String>) effectsCls.getMethod("ids").invoke(null));
+            Class<?> customCls = Class.forName("com.specialitems.effects.CustomEffect", true, cl);
+            Class<?> itemUtil = Class.forName("com.specialitems.util.ItemUtil", true, cl);
+            java.lang.reflect.Method get = effectsCls.getMethod("get", String.class);
+            java.lang.reflect.Method supports = customCls.getMethod("supports", Material.class);
+            java.lang.reflect.Method maxLevel = customCls.getMethod("maxLevel");
+            java.lang.reflect.Method levelOf = itemUtil.getMethod("getEffectLevel", ItemStack.class, String.class);
+            java.lang.reflect.Method onBreak = customCls.getMethod("onBlockBreak", Player.class, ItemStack.class, BlockBreakEvent.class, int.class);
+
+            for (String id : ids) {
+                Object eff = get.invoke(null, id);
+                if (eff == null) continue;
+                if (!(Boolean) supports.invoke(eff, tool.getType())) continue;
+                int lvl = (Integer) levelOf.invoke(null, tool, id);
+                if (lvl <= 0) continue;
+                int ml = (Integer) maxLevel.invoke(eff);
+                BlockBreakEvent fake = new BlockBreakEvent(block, player);
+                onBreak.invoke(eff, player, tool, fake, Math.min(lvl, ml));
+            }
+        } catch (Throwable ignored) {}
+    }
+
     private boolean processFarmHarvest(Player p, Block b) {
         Location loc = b.getLocation();
         if (!Cfg.FARM.contains(loc)) return false;
@@ -152,6 +209,8 @@ public class NodeManager implements Listener {
         if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
         if (!isSelectedCropBlock(b.getType(), selected)) return false;
         if (!isMatureCrop(b)) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+
+        triggerSpecialEffects(p, b);
 
         UUID uid = p.getUniqueId();
         BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());

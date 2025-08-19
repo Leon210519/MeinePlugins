@@ -39,7 +39,7 @@ public class BlockListener implements Listener {
         return ids;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent e) {
         Player p = e.getPlayer();
         if (p == null || p.getGameMode() == GameMode.CREATIVE) return;
