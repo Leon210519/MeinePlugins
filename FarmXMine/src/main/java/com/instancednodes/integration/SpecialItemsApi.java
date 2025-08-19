@@ -1,6 +1,5 @@
 package com.instancednodes.integration;
 
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Set;
@@ -31,10 +30,5 @@ public interface SpecialItemsApi {
      * Get the yield multiplier the item applies. Returns 1.0 if none.
      */
     double getYieldMultiplier(ItemStack item);
-
-    /**
-     * Grant leveling XP for the given tool and region type.
-     */
-    void grantHarvestXp(Player player, ItemStack item, RegionType regionType, int amount);
 }
 

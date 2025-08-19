@@ -12,10 +12,6 @@ import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.ServicePriority;
-
-import com.instancednodes.integration.SpecialItemsApi;
-import com.specialitems.integration.SpecialItemsBridge;
 
 // Leveling imports
 import com.specialitems.leveling.LevelingService;
@@ -81,7 +77,6 @@ public class SpecialItemsPlugin extends JavaPlugin {
         // --- Leveling system (NEW) ---
         this.leveling = new LevelingService(this);
         getServer().getPluginManager().registerEvents(new LevelingListener(leveling), this);
-        getServer().getServicesManager().register(SpecialItemsApi.class, new SpecialItemsBridge(leveling), this, ServicePriority.Normal);
 
         // Ticker (kept from your original)
         try {
