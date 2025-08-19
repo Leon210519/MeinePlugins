@@ -43,10 +43,14 @@ public class SpecialItemsIntegrationListener implements Listener {
         RegionType rt = regionService.getRegionType(block.getLocation());
         if (rt == RegionType.NONE) return;
 
-        if (!regionService.isWhitelisted(rt, block.getType())) {
-            e.setCancelled(true);
-            e.setDropItems(false);
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Hier nicht erlaubt"));
+        boolean bypass = player.hasPermission("farmxmine.bypass");
+        boolean whitelisted = regionService.isWhitelisted(rt, block.getType());
+        if (!whitelisted) {
+            if (!bypass) {
+                e.setCancelled(true);
+                e.setDropItems(false);
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent("Hier nicht erlaubt"));
+            }
             return;
         }
 
@@ -97,8 +101,10 @@ public class SpecialItemsIntegrationListener implements Listener {
         for (ItemStack it : drops) {
             leftover.putAll(player.getInventory().addItem(it));
         }
-        for (ItemStack it : leftover.values()) {
-            player.getWorld().dropItemNaturally(player.getLocation(), it);
+        if (!Cfg.VOID_OVERFLOW) {
+            for (ItemStack it : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), it);
+            }
         }
     }
 
