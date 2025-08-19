@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
@@ -20,10 +21,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
@@ -54,8 +57,29 @@ public class NodeManager implements Listener {
         return na.equals(nb);
     }
 
-    // FARM: handle left-click harvest
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // Cancel early so protection plugins like WorldGuard skip these events entirely
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void suppressInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+        Block b = e.getClickedBlock();
+        if (b == null) return;
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    public void preCancelBreak(BlockBreakEvent e) {
+        Block b = e.getBlock();
+        Location loc = b.getLocation();
+        if (Cfg.MINE.contains(loc) || Cfg.FARM.contains(loc)) {
+            e.setCancelled(true);
+        }
+    }
+
+    // FARM: handle left-click harvest even if other plugins cancel the event
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onLeftClick(PlayerInteractEvent e) {
         if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
         Block b = e.getClickedBlock();
@@ -72,8 +96,8 @@ public class NodeManager implements Listener {
         }
     }
 
-    // MINE: process even if cancelled by other plugins (WG)
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // MINE: process even if cancelled by other plugins (e.g. WorldGuard)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent e) {
         Block b = e.getBlock();
         Location loc = b.getLocation();
@@ -120,12 +144,73 @@ public class NodeManager implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onDrop(BlockDropItemEvent e) {
+        Block b = e.getBlock();
+        Location loc = b.getLocation();
+        boolean isMine = Cfg.MINE.contains(loc);
+        boolean isFarm = !isMine && Cfg.FARM.contains(loc);
+        if (!isMine && !isFarm) return;
+        Player p = e.getPlayer();
+        if (p == null) return;
+        e.setCancelled(true);
+        e.getItems().clear();
+        if (isMine) {
+            processMineFinal(p, b, e.getBlockState().getType());
+        } else {
+            processFarmHarvestState(p, b, e.getBlockState());
+        }
+    }
+
     // Public entry for other plugins
     public boolean processMineBlockExternal(Player p, Block b) {
         if (p == null || b == null) return false;
         if (!Cfg.MINE.contains(b.getLocation())) return false;
         if (!isOre(b.getType())) return false;
         return processMineFinal(p, b);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void triggerSpecialEffects(Player player, Block block) {
+        Plugin spec = Bukkit.getPluginManager().getPlugin("SpecialItems");
+        if (spec == null) return;
+        ItemStack tool = player.getInventory().getItem(EquipmentSlot.HAND);
+        if (tool == null || tool.getType() == Material.AIR) return;
+        try {
+            java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+            ItemMeta meta = tool.getItemMeta();
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                if (pdc != null) for (NamespacedKey key : pdc.getKeys()) {
+                    String k = key.getKey();
+                    if (k != null && k.startsWith("ench_")) {
+                        ids.add(k.substring("ench_".length()));
+                    }
+                }
+            }
+
+            ClassLoader cl = spec.getClass().getClassLoader();
+            Class<?> effectsCls = Class.forName("com.specialitems.effects.Effects", true, cl);
+            ids.addAll((java.util.Set<String>) effectsCls.getMethod("ids").invoke(null));
+            Class<?> customCls = Class.forName("com.specialitems.effects.CustomEffect", true, cl);
+            Class<?> itemUtil = Class.forName("com.specialitems.util.ItemUtil", true, cl);
+            java.lang.reflect.Method get = effectsCls.getMethod("get", String.class);
+            java.lang.reflect.Method supports = customCls.getMethod("supports", Material.class);
+            java.lang.reflect.Method maxLevel = customCls.getMethod("maxLevel");
+            java.lang.reflect.Method levelOf = itemUtil.getMethod("getEffectLevel", ItemStack.class, String.class);
+            java.lang.reflect.Method onBreak = customCls.getMethod("onBlockBreak", Player.class, ItemStack.class, BlockBreakEvent.class, int.class);
+
+            for (String id : ids) {
+                Object eff = get.invoke(null, id);
+                if (eff == null) continue;
+                if (!(Boolean) supports.invoke(eff, tool.getType())) continue;
+                int lvl = (Integer) levelOf.invoke(null, tool, id);
+                if (lvl <= 0) continue;
+                int ml = (Integer) maxLevel.invoke(eff);
+                BlockBreakEvent fake = new BlockBreakEvent(block, player);
+                onBreak.invoke(eff, player, tool, fake, Math.min(lvl, ml));
+            }
+        } catch (Throwable ignored) {}
     }
 
     private boolean processFarmHarvest(Player p, Block b) {
@@ -139,6 +224,8 @@ public class NodeManager implements Listener {
         if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
         if (!isSelectedCropBlock(b.getType(), selected)) return false;
         if (!isMatureCrop(b)) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+
+        triggerSpecialEffects(p, b);
 
         UUID uid = p.getUniqueId();
         BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
@@ -174,15 +261,71 @@ public class NodeManager implements Listener {
         return true;
     }
 
+    private boolean processFarmHarvestState(Player p, Block b, BlockState state) {
+        Location loc = b.getLocation();
+        if (!Cfg.FARM.contains(loc)) return false;
+        if (!hasTool(p, "HOE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "hoe")); return false; }
+
+        UUID uidSel = p.getUniqueId();
+        String selName = InstancedNodesPlugin.get().data().getSelection(uidSel, "crop", Cfg.FARM_defaultMat);
+        Material selected = Material.matchMaterial(selName);
+        if (selected == null || !Cfg.FARM_CROPS.contains(selected)) return false;
+        if (!isSelectedCropBlock(state.getType(), selected)) return false;
+        BlockData data = state.getBlockData();
+        if (data instanceof Ageable) {
+            Ageable ag = (Ageable) data;
+            if (ag.getAge() < ag.getMaximumAge()) { p.sendMessage(Msg.get("crop_not_mature")); return false; }
+        }
+
+        UUID uid = p.getUniqueId();
+        BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        Map<BlockVector, Long> map = cooldowns.computeIfAbsent(uid, k -> new HashMap<>());
+        long now = System.currentTimeMillis();
+        Long until = map.get(key);
+        if (until != null && until > now) {
+            if (Cfg.PLAY_SOUNDS) p.playSound(loc, Sound.BLOCK_NOTE_BLOCK_BASS, 0.5f, 0.8f);
+            return true;
+        }
+
+        long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, selected.name());
+        int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
+        yield = applyYieldBonuses(p, p.getInventory().getItem(EquipmentSlot.HAND), yield);
+
+        ItemStack drop = new ItemStack(materialToDrop(selected), yield);
+        Map<Integer, ItemStack> left = p.getInventory().addItem(drop);
+        if (!left.isEmpty()) for (ItemStack it : left.values()) p.getWorld().dropItemNaturally(p.getLocation(), it);
+
+        InstancedNodesPlugin.get().level().addXp(p, com.instancednodes.leveling.LevelManager.Kind.FARM);
+
+        BlockData grown = state.getBlockData();
+        Bukkit.getScheduler().runTask(InstancedNodesPlugin.get(), () -> b.setBlockData(grown, false));
+        p.sendBlockChange(loc, Bukkit.createBlockData(Material.AIR));
+        if (Cfg.PLAY_SOUNDS) p.playSound(loc, Sound.BLOCK_STONE_BREAK, 0.7f, 1.2f);
+        map.put(key, now + Cfg.RESPAWN_SECONDS * 1000L);
+
+        Bukkit.getScheduler().runTaskLater(InstancedNodesPlugin.get(), () -> {
+            if (p.isOnline()) {
+                p.sendBlockChange(loc, grown);
+            }
+        }, Cfg.RESPAWN_SECONDS * 20L);
+
+        Log.d("FARM harvest by " + p.getName() + " at " + Log.loc(loc) + " yield=" + yield + " sel=" + selected);
+        return true;
+    }
+
     private boolean processMineHarvest(Player p, BlockBreakEvent e) {
         Block b = e.getBlock();
         if (!Cfg.MINE.contains(b.getLocation())) return false;
         if (!hasTool(p, "PICKAXE")) { p.sendMessage(Msg.get("harvest_blocked_tool").replace("%tool%", "pickaxe")); return false; }
         if (!isOre(b.getType())) return false;
-        return processMineFinal(p, b);
+        return processMineFinal(p, b, b.getType());
     }
 
     private boolean processMineFinal(Player p, Block b) {
+        return processMineFinal(p, b, b.getType());
+    }
+
+    private boolean processMineFinal(Player p, Block b, Material oreType) {
         Location loc = b.getLocation();
         BlockVector key = new BlockVector(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         RespawnInfo existing = respawns.get(key);
@@ -193,7 +336,6 @@ public class NodeManager implements Listener {
         }
 
         UUID uid = p.getUniqueId();
-        Material oreType = b.getType();
 
         long harvests = InstancedNodesPlugin.get().data().incrementHarvest(uid, oreType.name());
         int yield = Mathf.yieldFor(harvests, Cfg.TARGET_HARVESTS, Cfg.EXPONENT);
