@@ -52,6 +52,13 @@ farmxmine:
 inventory:
   void_overflow: true
 
+compat:
+  veinminer:
+    detect_lore: ["Veinminer", "Vein Miner"]
+    max_blocks: 64
+  harvester:
+    max_blocks: 64
+
 # Leveling system defaults
 leveling:
   xp_per_action:
@@ -60,6 +67,7 @@ leveling:
     MELEE_HIT: 2
     RANGED_HIT: 2
     TAKEN_HIT: 1
+  per_action_xp_cap: 200
   yield:
     per_level_pct: 2.0
     max_pct: 200
@@ -76,21 +84,21 @@ leveling:
     level_max: 10
   regions:
     mine:
-      world: world
-      min: [-96, -65, -95]
-      max: [99, -2, 106]
+      world: "world"
+      min: { x: -96, y: -65, z: -95 }
+      max: { x: 99, y: -2, z: 106 }
     farm:
-      world: world
-      min: [85, -60, 48]
-      max: [275, -20, 252]
+      world: "world"
+      min: { x: 85, y: -60, z: 48 }
+      max: { x: 275, y: -20, z: 252 }
   display:
     unbreakable: true
     glint: true
     lore:
-      level: "Level: %LEVEL%"
-      xp: "XP: %XP%/%NEED%"
-      yield_mine: "Yield: +%YIELD%% (mine)"
-      yield_farm: "Yield: +%YIELD%% (farm)"
+      level: "&7Level: &e%LEVEL%"
+      xp: "&7XP: &b%XP%&7/&b%NEED%"
+      yield_mine: "&7Yield: &a+%YIELD%%% &8(mine)"
+      yield_farm: "&7Yield: &a+%YIELD%%% &8(farm)"
   messages:
     level_up: "%ITEM% leveled up to %LEVEL%"
     extra_enchant: "%ITEM% gained %ENCHANT% %LEVEL%"
