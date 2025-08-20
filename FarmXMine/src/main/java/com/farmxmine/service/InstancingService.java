@@ -11,7 +11,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -28,10 +27,7 @@ public class InstancingService implements Listener {
     private final int generalMax;
     private final boolean directToInv;
     private final boolean voidOverflow;
-    private final boolean overrideCancelled;
-    private final List<String> allowedWorlds;
-    private final String requiredPermission;
-    private final Plugin worldGuard;
+    // Fields related to bypassing protections have been removed
 
     public InstancingService(JavaPlugin plugin, LevelService level) {
         this.plugin = plugin;
@@ -43,57 +39,33 @@ public class InstancingService implements Listener {
         this.generalMax = plugin.getConfig().getInt("general.max-broken-blocks", 64);
         this.directToInv = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
         this.voidOverflow = plugin.getConfig().getBoolean("inventory.void_overflow", true);
-        this.overrideCancelled = plugin.getConfig().getBoolean("general.override_cancelled", true);
-        this.allowedWorlds = plugin.getConfig().getStringList("general.allowed_worlds");
-        this.requiredPermission = plugin.getConfig().getString("general.required_permission", "farmxmine.override.break");
-        this.worldGuard = Bukkit.getPluginManager().getPlugin("WorldGuard");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
-public void onBreak(BlockBreakEvent event) {
-    Player player = event.getPlayer();
-    Block block = event.getBlock();
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        Block block = event.getBlock();
 
-    String worldName = block.getWorld().getName();
-    if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
+        String worldName = block.getWorld().getName();
+        if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
-    Material type = block.getType();
-    boolean mining = isOre(type);
-    boolean farming = !mining && isMatureCrop(block);
-    if (!mining && !farming) return;
+        Material type = block.getType();
+        boolean mining = isOre(type);
+        boolean farming = !mining && isMatureCrop(block);
+        if (!mining && !farming) return;
 
-    ItemStack tool = player.getInventory().getItemInMainHand();
-    String toolName = tool.getType().name();
-    if (mining && !toolName.endsWith("_PICKAXE")) return;
-    if (farming && !toolName.endsWith("_HOE")) return;
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        String toolName = tool.getType().name();
+        if (mining && !toolName.endsWith("_PICKAXE")) return;
+        if (farming && !toolName.endsWith("_HOE")) return;
 
-    if (event.isCancelled()) {
-        if (!overrideCancelled) return;
-        if (!allowedWorlds.contains(worldName)) return;
-        if (requiredPermission != null && !requiredPermission.isEmpty() && !player.hasPermission(requiredPermission)) return;
-        if (worldGuard == null) return;
-        if (!inFarmRegion(block)) return;
-        try {
-            var canBuild = (Boolean) worldGuard.getClass()
-                    .getMethod("canBuild", Player.class, org.bukkit.Location.class)
-                    .invoke(worldGuard, player, block.getLocation());
-            if (canBuild) return;
-        } catch (Exception e) {
-            return;
-
+        if (mining) {
+            handle(event, player, block, true);
+        } else {
+            handle(event, player, block, false);
         }
-
-        handle(event, player, block, mining);
-        return;
     }
-
-    if (mining) {
-        handle(event, player, block, true);
-    } else {
-        handle(event, player, block, false);
-    }
-}
 
 
     private boolean isMatureCrop(Block block) {
@@ -102,26 +74,6 @@ public void onBreak(BlockBreakEvent event) {
             return age.getAge() >= age.getMaximumAge();
         }
         return false;
-    }
-
-    private boolean inFarmRegion(Block block) {
-        if (worldGuard == null) return false;
-        try {
-            Class<?> adapter = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter");
-            Class<?> wgClass = Class.forName("com.sk89q.worldguard.WorldGuard");
-            Object wg = wgClass.getMethod("getInstance").invoke(null);
-            Object platform = wg.getClass().getMethod("getPlatform").invoke(wg);
-            Object container = platform.getClass().getMethod("getRegionContainer").invoke(platform);
-            Object adaptedWorld = adapter.getMethod("adapt", org.bukkit.World.class).invoke(null, block.getWorld());
-            Object manager = container.getClass().getMethod("get", adaptedWorld.getClass()).invoke(container, adaptedWorld);
-            if (manager == null) return false;
-            Object region = manager.getClass().getMethod("getRegion", String.class).invoke(manager, "farm");
-            if (region == null) return false;
-            Object vec = adapter.getMethod("asBlockVector", org.bukkit.Location.class).invoke(null, block.getLocation());
-            return (Boolean) region.getClass().getMethod("contains", vec.getClass()).invoke(region, vec);
-        } catch (Exception e) {
-            return false;
-        }
     }
 
     private void handle(BlockBreakEvent event, Player player, Block block, boolean mining) {
