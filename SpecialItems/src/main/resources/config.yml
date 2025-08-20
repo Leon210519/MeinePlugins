@@ -84,13 +84,13 @@ leveling:
     level_max: 10
   regions:
     mine:
-      world: world
-      min: [-96, -65, -95]
-      max: [99, -2, 106]
+      world: "world"
+      min: { x: -96, y: -65, z: -95 }
+      max: { x: 99, y: -2, z: 106 }
     farm:
-      world: world
-      min: [85, -60, 48]
-      max: [275, -20, 252]
+      world: "world"
+      min: { x: 85, y: -60, z: 48 }
+      max: { x: 275, y: -20, z: 252 }
   display:
     unbreakable: true
     glint: true
