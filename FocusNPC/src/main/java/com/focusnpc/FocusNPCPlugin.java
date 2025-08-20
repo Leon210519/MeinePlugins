@@ -6,7 +6,6 @@ import com.focusnpc.gui.GuiFactory;
 import com.focusnpc.listener.Listeners;
 import com.focusnpc.npc.NpcManager;
 import com.focusnpc.placeholder.FocusPlaceholders;
-import com.focusnpc.transform.BlockTransformer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -18,7 +17,6 @@ public class FocusNPCPlugin extends JavaPlugin {
     private GuiFactory guiFactory;
     private String farmingPlaceholder;
     private String miningPlaceholder;
-    private BlockTransformer blockTransformer;
 
     @Override
     public void onEnable() {
@@ -28,8 +26,6 @@ public class FocusNPCPlugin extends JavaPlugin {
         this.playerData = new PlayerData(this);
         this.npcManager = new NpcManager(this);
         this.guiFactory = new GuiFactory(this);
-        this.blockTransformer = new BlockTransformer(this);
-        this.blockTransformer.reload();
 
         FocusNpcCommand cmd = new FocusNpcCommand(this);
         getCommand("focusnpc").setExecutor(cmd);
@@ -50,13 +46,11 @@ public class FocusNPCPlugin extends JavaPlugin {
         this.miningPlaceholder = getConfig().getString("placeholders.mining", "%farmxmine_mining_level%");
         this.playerData.reload();
         this.npcManager.reload();
-        this.blockTransformer.reload();
     }
 
     public PlayerData getPlayerData() { return playerData; }
     public GuiFactory getGuiFactory() { return guiFactory; }
     public NpcManager getNpcManager() { return npcManager; }
-    public BlockTransformer getBlockTransformer() { return blockTransformer; }
 
     public int getFarmingLevel(Player player) {
         return getLevel(player, farmingPlaceholder);
@@ -67,7 +61,8 @@ public class FocusNPCPlugin extends JavaPlugin {
     }
 
     private int getLevel(Player player, String placeholder) {
-        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI") ||
+            !Bukkit.getPluginManager().isPluginEnabled("FarmXMine")) {
             return 0;
         }
         String value = PlaceholderAPI.setPlaceholders(player, placeholder);

@@ -8,9 +8,3 @@ npcs:
   miner:
     skin: "MinerSkinName"
   saved: []
-
-transform:
-  radius: 100
-  max_blocks_per_tick: 500
-  respect_worldguard: true
-  allowed_worlds: [ "world" ]

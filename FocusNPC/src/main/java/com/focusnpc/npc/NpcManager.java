@@ -7,8 +7,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
@@ -120,12 +120,13 @@ public class NpcManager {
             } catch (Exception ignored) {
             }
         } else {
-            ArmorStand as = (ArmorStand) loc.getWorld().spawnEntity(loc, EntityType.ARMOR_STAND);
-            as.setCustomName(getName(type));
-            as.setCustomNameVisible(true);
-            as.setGravity(false);
-            as.setSilent(true);
-            fnpc.setEntityId(as.getUniqueId());
+            Villager villager = (Villager) loc.getWorld().spawnEntity(loc, EntityType.VILLAGER);
+            villager.setProfession(type == NpcType.FARMER ? Villager.Profession.FARMER : Villager.Profession.TOOLSMITH);
+            villager.setAI(false);
+            villager.setSilent(true);
+            villager.setCustomName(getName(type));
+            villager.setCustomNameVisible(true);
+            fnpc.setEntityId(villager.getUniqueId());
         }
         npcs.add(fnpc);
         return fnpc;

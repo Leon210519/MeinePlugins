@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
@@ -23,7 +23,7 @@ public class Listeners implements Listener {
     }
 
     @EventHandler
-    public void onEntityClick(PlayerInteractAtEntityEvent event) {
+    public void onEntityClick(PlayerInteractEntityEvent event) {
         Entity entity = event.getRightClicked();
         FocusNpc npc = plugin.getNpcManager().getByEntityId(entity.getUniqueId());
         if (npc != null) {
@@ -54,7 +54,6 @@ public class Listeners implements Listener {
             } else {
                 plugin.getPlayerData().setFarmFocus(player.getUniqueId(), mat);
                 player.sendMessage("§aFarm focus set to " + mat.name());
-                plugin.getBlockTransformer().transform(player, NpcType.FARMER, mat);
             }
         } else {
             if (plugin.getPlayerData().getMineFocus(player.getUniqueId()) == mat) {
@@ -62,7 +61,6 @@ public class Listeners implements Listener {
             } else {
                 plugin.getPlayerData().setMineFocus(player.getUniqueId(), mat);
                 player.sendMessage("§aMine focus set to " + mat.name());
-                plugin.getBlockTransformer().transform(player, NpcType.MINER, mat);
             }
         }
         player.closeInventory();

@@ -2,7 +2,7 @@ name: FocusNPC
 main: com.focusnpc.FocusNPCPlugin
 version: 1.0.0
 api-version: "1.21"
-softdepend: [PlaceholderAPI, Citizens, FarmXMine, WorldGuard]
+softdepend: [PlaceholderAPI, Citizens, FarmXMine]
 commands:
   focusnpc:
     description: Manage FocusNPCs
