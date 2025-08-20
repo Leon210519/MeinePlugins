@@ -5,13 +5,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Villager.Profession;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventException;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.EventExecutor;
 
@@ -21,15 +20,19 @@ import java.util.*;
 public class NpcManager {
     private final FocusNPCPlugin plugin;
     private final boolean citizens;
+
+    // Citizens (via reflection to keep it optional)
     private Object npcRegistry;
-    private Method createNpc;
-    private Method spawn;
-    private Method getId;
-    private Method destroy;
-    private Method getById;
-    private Method getOrAddTrait;
+    private Method createNpc;      // createNPC(EntityType, String)
+    private Method spawn;          // NPC#spawn(Location)
+    private Method getId;          // NPC#getId()
+    private Method destroy;        // NPC#destroy()
+    private Method getById;        // Registry#getById(int)
+    private Method getOrAddTrait;  // NPC#getOrAddTrait(Class)
+    private Method getEntity;      // NPC#getEntity()
     private Class<?> skinTraitClass;
-    private Method setSkinName;
+    private Method setSkinName;    // SkinTrait#setSkinName(String)
+
     private final List<FocusNpc> npcs = new ArrayList<>();
 
     public NpcManager(FocusNPCPlugin plugin) {
@@ -39,36 +42,45 @@ public class NpcManager {
             try {
                 Class<?> api = Class.forName("net.citizensnpcs.api.CitizensAPI");
                 npcRegistry = api.getMethod("getNPCRegistry").invoke(null);
+
                 createNpc = npcRegistry.getClass().getMethod("createNPC", EntityType.class, String.class);
                 Class<?> npcClass = Class.forName("net.citizensnpcs.api.npc.NPC");
+
                 spawn = npcClass.getMethod("spawn", Location.class);
                 getId = npcClass.getMethod("getId");
                 destroy = npcClass.getMethod("destroy");
                 getById = npcRegistry.getClass().getMethod("getById", int.class);
                 getOrAddTrait = npcClass.getMethod("getOrAddTrait", Class.class);
+                getEntity = npcClass.getMethod("getEntity");
+
                 skinTraitClass = Class.forName("net.citizensnpcs.api.trait.trait.SkinTrait");
                 setSkinName = skinTraitClass.getMethod("setSkinName", String.class);
 
-                // register click event via reflection
-                Class<? extends Event> eventClass = (Class<? extends Event>) Class.forName("net.citizensnpcs.api.event.NPCRightClickEvent");
-                Bukkit.getPluginManager().registerEvent(eventClass, new Listener() {}, EventPriority.NORMAL, new EventExecutor() {
-                    @Override
-                    public void execute(Listener listener, Event event) throws EventException {
-                        try {
-                            Object npc = eventClass.getMethod("getNPC").invoke(event);
-                            int id = (int) getId.invoke(npc);
-                            Object player = eventClass.getMethod("getClicker").invoke(event);
-                            if (player instanceof org.bukkit.entity.Player p) {
-                                FocusNpc fn = getByCitizenId(id);
-                                if (fn != null) {
-                                    plugin.getGuiFactory().openGui(p, fn.getType());
-                                }
+                // Citizens right-click event hook
+                @SuppressWarnings("unchecked")
+                Class<? extends Event> clickEventClass =
+                        (Class<? extends Event>) Class.forName("net.citizensnpcs.api.event.NPCRightClickEvent");
+
+                Bukkit.getPluginManager().registerEvent(clickEventClass, new Listener() {}, EventPriority.NORMAL,
+                        new EventExecutor() {
+                            @Override
+                            public void execute(Listener listener, Event event) throws EventException {
+                                try {
+                                    Object npc = clickEventClass.getMethod("getNPC").invoke(event);
+                                    int id = (int) getId.invoke(npc);
+                                    Object player = clickEventClass.getMethod("getClicker").invoke(event);
+                                    if (player instanceof org.bukkit.entity.Player p) {
+                                        FocusNpc fn = getByCitizenId(id);
+                                        if (fn != null) {
+                                            plugin.getGuiFactory().openGui(p, fn.getType());
+                                        }
+                                    }
+                                } catch (Exception ignored) { }
                             }
-                        } catch (Exception ignored) {}
-                    }
-                }, plugin);
+                        }, plugin);
+
             } catch (Exception e) {
-                // disable citizens features on failure
+                // If Citizens API resolution fails, treat as not installed
             }
         }
     }
@@ -89,7 +101,7 @@ public class NpcManager {
                 String skin = (String) map.get("skin");
                 Location loc = new Location(world, x, y, z, yaw, pitch);
                 spawnNpc(type, loc, skin);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) { }
         }
     }
 
@@ -100,28 +112,48 @@ public class NpcManager {
 
     public FocusNpc spawnNpc(NpcType type, Location loc, String skin) {
         FocusNpc fnpc = new FocusNpc(type, loc, skin);
+
         if (citizens && npcRegistry != null) {
             try {
                 Object npc = createNpc.invoke(npcRegistry, EntityType.PLAYER, getName(type));
-                spawn.invoke(npc, loc);
+                // set skin
                 Object trait = getOrAddTrait.invoke(npc, skinTraitClass);
                 if (skin != null && !skin.isEmpty()) {
                     setSkinName.invoke(trait, skin);
                 }
+                // spawn
+                spawn.invoke(npc, loc);
+
+                // make entity silent
+                Object handleEnt = getEntity.invoke(npc);
+                if (handleEnt instanceof org.bukkit.entity.LivingEntity le) {
+                    le.setSilent(true);
+                    le.setCustomName(getName(type));
+                    le.setCustomNameVisible(true);
+                }
+
                 int id = (int) getId.invoke(npc);
                 fnpc.setCitizen(npc);
                 fnpc.setCitizenId(id);
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) { }
         } else {
-            Villager villager = (Villager) loc.getWorld().spawnEntity(loc, EntityType.VILLAGER);
-            villager.setAI(false);
-            villager.setInvulnerable(true);
-            villager.setCustomName(getName(type));
-            villager.setCustomNameVisible(true);
-            villager.setProfession(type == NpcType.FARMER ? Profession.FARMER : Profession.TOOLSMITH);
-            fnpc.setEntityId(villager.getUniqueId());
+            // Fallback: ArmorStand (silent, named)
+            ArmorStand as = loc.getWorld().spawn(loc, ArmorStand.class, stand -> {
+                stand.setCustomName(getName(type));
+                stand.setCustomNameVisible(true);
+                stand.setGravity(false);
+                stand.setInvisible(false);   // visible "NPC"
+                stand.setSmall(false);
+                stand.setArms(false);
+                stand.setBasePlate(true);
+                stand.setMarker(false);
+                stand.setSilent(true);
+                stand.setInvulnerable(true);
+                stand.setCollidable(false);
+            });
+            fnpc.setEntityId(as.getUniqueId());
         }
+
         npcs.add(fnpc);
         return fnpc;
     }
@@ -129,7 +161,7 @@ public class NpcManager {
     public void despawnAll() {
         for (FocusNpc npc : npcs) {
             if (citizens && npc.getCitizen() != null) {
-                try { destroy.invoke(npc.getCitizen()); } catch (Exception ignored) {}
+                try { destroy.invoke(npc.getCitizen()); } catch (Exception ignored) { }
             } else if (npc.getEntityId() != null) {
                 Entity ent = Bukkit.getEntity(npc.getEntityId());
                 if (ent != null) ent.remove();
@@ -141,12 +173,14 @@ public class NpcManager {
     public boolean removeNearest(Location loc) {
         FocusNpc nearest = getNearest(loc);
         if (nearest == null) return false;
+
         if (citizens && nearest.getCitizen() != null) {
-            try { destroy.invoke(nearest.getCitizen()); } catch (Exception ignored) {}
+            try { destroy.invoke(nearest.getCitizen()); } catch (Exception ignored) { }
         } else if (nearest.getEntityId() != null) {
             Entity ent = Bukkit.getEntity(nearest.getEntityId());
             if (ent != null) ent.remove();
         }
+
         npcs.remove(nearest);
         save();
         return true;
@@ -164,7 +198,7 @@ public class NpcManager {
                 best = n;
             }
         }
-        if (dist > 25) return null;
+        if (dist > 25) return null; // ~5 Blöcke Radius
         return best;
     }
 
@@ -182,7 +216,9 @@ public class NpcManager {
         return null;
     }
 
-    public List<FocusNpc> getNpcs() { return Collections.unmodifiableList(npcs); }
+    public List<FocusNpc> getNpcs() {
+        return Collections.unmodifiableList(npcs);
+    }
 
     public void save() {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -204,6 +240,6 @@ public class NpcManager {
     }
 
     private String getName(NpcType type) {
-        return type == NpcType.FARMER ? ChatColor.GREEN + "Farmer" : ChatColor.AQUA + "Miner";
+        return (type == NpcType.FARMER ? ChatColor.GREEN + "Farmer" : ChatColor.AQUA + "Miner");
     }
 }
