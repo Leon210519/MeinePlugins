@@ -2,11 +2,7 @@ general:
   debug: false
   disabled-worlds: []
   max-broken-blocks: 64
-
-  override_cancelled: true
-  allowed_worlds: ["world"]
-  required_permission: "farmxmine.override.break"
-
+ 
 respawn_seconds: 30
 farmxmine:
   direct_to_inventory: true
