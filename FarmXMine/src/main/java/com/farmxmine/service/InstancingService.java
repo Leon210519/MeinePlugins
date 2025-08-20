@@ -81,6 +81,7 @@ public void onBreak(BlockBreakEvent event) {
             if (canBuild) return;
         } catch (Exception e) {
             return;
+
         }
 
         handle(event, player, block, mining);
