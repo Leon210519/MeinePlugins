@@ -1,7 +1,6 @@
 package com.farmxmine.service;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -12,10 +11,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class InstancingService implements Listener {
     private final JavaPlugin plugin;
@@ -30,6 +31,7 @@ public class InstancingService implements Listener {
     private final boolean overrideCancelled;
     private final List<String> allowedWorlds;
     private final String requiredPermission;
+    private final Plugin worldGuard;
 
     public InstancingService(JavaPlugin plugin, LevelService level) {
         this.plugin = plugin;
@@ -44,6 +46,7 @@ public class InstancingService implements Listener {
         this.overrideCancelled = plugin.getConfig().getBoolean("general.override_cancelled", true);
         this.allowedWorlds = plugin.getConfig().getStringList("general.allowed_worlds");
         this.requiredPermission = plugin.getConfig().getString("general.required_permission", "farmxmine.override.break");
+        this.worldGuard = Bukkit.getPluginManager().getPlugin("WorldGuard");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -69,33 +72,18 @@ public void onBreak(BlockBreakEvent event) {
         if (!overrideCancelled) return;
         if (!allowedWorlds.contains(worldName)) return;
         if (requiredPermission != null && !requiredPermission.isEmpty() && !player.hasPermission(requiredPermission)) return;
-
-        int count = computeCount(player, mining);
-        List<ItemStack> drops = new ArrayList<>();
-        for (ItemStack drop : block.getDrops(tool, player)) {
-            ItemStack copy = drop.clone();
-            copy.setAmount(copy.getAmount() * count);
-            drops.add(copy);
+        if (worldGuard == null) return;
+        if (!inFarmRegion(block)) return;
+        try {
+            var canBuild = (Boolean) worldGuard.getClass()
+                    .getMethod("canBuild", Player.class, org.bukkit.Location.class)
+                    .invoke(worldGuard, player, block.getLocation());
+            if (canBuild) return;
+        } catch (Exception e) {
+            return;
         }
 
-        event.setCancelled(false);
-        event.setDropItems(false);
-        event.setExpToDrop(0);
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (block.getType() != Material.AIR) {
-                block.setType(Material.AIR);
-                block.getWorld().playEffect(block.getLocation(), Effect.STEP_SOUND, type);
-            }
-            for (ItemStack drop : drops) {
-                giveDrop(player, block, drop);
-            }
-            if (mining) {
-                level.addMineXp(player, count);
-            } else {
-                level.addFarmXp(player, count);
-            }
-        });
+        handle(event, player, block, mining);
         return;
     }
 
@@ -115,24 +103,50 @@ public void onBreak(BlockBreakEvent event) {
         return false;
     }
 
+    private boolean inFarmRegion(Block block) {
+        if (worldGuard == null) return false;
+        try {
+            Class<?> adapter = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter");
+            Class<?> wgClass = Class.forName("com.sk89q.worldguard.WorldGuard");
+            Object wg = wgClass.getMethod("getInstance").invoke(null);
+            Object platform = wg.getClass().getMethod("getPlatform").invoke(wg);
+            Object container = platform.getClass().getMethod("getRegionContainer").invoke(platform);
+            Object adaptedWorld = adapter.getMethod("adapt", org.bukkit.World.class).invoke(null, block.getWorld());
+            Object manager = container.getClass().getMethod("get", adaptedWorld.getClass()).invoke(container, adaptedWorld);
+            if (manager == null) return false;
+            Object region = manager.getClass().getMethod("getRegion", String.class).invoke(manager, "farm");
+            if (region == null) return false;
+            Object vec = adapter.getMethod("asBlockVector", org.bukkit.Location.class).invoke(null, block.getLocation());
+            return (Boolean) region.getClass().getMethod("contains", vec.getClass()).invoke(region, vec);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private void handle(BlockBreakEvent event, Player player, Block block, boolean mining) {
         event.setCancelled(true);
+        event.setDropItems(false);
+        event.setExpToDrop(0);
         int count = computeCount(player, mining);
         ItemStack tool = player.getInventory().getItemInMainHand();
-        for (ItemStack drop : block.getDrops(tool, player)) {
-            drop.setAmount(drop.getAmount() * count);
+        List<ItemStack> drops = collectDrops(block, tool, player, mining, count);
+        for (ItemStack drop : drops) {
             giveDrop(player, block, drop);
         }
         if (mining) {
             level.addMineXp(player, count);
-            sendBlockChange(player, block, Material.AIR.createBlockData());
         } else {
             level.addFarmXp(player, count);
-            BlockData replanted = block.getBlockData().clone();
-            if (replanted instanceof Ageable age) { age.setAge(0); }
-            sendBlockChange(player, block, replanted);
         }
         BlockData original = block.getBlockData();
+        BlockData replacement;
+        if (mining) {
+            boolean deepslate = block.getType().name().startsWith("DEEPSLATE_");
+            replacement = (deepslate ? Material.DEEPSLATE : Material.STONE).createBlockData();
+        } else {
+            replacement = Material.AIR.createBlockData();
+        }
+        sendBlockChange(player, block, replacement);
         Bukkit.getScheduler().runTaskLater(plugin, () -> player.sendBlockChange(block.getLocation(), original), respawnSeconds * 20L);
     }
 
@@ -170,4 +184,38 @@ public void onBreak(BlockBreakEvent event) {
     private void sendBlockChange(Player player, Block block, BlockData data) {
         player.sendBlockChange(block.getLocation(), data);
     }
+
+    private List<ItemStack> collectDrops(Block block, ItemStack tool, Player player, boolean mining, int count) {
+        List<ItemStack> drops = new ArrayList<>();
+        boolean smelt = mining && hasAutoSmelt(tool);
+        for (ItemStack drop : block.getDrops(tool, player)) {
+            Material type = drop.getType();
+            if (!mining && type.name().endsWith("SEEDS")) {
+                continue;
+            }
+            if (smelt) {
+                type = SMELTS.getOrDefault(type, type);
+                drop = new ItemStack(type, drop.getAmount());
+            }
+            drop.setAmount(drop.getAmount() * count);
+            drops.add(drop);
+        }
+        return drops;
+    }
+
+    private boolean hasAutoSmelt(ItemStack tool) {
+        if (!tool.hasItemMeta() || !tool.getItemMeta().hasLore()) return false;
+        for (String line : tool.getItemMeta().getLore()) {
+            if (line.toLowerCase().contains("autosmelt")) return true;
+        }
+        return false;
+    }
+
+    private static final Map<Material, Material> SMELTS = Map.ofEntries(
+            Map.entry(Material.RAW_IRON, Material.IRON_INGOT),
+            Map.entry(Material.RAW_GOLD, Material.GOLD_INGOT),
+            Map.entry(Material.RAW_COPPER, Material.COPPER_INGOT),
+            Map.entry(Material.GOLD_NUGGET, Material.GOLD_INGOT),
+            Map.entry(Material.ANCIENT_DEBRIS, Material.NETHERITE_SCRAP)
+    );
 }
