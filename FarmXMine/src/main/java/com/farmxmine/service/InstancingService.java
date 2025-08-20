@@ -27,9 +27,9 @@ public class InstancingService implements Listener {
     private final int generalMax;
     private final boolean directToInv;
     private final boolean voidOverflow;
-    private final boolean wgBreakOverride;
-    private final List<String> wgWorlds;
-    private final String wgPermission;
+    private final boolean overrideCancelled;
+    private final List<String> allowedWorlds;
+    private final String requiredPermission;
 
     public InstancingService(JavaPlugin plugin, LevelService level) {
         this.plugin = plugin;
@@ -41,13 +41,13 @@ public class InstancingService implements Listener {
         this.generalMax = plugin.getConfig().getInt("general.max-broken-blocks", 64);
         this.directToInv = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
         this.voidOverflow = plugin.getConfig().getBoolean("inventory.void_overflow", true);
-        this.wgBreakOverride = plugin.getConfig().getBoolean("general.worldguard_break_override", true);
-        this.wgWorlds = plugin.getConfig().getStringList("general.allowed_worlds");
-        this.wgPermission = plugin.getConfig().getString("general.required_permission", "farmxmine.override.break");
+        this.overrideCancelled = plugin.getConfig().getBoolean("general.override_cancelled", true);
+        this.allowedWorlds = plugin.getConfig().getStringList("general.allowed_worlds");
+        this.requiredPermission = plugin.getConfig().getString("general.required_permission", "farmxmine.override.break");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
 public void onBreak(BlockBreakEvent event) {
     Player player = event.getPlayer();
     Block block = event.getBlock();
@@ -66,9 +66,9 @@ public void onBreak(BlockBreakEvent event) {
     if (farming && !toolName.endsWith("_HOE")) return;
 
     if (event.isCancelled()) {
-        if (!wgBreakOverride) return;
-        if (!wgWorlds.contains(worldName)) return;
-        if (wgPermission != null && !wgPermission.isEmpty() && !player.hasPermission(wgPermission)) return;
+        if (!overrideCancelled) return;
+        if (!allowedWorlds.contains(worldName)) return;
+        if (requiredPermission != null && !requiredPermission.isEmpty() && !player.hasPermission(requiredPermission)) return;
 
         int count = computeCount(player, mining);
         List<ItemStack> drops = new ArrayList<>();
