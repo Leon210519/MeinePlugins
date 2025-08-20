@@ -99,6 +99,7 @@ leveling:
       xp: "&7XP: &b%XP%&7/&b%NEED%"
       yield_mine: "&7Yield: &a+%YIELD%%% &8(mine)"
       yield_farm: "&7Yield: &a+%YIELD%%% &8(farm)"
+      yield_bonus: "&7Bonus Yield: &a+%YIELD%%%"
   messages:
     level_up: "%ITEM% leveled up to %LEVEL%"
     extra_enchant: "%ITEM% gained %ENCHANT% %LEVEL%"
