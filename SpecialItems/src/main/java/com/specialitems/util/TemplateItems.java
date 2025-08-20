@@ -10,8 +10,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public final class TemplateItems {
 
@@ -19,15 +18,28 @@ public final class TemplateItems {
 
     private TemplateItems() {}
 
+    private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
+
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
+        BY_MAT_NAME.clear();
+        CustomModels.reset();
         var sec = Configs.templates.getConfigurationSection("templates");
         if (sec == null) return list;
-        for (String key : sec.getKeys(false)) {
+        List<String> keys = new ArrayList<>(sec.getKeys(false));
+        Collections.sort(keys);
+        for (String key : keys) {
             ConfigurationSection tsec = sec.getConfigurationSection(key);
             String tid = (tsec == null ? key : tsec.getString("id", key));
             ItemStack it = buildFrom(tid, tsec);
-            if (it != null) list.add(new TemplateItem(tid, it));
+            if (it != null) {
+                list.add(new TemplateItem(tid, it));
+                ItemMeta meta = it.getItemMeta();
+                if (meta != null && meta.hasDisplayName()) {
+                    String k = it.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
+                    BY_MAT_NAME.put(k, new TemplateItem(tid, it));
+                }
+            }
         }
         return list;
     }
@@ -56,7 +68,8 @@ public final class TemplateItems {
         }
 
         try {
-            int cmd = CustomModels.cmdFor(id, t.getString("name"));
+            int explicit = t.getInt("custom_model_data", 0);
+            int cmd = CustomModels.register(id, explicit);
             if (cmd > 0) {
                 ItemMeta m = it.getItemMeta();
                 if (m != null) {
@@ -79,5 +92,27 @@ public final class TemplateItems {
         }
 
         return it;
+    }
+
+    /**
+     * Attempts to match the given item to a template based on material and
+     * display name. If a match is found the template's custom model data is
+     * applied to the item.
+     *
+     * @param item item to update
+     * @return true if a template match was applied
+     */
+    public static boolean applyTemplateMeta(ItemStack item) {
+        if (item == null) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return false;
+        String key = item.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
+        TemplateItem tmpl = BY_MAT_NAME.get(key);
+        if (tmpl == null) return false;
+        ItemMeta tmeta = tmpl.stack().getItemMeta();
+        if (tmeta == null || !tmeta.hasCustomModelData()) return false;
+        meta.setCustomModelData(tmeta.getCustomModelData());
+        item.setItemMeta(meta);
+        return true;
     }
 }
