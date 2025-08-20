@@ -42,7 +42,9 @@ public class InstancingService implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+
     public void onBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         Block block = event.getBlock();
