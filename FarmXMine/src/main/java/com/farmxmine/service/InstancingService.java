@@ -38,34 +38,43 @@ public class InstancingService implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    @EventHandler
-    public void onBreak(BlockBreakEvent event) {
-        Player player = event.getPlayer();
-        Block block = event.getBlock();
-        String world = block.getWorld().getName();
-        if (plugin.getConfig().getStringList("general.disabled-worlds").contains(world)) return;
-        Material type = block.getType();
-        boolean mining = isOre(type);
-        boolean farming = !mining && isMatureCrop(block);
-        if (!mining && !farming) return;
+@EventHandler // wichtig: NICHT ignoreCancelled=true!
+public void onBreak(BlockBreakEvent event) {
+    Player player = event.getPlayer();
+    Block block = event.getBlock();
 
-        if (event.isCancelled()) {
-            if (!plugin.getConfig().getBoolean("general.override_cancelled", true)) return;
-            int count = computeCount(player, mining);
-            if (mining) {
-                level.addMineXp(player, count);
-            } else {
-                level.addFarmXp(player, count);
-            }
-            return;
-        }
+    // world filter
+    String worldName = block.getWorld().getName();
+    if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
+    Material type = block.getType();
+    boolean mining  = isOre(type);
+    boolean farming = !mining && isMatureCrop(block);
+    if (!mining && !farming) return;
+
+    // Wenn ein anderes Plugin (z.B. WorldGuard) gecancelt hat:
+    if (event.isCancelled()) {
+        boolean override = plugin.getConfig().getBoolean("general.override_cancelled", true);
+        if (!override) return; // nichts tun, wenn Override aus
+
+        // Nur XP gutschreiben – KEIN tatsächlicher Abbau!
+        int count = computeCount(player, mining);
         if (mining) {
-            handle(event, player, block, true);
+            level.addMineXp(player, count);
         } else {
-            handle(event, player, block, false);
+            level.addFarmXp(player, count);
         }
+        return;
     }
+
+    // Normales Verhalten (Block wird abgebaut / verarbeitet)
+    if (mining) {
+        handle(event, player, block, true);
+    } else {
+        handle(event, player, block, false);
+    }
+}
+
 
     private boolean isMatureCrop(Block block) {
         BlockData data = block.getBlockData();

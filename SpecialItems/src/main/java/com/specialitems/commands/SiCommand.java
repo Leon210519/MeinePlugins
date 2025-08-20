@@ -94,6 +94,7 @@ public class SiCommand implements CommandExecutor {
             case "reload" -> {
                 if (!requireAdmin(sender)) return true;
                 Configs.load(SpecialItemsPlugin.getInstance());
+                TemplateItems.loadAll();
                 sender.sendMessage(ChatColor.GREEN + "SpecialItems configuration reloaded.");
                 return true;
             }

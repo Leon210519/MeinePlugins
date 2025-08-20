@@ -2,7 +2,9 @@ general:
   debug: false
   disabled-worlds: []
   max-broken-blocks: 64
+
   override_cancelled: true
+
 respawn_seconds: 30
 farmxmine:
   direct_to_inventory: true
