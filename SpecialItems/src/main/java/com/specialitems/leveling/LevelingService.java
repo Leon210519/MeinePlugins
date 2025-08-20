@@ -17,6 +17,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.persistence.PersistentDataType;
 
 import com.specialitems.util.ItemUtil;
 
@@ -36,6 +37,7 @@ public class LevelingService {
     private final JavaPlugin plugin;
     private final ItemTagUtil tags;
     private final RegionService regions;
+    private final Keys keys;
     private final Random rng = new Random();
 
     // config values
@@ -48,7 +50,7 @@ public class LevelingService {
     private final int enchantLevelMin, enchantLevelMax;
 
     // Lore / Messages (mit Farbcode-Unterstützung)
-    private final String loreLevelFmt, loreXpFmt, loreYieldMineFmt, loreYieldFarmFmt;
+    private final String loreLevelFmt, loreXpFmt, loreYieldMineFmt, loreYieldFarmFmt, loreBonusYieldFmt;
     private final String msgLevelUp, msgEnchant;
 
     // Vein/Harvester Kompat
@@ -110,9 +112,11 @@ public class LevelingService {
         this.loreXpFmt        = cfg.getString("leveling.display.lore.xp",          "&7XP: &b%XP%&7/&b%NEED%");
         this.loreYieldMineFmt = cfg.getString("leveling.display.lore.yield_mine",  "&7Yield: &a+%YIELD%%% &8(mine)");
         this.loreYieldFarmFmt = cfg.getString("leveling.display.lore.yield_farm",  "&7Yield: &a+%YIELD%%% &8(farm)");
+        this.loreBonusYieldFmt= cfg.getString("leveling.display.lore.yield_bonus", "&7Bonus Yield: &a+%YIELD%%%");
         this.msgLevelUp       = cfg.getString("leveling.messages.level_up",        "%ITEM% leveled up to %LEVEL%");
         this.msgEnchant       = cfg.getString("leveling.messages.extra_enchant",   "%ITEM% gained %ENCHANT% %LEVEL%");
 
+        this.keys    = new Keys(plugin);
         this.tags    = new ItemTagUtil(plugin);
         this.regions = new RegionService(cfg.getConfigurationSection("leveling.regions"));
 
@@ -137,14 +141,33 @@ public class LevelingService {
         updateLore(item);
     }
 
+    private boolean hasBonusYield(ItemStack item) {
+        ItemMeta meta = item == null ? null : item.getItemMeta();
+        return meta != null && meta.getPersistentDataContainer().has(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+    }
+
     public boolean isSpecialItem(ItemStack item) {
-        return item != null && tags.isTagged(item);
+        if (item == null) return false;
+        if (tags.isTagged(item)) return true;
+        if (hasBonusYield(item)) {
+            initItem(item);
+            return true;
+        }
+        return false;
     }
 
     // Simple getters used by commands/utilities
     public int getLevel(ItemStack item) { return tags.getLevel(item); }
     public double getXp(ItemStack item) { return tags.getXp(item); }
-    public double getBonusYieldPct(ItemStack item) { return tags.getYield(item); }
+    public double getBonusYieldPct(ItemStack item) {
+        double base = tags.getYield(item);
+        ItemMeta meta = item == null ? null : item.getItemMeta();
+        if (meta != null) {
+            Double bonus = meta.getPersistentDataContainer().get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+            if (bonus != null) base += bonus;
+        }
+        return base;
+    }
 
     public ToolClass detectToolClass(ItemStack it) {
         if (it == null) return ToolClass.OTHER;
@@ -325,6 +348,11 @@ public class LevelingService {
         }
 
         double yield = tags.getYield(tool); // Prozent
+        ItemMeta meta = tool.getItemMeta();
+        if (meta != null) {
+            Double bonus = meta.getPersistentDataContainer().get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+            if (bonus != null) yield += bonus;
+        }
 
         for (Item item : e.getItems()) {
             ItemStack drop = item.getItemStack();
@@ -443,16 +471,24 @@ public class LevelingService {
 
         String type = tags.getType(item);
         String yieldLine = null;
+        String bonusLine = null;
+        double baseYield = tags.getYield(item);
+        double bonusYield = 0.0;
+        Double bonusTag = meta.getPersistentDataContainer().get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+        if (bonusTag != null) bonusYield = bonusTag;
         if ("pickaxe".equals(type)) {
-            yieldLine = color(loreYieldMineFmt.replace("%YIELD%", fmt(tags.getYield(item))));
+            yieldLine = color(loreYieldMineFmt.replace("%YIELD%", fmt(baseYield + bonusYield)));
         } else if ("hoe".equals(type)) {
-            yieldLine = color(loreYieldFarmFmt.replace("%YIELD%", fmt(tags.getYield(item))));
+            yieldLine = color(loreYieldFarmFmt.replace("%YIELD%", fmt(baseYield + bonusYield)));
+        }
+        if (bonusYield > 0) {
+            bonusLine = color(loreBonusYieldFmt.replace("%YIELD%", fmt(bonusYield)));
         }
 
         // Alte Stats-Zeilen entfernen (nur unsere, anhand von Prefixen)
         lore.removeIf(s -> {
             String st = ChatColor.stripColor(s);
-            return st.startsWith("Level:") || st.startsWith("XP:") || st.startsWith("Yield:");
+            return st.startsWith("Level:") || st.startsWith("XP:") || st.startsWith("Yield:") || st.startsWith("Bonus Yield:");
         });
 
         // Neu OBEN einfügen (damit es direkt unter dem Itemnamen steht)
@@ -460,6 +496,7 @@ public class LevelingService {
         add.add(lvlLine);
         add.add(xpLine);
         if (yieldLine != null) add.add(yieldLine);
+        if (bonusLine != null) add.add(bonusLine);
 
         lore.addAll(0, add);
 
