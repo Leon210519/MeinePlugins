@@ -14,4 +14,4 @@ commands:
 permissions:
   farmxmine.admin:
     default: op
-softdepend: [Vault, PlaceholderAPI]
+softdepend: [Vault, PlaceholderAPI, WorldGuard]
