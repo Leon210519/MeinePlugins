@@ -5,7 +5,6 @@ import com.instancednodes.integration.SpecialItemsApi;
 import com.specialitems.leveling.LevelingService;
 import com.specialitems.leveling.ToolClass;
 import com.specialitems.util.ItemUtil;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -48,14 +47,6 @@ public class SpecialItemsBridge implements SpecialItemsApi {
     @Override
     public void grantHarvestXp(Player player, ItemStack item, RegionType regionType, int amount) {
         ToolClass clazz = regionType == RegionType.MINE ? ToolClass.PICKAXE : ToolClass.HOE;
-        var ups = leveling.grantXp(item, amount, clazz);
-        if (ups == null || ups.isEmpty()) return;
-        String name = (item.hasItemMeta() && item.getItemMeta().hasDisplayName())
-                ? item.getItemMeta().getDisplayName()
-                : item.getType().name();
-        for (var up : ups) {
-            player.sendMessage(ChatColor.AQUA + name + ChatColor.GREEN + " reached level " + ChatColor.YELLOW + up.level()
-                    + (up.enchanted() ? ChatColor.GREEN + " and gained a bonus enchantment!" : ChatColor.GRAY + " without a bonus enchantment."));
-        }
+        leveling.grantXp(player, item, amount, clazz);
     }
 }
