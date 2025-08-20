@@ -11,6 +11,7 @@ import com.instancednodes.integration.RegionService;
 import com.instancednodes.integration.SpecialItemsApi;
 import com.instancednodes.integration.HarvestService;
 import com.instancednodes.integration.SpecialItemsIntegrationListener;
+import com.instancednodes.placeholder.FarmXMinePlaceholders;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Random;
@@ -45,6 +46,9 @@ public class InstancedNodesPlugin extends JavaPlugin {
         }
         if (getCommand("nodes") != null) getCommand("nodes").setExecutor(new NodesCommand(this));
         if (getCommand("prestige") != null) getCommand("prestige").setExecutor(new PrestigeCommand(this));
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new FarmXMinePlaceholders(this).register();
+        }
         getLogger().info("InstancedNodes enabled v" + getDescription().getVersion());
     }
 

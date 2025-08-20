@@ -7,3 +7,8 @@ no_permission: "%prefix%&cYou don't have permission."
 reloaded: "%prefix%&aConfig reloaded."
 debug_on: "%prefix%&aDebug &2ON&a."
 debug_off: "%prefix%&aDebug &cOFF&a."
+
+# PlaceholderAPI placeholders:
+# %farmxmine_level% - Player level
+# %farmxmine_prestige% - Player prestige
+# %farmxmine_xp% - Player XP

@@ -21,4 +21,4 @@ permissions:
     default: true
   instancednodes.prestige:
     default: true
-softdepend: [WorldGuard]
+softdepend: [WorldGuard, PlaceholderAPI]
