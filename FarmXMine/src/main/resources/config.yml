@@ -3,7 +3,7 @@ general:
   disabled-worlds: []
   max-broken-blocks: 64
 
-  worldguard_break_override: true
+  override_cancelled: true
   allowed_worlds: ["world"]
   required_permission: "farmxmine.override.break"
 
