@@ -10,6 +10,7 @@ import com.specialitems.listeners.GuiListener;
 import com.specialitems.listeners.BinListener;
 import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
+import com.specialitems.util.TemplateItems;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.ServicePriority;
@@ -43,6 +44,8 @@ public class SpecialItemsPlugin extends JavaPlugin {
         try {
             // Load configs/messages if your Configs helper does that.
             Configs.load(this);
+            // Preload templates to resolve custom model data mappings
+            TemplateItems.loadAll();
         } catch (Throwable t) {
             Log.warn("Configs.load failed: " + t.getMessage());
         }

@@ -1,145 +1,64 @@
 package com.specialitems.util;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Resolves custom model data values for template parts. If a template does not
+ * define an explicit value, a deterministic value in the range 100000-999999
+ * is generated from the template id. Collisions are avoided by incrementing
+ * until a free id is found. Values are kept only in-memory and regenerated on
+ * each plugin start.
+ */
 public final class CustomModels {
-    private static final Map<String,Integer> ID_TO_CMD = new HashMap<>();
-    static {
-        ID_TO_CMD.put("stone_miner", 1002);
-        ID_TO_CMD.put("novice_farmer", 2004);
-        ID_TO_CMD.put("rookie_scout_boots", 3007);
-        ID_TO_CMD.put("cave_lantern_helm", 8001);
-        ID_TO_CMD.put("rookie_hunter", 6005);
-        ID_TO_CMD.put("miner_pick_t1", 5002);
-        ID_TO_CMD.put("miner_pick_t2", 5003);
-        ID_TO_CMD.put("miner_pick_t3", 5004);
-        ID_TO_CMD.put("miner_aoe_pick", 3004);
-        ID_TO_CMD.put("tunnel_borer", 3024);
-        ID_TO_CMD.put("smelt_vac", 5012);
-        ID_TO_CMD.put("farmer_hoe_t1", 2001);
-        ID_TO_CMD.put("farmer_hoe_t2", 2002);
-        ID_TO_CMD.put("farmer_hoe_t3", 2003);
-        ID_TO_CMD.put("orchard_hoe", 2005);
-        ID_TO_CMD.put("hunter_sword_t1", 6002);
-        ID_TO_CMD.put("hunter_sword_t2", 6003);
-        ID_TO_CMD.put("hunter_sword_t3", 6004);
-        ID_TO_CMD.put("frostbrand", 3003);
-        ID_TO_CMD.put("wither_reaper", 7008);
-        ID_TO_CMD.put("raider_axe", 5005);
-        ID_TO_CMD.put("scout_boots_t1", 3008);
-        ID_TO_CMD.put("scout_boots_t2", 3009);
-        ID_TO_CMD.put("scout_boots_t3", 3010);
-        ID_TO_CMD.put("spelunker_helm", 8009);
-        ID_TO_CMD.put("pack_magnet_chest", 3006);
-        ID_TO_CMD.put("xp_scholar_helm", 6006);
-        ID_TO_CMD.put("set_arctic_helm", 3014);
-        ID_TO_CMD.put("set_arctic_chest", 3013);
-        ID_TO_CMD.put("set_arctic_legs", 3015);
-        ID_TO_CMD.put("set_arctic_boots", 3012);
-        ID_TO_CMD.put("set_arctic_blade", 3011);
-        ID_TO_CMD.put("set_arctic_pick", 3016);
-        ID_TO_CMD.put("set_ember_helm", 5009);
-        ID_TO_CMD.put("set_ember_chest", 5008);
-        ID_TO_CMD.put("set_ember_legs", 5010);
-        ID_TO_CMD.put("set_ember_boots", 5007);
-        ID_TO_CMD.put("set_ember_blade", 5006);
-        ID_TO_CMD.put("set_ember_pick", 5011);
-        ID_TO_CMD.put("set_verdant_helm", 2008);
-        ID_TO_CMD.put("set_verdant_chest", 2007);
-        ID_TO_CMD.put("set_verdant_legs", 2010);
-        ID_TO_CMD.put("set_verdant_boots", 2006);
-        ID_TO_CMD.put("set_verdant_hoe", 2009);
-        ID_TO_CMD.put("set_verdant_sickle", 2011);
-        ID_TO_CMD.put("set_abyss_helm", 7005);
-        ID_TO_CMD.put("set_abyss_chest", 7004);
-        ID_TO_CMD.put("set_abyss_legs", 7006);
-        ID_TO_CMD.put("set_abyss_boots", 7003);
-        ID_TO_CMD.put("set_abyss_blade", 7002);
-        ID_TO_CMD.put("set_abyss_pick", 7007);
-        ID_TO_CMD.put("set_storm_helm", 3020);
-        ID_TO_CMD.put("set_storm_chest", 3019);
-        ID_TO_CMD.put("set_storm_legs", 3021);
-        ID_TO_CMD.put("set_storm_boots", 3018);
-        ID_TO_CMD.put("set_storm_blade", 3017);
-        ID_TO_CMD.put("set_storm_pick", 3022);
-        ID_TO_CMD.put("set_solar_helm", 8006);
-        ID_TO_CMD.put("set_solar_chest", 8005);
-        ID_TO_CMD.put("set_solar_legs", 8007);
-        ID_TO_CMD.put("set_solar_boots", 8004);
-        ID_TO_CMD.put("set_solar_blade", 8003);
-        ID_TO_CMD.put("set_solar_pick", 8008);
-        ID_TO_CMD.put("set_titan_helm", 4008);
-        ID_TO_CMD.put("set_titan_chest", 4007);
-        ID_TO_CMD.put("set_titan_legs", 4009);
-        ID_TO_CMD.put("set_titan_boots", 4006);
-        ID_TO_CMD.put("set_titan_blade", 4005);
-        ID_TO_CMD.put("set_titan_pick", 4010);
-        ID_TO_CMD.put("omega_pick", 4003);
-        ID_TO_CMD.put("omega_sword", 4004);
-        ID_TO_CMD.put("omega_farmer", 4002);
-        ID_TO_CMD.put("omega_boots", 4001);
-        ID_TO_CMD.put("silk_runner_boots", 3023);
-        ID_TO_CMD.put("miner_support_chest", 3005);
-        ID_TO_CMD.put("steady_helm", 1001);
-        ID_TO_CMD.put("expeditioner_legs", 3002);
-        ID_TO_CMD.put("swift_shovel", 8010);
-        ID_TO_CMD.put("lumberjack_axe", 5001);
-        ID_TO_CMD.put("arcane_dagger", 6000);
-        ID_TO_CMD.put("chill_cleaver", 3001);
-        ID_TO_CMD.put("grim_scythe", 7001);
-        ID_TO_CMD.put("scholar_blade", 8002);
-        ID_TO_CMD.put("bow_common", 1000);
-        ID_TO_CMD.put("bow_uncommon", 2000);
-        ID_TO_CMD.put("bow_rare", 3000);
-        ID_TO_CMD.put("bow_epic", 4000);
-        ID_TO_CMD.put("bow_legendary", 5000);
-        ID_TO_CMD.put("bow_mythic", 6001);
-        ID_TO_CMD.put("bow_special", 7000);
-        ID_TO_CMD.put("bow_unique", 8000);
-        ID_TO_CMD.put("common_helm", 9001);
-        ID_TO_CMD.put("common_chest", 9002);
-        ID_TO_CMD.put("common_legs", 9003);
-        ID_TO_CMD.put("common_boots", 9004);
-        ID_TO_CMD.put("common_sword", 9005);
-        ID_TO_CMD.put("common_pick", 9006);
-        ID_TO_CMD.put("common_axe", 9007);
-        ID_TO_CMD.put("common_hoe", 9008);
-        ID_TO_CMD.put("uncommon_helm", 9009);
-        ID_TO_CMD.put("uncommon_chest", 9010);
-        ID_TO_CMD.put("uncommon_legs", 9011);
-        ID_TO_CMD.put("uncommon_boots", 9012);
-        ID_TO_CMD.put("uncommon_sword", 9013);
-        ID_TO_CMD.put("uncommon_pick", 9014);
-        ID_TO_CMD.put("uncommon_axe", 9015);
-        ID_TO_CMD.put("uncommon_hoe", 9016);
-        ID_TO_CMD.put("rare_helm", 9017);
-        ID_TO_CMD.put("rare_chest", 9018);
-        ID_TO_CMD.put("rare_legs", 9019);
-        ID_TO_CMD.put("rare_boots", 9020);
-        ID_TO_CMD.put("rare_sword", 9021);
-        ID_TO_CMD.put("rare_pick", 9022);
-        ID_TO_CMD.put("rare_axe", 9023);
-        ID_TO_CMD.put("rare_hoe", 9024);
-        ID_TO_CMD.put("epic_helm", 9025);
-        ID_TO_CMD.put("epic_chest", 9026);
-        ID_TO_CMD.put("epic_legs", 9027);
-        ID_TO_CMD.put("epic_boots", 9028);
-        ID_TO_CMD.put("epic_sword", 9029);
-        ID_TO_CMD.put("epic_pick", 9030);
-        ID_TO_CMD.put("epic_axe", 9031);
-        ID_TO_CMD.put("epic_hoe", 9032);
-        ID_TO_CMD.put("legendary_helm", 9033);
-        ID_TO_CMD.put("legendary_chest", 9034);
-        ID_TO_CMD.put("legendary_legs", 9035);
-        ID_TO_CMD.put("legendary_boots", 9036);
-        ID_TO_CMD.put("legendary_sword", 9037);
-        ID_TO_CMD.put("legendary_pick", 9038);
-        ID_TO_CMD.put("legendary_axe", 9039);
-        ID_TO_CMD.put("legendary_hoe", 9040);
-    }
+
+    private static final Map<String, Integer> ID_TO_CMD = new HashMap<>();
+    private static final Set<Integer> USED = new HashSet<>();
+
     private CustomModels() {}
+
+    /**
+     * Clears all cached mappings. Should be called when templates are (re)loaded.
+     */
+    public static void reset() {
+        ID_TO_CMD.clear();
+        USED.clear();
+    }
+
+    /**
+     * Registers the given id with a desired custom model data value. If the
+     * desired value is {@code <= 0}, a deterministic value based on the id is
+     * generated. Collisions are resolved by incrementing within the safe range.
+     *
+     * @param id      template id
+     * @param desired optional custom model data from the template
+     * @return resolved custom model data
+     */
+    public static int register(String id, int desired) {
+        if (ID_TO_CMD.containsKey(id)) {
+            return ID_TO_CMD.get(id);
+        }
+        int cmd = desired;
+        if (cmd <= 0) {
+            int base = Math.abs(("SETID:" + id).hashCode());
+            cmd = 100000 + (base % 900000);
+        }
+        while (USED.contains(cmd)) {
+            cmd++;
+            if (cmd > 999999) cmd = 100000;
+        }
+        ID_TO_CMD.put(id, cmd);
+        USED.add(cmd);
+        return cmd;
+    }
+
+    /**
+     * Returns the resolved custom model data for the id, generating one if
+     * necessary.
+     */
     public static int cmdFor(String id, String rawName) {
-        Integer v = ID_TO_CMD.get(id);
-        return v == null ? 0 : v;
+        return register(id, 0);
     }
 }
