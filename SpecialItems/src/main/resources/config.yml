@@ -51,3 +51,46 @@ farmxmine:
 
 inventory:
   void_overflow: true
+
+# Leveling system defaults
+leveling:
+  xp_per_action:
+    MINE_BLOCK_BREAK: 3
+    FARM_CROP_BREAK: 1
+    MELEE_HIT: 2
+    RANGED_HIT: 2
+    TAKEN_HIT: 1
+  yield:
+    per_level_pct: 2.0
+    max_pct: 200
+  enchants:
+    chance_pct: 1.0
+    pool:
+      - DAMAGE_ALL
+      - LOOT_BONUS_MOBS
+      - DIG_SPEED
+      - PROTECTION_ENVIRONMENTAL
+      - THORNS
+      - DURABILITY
+    level_min: 1
+    level_max: 10
+  regions:
+    mine:
+      world: world
+      min: [-96, -65, -95]
+      max: [99, -2, 106]
+    farm:
+      world: world
+      min: [85, -60, 48]
+      max: [275, -20, 252]
+  display:
+    unbreakable: true
+    glint: true
+    lore:
+      level: "Level: %LEVEL%"
+      xp: "XP: %XP%/%NEED%"
+      yield_mine: "Yield: +%YIELD%% (mine)"
+      yield_farm: "Yield: +%YIELD%% (farm)"
+  messages:
+    level_up: "%ITEM% leveled up to %LEVEL%"
+    extra_enchant: "%ITEM% gained %ENCHANT% %LEVEL%"
