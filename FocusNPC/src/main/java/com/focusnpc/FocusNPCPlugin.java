@@ -61,10 +61,20 @@ public class FocusNPCPlugin extends JavaPlugin {
     }
 
     private int getLevel(Player player, String placeholder) {
-        if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI") ||
-            !Bukkit.getPluginManager().isPluginEnabled("FarmXMine")) {
-            return 0;
-        }
+    // Nur PAPI ist nötig; wenn FarmXMine fehlt oder der Placeholder nichts liefert, gibt’s 0 zurück
+    if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) return 0;
+    try {
+        String raw = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(player, placeholder);
+        if (raw == null || raw.isEmpty()) return 0;
+        // Nur Ziffern extrahieren (z. B. falls "Level: 123")
+        String digits = raw.replaceAll("[^0-9-]", "");
+        if (digits.isEmpty()) return 0;
+        int lvl = Integer.parseInt(digits);
+        return Math.max(0, lvl);
+    } catch (Exception ignored) {
+        return 0;
+    }
+}
         String value = PlaceholderAPI.setPlaceholders(player, placeholder);
         try {
             return Integer.parseInt(value);

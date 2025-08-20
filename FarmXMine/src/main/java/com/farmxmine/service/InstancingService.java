@@ -1,17 +1,20 @@
 package com.farmxmine.service;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class InstancingService implements Listener {
@@ -24,6 +27,9 @@ public class InstancingService implements Listener {
     private final int generalMax;
     private final boolean directToInv;
     private final boolean voidOverflow;
+    private final boolean wgBreakOverride;
+    private final List<String> wgWorlds;
+    private final String wgPermission;
 
     public InstancingService(JavaPlugin plugin, LevelService level) {
         this.plugin = plugin;
@@ -35,39 +41,64 @@ public class InstancingService implements Listener {
         this.generalMax = plugin.getConfig().getInt("general.max-broken-blocks", 64);
         this.directToInv = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
         this.voidOverflow = plugin.getConfig().getBoolean("inventory.void_overflow", true);
+        this.wgBreakOverride = plugin.getConfig().getBoolean("general.worldguard_break_override", true);
+        this.wgWorlds = plugin.getConfig().getStringList("general.allowed_worlds");
+        this.wgPermission = plugin.getConfig().getString("general.required_permission", "farmxmine.override.break");
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-@EventHandler // wichtig: NICHT ignoreCancelled=true!
+@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
 public void onBreak(BlockBreakEvent event) {
     Player player = event.getPlayer();
     Block block = event.getBlock();
 
-    // world filter
     String worldName = block.getWorld().getName();
     if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
     Material type = block.getType();
-    boolean mining  = isOre(type);
+    boolean mining = isOre(type);
     boolean farming = !mining && isMatureCrop(block);
     if (!mining && !farming) return;
 
-    // Wenn ein anderes Plugin (z.B. WorldGuard) gecancelt hat:
-    if (event.isCancelled()) {
-        boolean override = plugin.getConfig().getBoolean("general.override_cancelled", true);
-        if (!override) return; // nichts tun, wenn Override aus
+    ItemStack tool = player.getInventory().getItemInMainHand();
+    String toolName = tool.getType().name();
+    if (mining && !toolName.endsWith("_PICKAXE")) return;
+    if (farming && !toolName.endsWith("_HOE")) return;
 
-        // Nur XP gutschreiben – KEIN tatsächlicher Abbau!
+    if (event.isCancelled()) {
+        if (!wgBreakOverride) return;
+        if (!wgWorlds.contains(worldName)) return;
+        if (wgPermission != null && !wgPermission.isEmpty() && !player.hasPermission(wgPermission)) return;
+
         int count = computeCount(player, mining);
-        if (mining) {
-            level.addMineXp(player, count);
-        } else {
-            level.addFarmXp(player, count);
+        List<ItemStack> drops = new ArrayList<>();
+        for (ItemStack drop : block.getDrops(tool, player)) {
+            ItemStack copy = drop.clone();
+            copy.setAmount(copy.getAmount() * count);
+            drops.add(copy);
         }
+
+        event.setCancelled(false);
+        event.setDropItems(false);
+        event.setExpToDrop(0);
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (block.getType() != Material.AIR) {
+                block.setType(Material.AIR);
+                block.getWorld().playEffect(block.getLocation(), Effect.STEP_SOUND, type);
+            }
+            for (ItemStack drop : drops) {
+                giveDrop(player, block, drop);
+            }
+            if (mining) {
+                level.addMineXp(player, count);
+            } else {
+                level.addFarmXp(player, count);
+            }
+        });
         return;
     }
 
-    // Normales Verhalten (Block wird abgebaut / verarbeitet)
     if (mining) {
         handle(event, player, block, true);
     } else {
