@@ -1,0 +1,16 @@
+placeholders:
+  farming: "%farmxmine_farming_level%"
+  mining: "%farmxmine_mining_level%"
+
+npcs:
+  farmer:
+    skin: "FarmerSkinName"
+  miner:
+    skin: "MinerSkinName"
+  saved: []
+
+transform:
+  radius: 100
+  max_blocks_per_tick: 500
+  respect_worldguard: true
+  allowed_worlds: [ "world" ]
