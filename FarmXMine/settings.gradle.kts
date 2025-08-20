@@ -1,1 +1,1 @@
-rootProject.name = "InstancedNodes"
+rootProject.name = "FarmxMine"

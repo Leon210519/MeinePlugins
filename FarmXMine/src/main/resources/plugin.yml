@@ -1,24 +1,17 @@
 name: FarmxMine
-main: com.instancednodes.InstancedNodesPlugin
-version: 0.4.6
+main: com.farmxmine.FarmxMinePlugin
+version: 1.0.0
 api-version: '1.21'
-authors: [ 'MinehutHelper' ]
+authors: ['MinehutHelper']
 commands:
-  nodes:
-    description: InstancedNodes admin commands
-    usage: /nodes <debug|reload>
-    permission: instancednodes.admin
-  prestige:
-    description: Prestige to increase income multiplier
-    usage: /prestige
-    permission: instancednodes.prestige
+  artifacts:
+    description: View owned artifacts
+    usage: /artifacts
+  fxm:
+    description: FarmxMine admin commands
+    permission: farmxmine.admin
+    usage: /fxm reload
 permissions:
-  instancednodes.admin:
+  farmxmine.admin:
     default: op
-  instancednodes.mine:
-    default: true
-  instancednodes.farm:
-    default: true
-  instancednodes.prestige:
-    default: true
-softdepend: [WorldGuard, PlaceholderAPI]
+softdepend: [Vault, PlaceholderAPI]
