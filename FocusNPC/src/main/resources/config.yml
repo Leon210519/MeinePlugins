@@ -1,0 +1,10 @@
+placeholders:
+  farming: "%farmxmine_farming_level%"
+  mining: "%farmxmine_mining_level%"
+
+npcs:
+  farmer:
+    skin: "FarmerSkinName"
+  miner:
+    skin: "MinerSkinName"
+  saved: []
