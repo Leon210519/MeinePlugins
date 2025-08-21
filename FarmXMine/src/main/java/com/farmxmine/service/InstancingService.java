@@ -167,7 +167,8 @@ public class InstancingService implements Listener {
         BlockData replacement = Material.AIR.createBlockData();
 
         set.add(loc);
-        sendBlockChange(player, block, replacement);
+        // send after server has confirmed cancellation so client doesn't get overwritten
+        Bukkit.getScheduler().runTask(plugin, () -> sendBlockChange(player, block, replacement));
 
         // Respawn nach Delay: Ursprungs-Blockzustand wieder anzeigen
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
