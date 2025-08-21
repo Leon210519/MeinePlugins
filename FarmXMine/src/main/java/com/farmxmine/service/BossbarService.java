@@ -15,15 +15,13 @@ public class BossbarService {
     private final Map<UUID, BossInfo> bars = new HashMap<>();
     private final BossBar.Color color;
     private final BossBar.Overlay style;
-    private final int idleTimeout;
-    private final int activeTimeout;
+    private final int timeout;
     private final String titleMining;
     private final String titleFarming;
 
     private static class BossInfo {
         BossBar bar;
-        int idleTask;
-        int hardTask;
+        int task;
     }
 
     public boolean isActive(Player player) {
@@ -35,8 +33,7 @@ public class BossbarService {
         this.plugin = plugin;
         this.color = BossBar.Color.valueOf(plugin.getConfig().getString("bossbar.color", "BLUE"));
         this.style = BossBar.Overlay.valueOf(plugin.getConfig().getString("bossbar.style", "SOLID"));
-        this.idleTimeout = plugin.getConfig().getInt("bossbar.timeout_idle_seconds", 10);
-        this.activeTimeout = plugin.getConfig().getInt("bossbar.timeout_active_seconds", 30);
+        this.timeout = plugin.getConfig().getInt("bossbar.timeout_active_seconds", 30);
         this.titleMining = plugin.getConfig().getString("bossbar.title_mining", "Mining");
         this.titleFarming = plugin.getConfig().getString("bossbar.title_farming", "Farming");
     }
@@ -52,10 +49,8 @@ public class BossbarService {
         String title = mining ? titleMining : titleFarming;
         info.bar.name(net.kyori.adventure.text.Component.text(title + " L" + level + " " + (int)xp + "/" + (int)next));
         info.bar.progress((float) (xp / next));
-        if (info.idleTask != 0) Bukkit.getScheduler().cancelTask(info.idleTask);
-        if (info.hardTask != 0) Bukkit.getScheduler().cancelTask(info.hardTask);
-        info.idleTask = Bukkit.getScheduler().runTaskLater(plugin, () -> hide(player), idleTimeout * 20L).getTaskId();
-        info.hardTask = Bukkit.getScheduler().runTaskLater(plugin, () -> hide(player), activeTimeout * 20L).getTaskId();
+        if (info.task != 0) Bukkit.getScheduler().cancelTask(info.task);
+        info.task = Bukkit.getScheduler().runTaskLater(plugin, () -> hide(player), timeout * 20L).getTaskId();
     }
 
     public void hide(Player player) {
