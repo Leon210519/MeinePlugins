@@ -137,14 +137,14 @@ public class InstancingService implements Listener {
     }
 
     private void handle(BlockBreakEvent event, Player player, Block block, Location loc, Set<Location> set, boolean mining) {
-        int xpFromEvent = event.getExpToDrop();
+        int count = computeCount(player, mining);
+        int xpFromEvent = event.getExpToDrop() * count;
 
         // Serverzustand nicht ändern → abbrechen & eigene Drops/XP geben
         event.setCancelled(true);
         event.setDropItems(false);
         event.setExpToDrop(0);
 
-        int count = computeCount(player, mining);
         ItemStack tool = player.getInventory().getItemInMainHand();
 
         // Drops simulieren (inkl. Fortune/Verzauberungen via getDrops)
@@ -164,12 +164,11 @@ public class InstancingService implements Listener {
         }
 
         // Spieler-Client: Block optisch ersetzen (Fake Break)
-        BlockData replacement = mining
-                ? (block.getType().name().startsWith("DEEPSLATE_") ? Material.DEEPSLATE : Material.STONE).createBlockData()
-                : Material.AIR.createBlockData();
+        BlockData replacement = Material.AIR.createBlockData();
 
         set.add(loc);
-        sendBlockChange(player, block, replacement);
+        // send after server has confirmed cancellation so client doesn't get overwritten
+        Bukkit.getScheduler().runTask(plugin, () -> sendBlockChange(player, block, replacement));
 
         // Respawn nach Delay: Ursprungs-Blockzustand wieder anzeigen
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
