@@ -28,13 +28,12 @@ import java.util.UUID;
 
 /**
  * InstancingService
- *
- * - Per-Player "Fake Break/Harvest": Der Block verschwindet nur für den Spieler.
- * - Respawn nach konfigurierbaren Sekunden (respawn_seconds, Default 20s).
- * - Nur Overworld (Environment.NORMAL).
- * - Ores/Crops werden aus den Konfig-Listen "ores" und "crops" gelesen.
- * - Respektiert das Flag "override_cancelled".
- * - Sauberes Cleanup bei Logout.
+ * - Per-Player Fake Break/Harvest (nur für den Actor sichtbar).
+ * - Respawn nach respawn_seconds (Default 20s).
+ * - Overworld only.
+ * - Ores/Crops aus Config, mit Fallbacks.
+ * - override_cancelled respektieren.
+ * - Cleanup bei Logout/Chunk-Unload.
  */
 public class InstancingService implements Listener {
 
@@ -57,10 +56,8 @@ public class InstancingService implements Listener {
     private final boolean overrideCancelled;
     private final long respawnTicks;
 
-    // Für per-Player versteckte Blockpositionen (nur optisch verborgen)
+    // pro Spieler versteckte Blockpositionen
     private final Map<UUID, Set<Location>> hidden = new HashMap<>();
-
-    // Felder zu Schutz-Bypasses wurden entfernt (WorldGuard etc. wird respektiert, außer override_cancelled=true)
 
     public InstancingService(JavaPlugin plugin, LevelService level, ArtifactService artifacts) {
         this.plugin = plugin;
@@ -72,12 +69,16 @@ public class InstancingService implements Listener {
         this.harvestMax = plugin.getConfig().getInt("compat.harvester.max_blocks", 64);
         this.generalMax = plugin.getConfig().getInt("general.max-broken-blocks", 64);
 
-        this.ores = loadMaterials("regions.mine.ores", "mine.ores", "ores");
-        if (this.ores.isEmpty()) this.ores.add(Material.COAL_ORE);
-        this.crops = loadMaterials("regions.farm.crops", "farm.crops", "crops");
-        if (this.crops.isEmpty()) this.crops.add(Material.WHEAT);
+        // Ores/Crops laden (robust) + Defaults
+        Set<Material> tmpOres = loadMaterials("regions.mine.ores", "mine.ores", "ores");
+        if (tmpOres.isEmpty()) tmpOres.add(Material.COAL_ORE);
+        this.ores = tmpOres;
 
-        this.miningRegion = parseRegion("regions.mine.bounds", "mine.bounds");
+        Set<Material> tmpCrops = loadMaterials("regions.farm.crops", "farm.crops", "crops");
+        if (tmpCrops.isEmpty()) tmpCrops.add(Material.WHEAT);
+        this.crops = tmpCrops;
+
+        this.miningRegion  = parseRegion("regions.mine.bounds", "mine.bounds");
         this.farmingRegion = parseRegion("regions.farm.bounds", "farm.bounds");
 
         this.overrideCancelled = plugin.getConfig().getBoolean("override_cancelled", false);
@@ -91,13 +92,13 @@ public class InstancingService implements Listener {
         Player player = event.getPlayer();
         Block block = event.getBlock();
 
-        // Falls ein anderer Plugin-Schutz gecancelt hat und wir das respektieren sollen → raus
+        // andere Plugins haben gecancelt → nur weiter, wenn erlaubt
         if (event.isCancelled() && !overrideCancelled) return;
 
-        // Nur Overworld
+        // nur Overworld
         if (block.getWorld().getEnvironment() != World.Environment.NORMAL) return;
 
-        // Optional: Deaktivierte Welten
+        // deaktivierte Welten
         String worldName = block.getWorld().getName();
         if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
@@ -110,19 +111,20 @@ public class InstancingService implements Listener {
         if (mining && miningRegion != null && !miningRegion.contains(loc)) return;
         if (farming && farmingRegion != null && !farmingRegion.contains(loc)) return;
 
+        // Ab HIER immer echte Welt schützen
         int baseXp = event.getExpToDrop();
         event.setCancelled(true);
         event.setDropItems(false);
         event.setExpToDrop(0);
 
-        // Doppelverarbeitung auf gleicher Position verhindern
+        // bereits versteckt?
         Set<Location> set = hidden.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>());
         if (set.contains(loc)) return;
 
-        // Tool-Checks
+        // Tool-Gating (mit falschem Tool NICHT abbauen)
         ItemStack tool = player.getInventory().getItemInMainHand();
         String toolName = tool.getType().name();
-        if (mining && !toolName.endsWith("_PICKAXE")) return;
+        if (mining && !toolName.endsWith("_PICKAXE")) return; // Event ist bereits gecancelt → kein Real-Abbau
         if (farming && !toolName.endsWith("_HOE")) return;
 
         // Verarbeiten
@@ -143,43 +145,37 @@ public class InstancingService implements Listener {
 
         ItemStack tool = player.getInventory().getItemInMainHand();
 
-        // Drops simulieren (inkl. Fortune/Verzauberungen via getDrops)
+        // Artifact-Multiplikator (inkl. Item-Yield Multiplikation intern in artifacts.getMultiplier abgebildet)
         double multi = artifacts.getMultiplier(player, mining ? ArtifactService.Category.MINING : ArtifactService.Category.FARMING);
+
+        // Drops simulieren (inkl. Fortune via getDrops)
         List<ItemStack> drops = collectDrops(block, tool, player, mining, count, multi);
         for (ItemStack drop : drops) {
             giveDrop(player, drop);
         }
 
         // XP/Leveling
-        if (mining) {
-            level.addMineXp(player, count);
-        } else {
-            level.addFarmXp(player, count);
-        }
-        if (xpFromEvent > 0) {
-            player.giveExp(xpFromEvent);
-        }
+        if (mining) level.addMineXp(player, count);
+        else        level.addFarmXp(player, count);
 
-        // Spieler-Client: Block optisch ersetzen (Fake Break)
+        if (xpFromEvent > 0) player.giveExp(xpFromEvent);
+
+        // Clientseitiger Placeholder: Erze = STONE, Crops = AIR
         BlockData replacement = mining ? Material.STONE.createBlockData() : Material.AIR.createBlockData();
 
         set.add(loc);
-        // send after server has confirmed cancellation so client doesn't get overwritten
+        // nach Tick senden, damit Client-Update stabil ist
         Bukkit.getScheduler().runTask(plugin, () -> sendBlockChange(player, block, replacement));
 
-        // Respawn nach Delay: Ursprungs-Blockzustand wieder anzeigen
+        // Respawn → echten Serverzustand zurücksenden
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             set.remove(loc);
             if (!player.isOnline()) return;
             World world = loc.getWorld();
             if (world == null) return;
-
-            // Chunk muss geladen sein
-            int cx = loc.getBlockX() >> 4;
-            int cz = loc.getBlockZ() >> 4;
+            int cx = loc.getBlockX() >> 4, cz = loc.getBlockZ() >> 4;
             if (!world.isChunkLoaded(cx, cz)) return;
 
-            // Zeige wieder den echten Blockzustand des Servers (falls er sich zwischenzeitlich geändert hat, sehen wir den neuen)
             player.sendBlockChange(loc, world.getBlockAt(loc).getBlockData());
         }, respawnTicks);
     }
@@ -192,10 +188,7 @@ public class InstancingService implements Listener {
             if (lore != null) {
                 for (String line : lore) {
                     for (String tag : veinLore) {
-                        if (line != null && tag != null && line.contains(tag)) {
-                            multi = true;
-                            break;
-                        }
+                        if (line != null && tag != null && line.contains(tag)) { multi = true; break; }
                     }
                     if (multi) break;
                 }
@@ -208,7 +201,7 @@ public class InstancingService implements Listener {
 
     private void giveDrop(Player player, ItemStack drop) {
         if (drop == null || drop.getType() == Material.AIR || drop.getAmount() <= 0) return;
-        player.getInventory().addItem(drop);
+        player.getInventory().addItem(drop); // direkt ins Inventar (kein Boden-Drop)
     }
 
     private void sendBlockChange(Player player, Block block, BlockData data) {
@@ -223,13 +216,10 @@ public class InstancingService implements Listener {
             if (original == null || original.getType() == Material.AIR) continue;
 
             Material outType = original.getType();
-            if (smelt) {
-                outType = SMELTS.getOrDefault(outType, outType);
-            }
+            if (smelt) outType = SMELTS.getOrDefault(outType, outType);
 
-            int amt = (int) Math.round(Math.max(1, original.getAmount()) * Math.max(1, count) * multi);
-            ItemStack drop = new ItemStack(outType, Math.max(1, amt));
-            drops.add(drop);
+            int amt = (int) Math.round(Math.max(1, original.getAmount()) * Math.max(1, count) * Math.max(0.0, multi));
+            drops.add(new ItemStack(outType, Math.max(1, amt)));
         }
         return drops;
     }
@@ -244,7 +234,7 @@ public class InstancingService implements Listener {
         return false;
     }
 
-    // Achtung: Map.ofEntries ist ab Java 9 verfügbar — Paper 1.21 nutzt i. d. R. Java 21 → okay.
+    // Java 9+ (Paper 1.21 i. d. R. Java 21)
     private static final Map<Material, Material> SMELTS = Map.ofEntries(
             Map.entry(Material.RAW_IRON, Material.IRON_INGOT),
             Map.entry(Material.RAW_GOLD, Material.GOLD_INGOT),
@@ -314,9 +304,7 @@ public class InstancingService implements Listener {
         boolean contains(Location loc) {
             World w = loc.getWorld();
             if (world != null && (w == null || !w.getName().equals(world))) return false;
-            int x = loc.getBlockX();
-            int y = loc.getBlockY();
-            int z = loc.getBlockZ();
+            int x = loc.getBlockX(), y = loc.getBlockY(), z = loc.getBlockZ();
             return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
         }
     }
