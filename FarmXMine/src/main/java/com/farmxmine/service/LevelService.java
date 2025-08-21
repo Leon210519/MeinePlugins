@@ -1,6 +1,7 @@
 package com.farmxmine.service;
 
 import com.farmxmine.data.PlayerData;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -42,7 +43,11 @@ public class LevelService {
             levelled = true;
         }
         bossbars.update(player, true, data.getMiningXp(), nextReq(data.getMiningLevel()), data.getMiningLevel());
-        if (levelled) artifacts.tryGrant(player, ArtifactService.Category.MINING);
+        if (levelled) {
+            player.sendMessage("Mining level up! Now level " + data.getMiningLevel());
+            player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            artifacts.tryGrant(player, ArtifactService.Category.MINING);
+        }
     }
 
     public void addFarmXp(Player player, int count) {
@@ -56,6 +61,10 @@ public class LevelService {
             levelled = true;
         }
         bossbars.update(player, false, data.getFarmingXp(), nextReq(data.getFarmingLevel()), data.getFarmingLevel());
-        if (levelled) artifacts.tryGrant(player, ArtifactService.Category.FARMING);
+        if (levelled) {
+            player.sendMessage("Farming level up! Now level " + data.getFarmingLevel());
+            player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            artifacts.tryGrant(player, ArtifactService.Category.FARMING);
+        }
     }
 }
