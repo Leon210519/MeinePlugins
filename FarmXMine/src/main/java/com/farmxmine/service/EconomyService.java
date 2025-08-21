@@ -16,7 +16,10 @@ public class EconomyService {
     }
 
     public double apply(Player player, double amount) {
-        return amount * artifacts.getMultiplier(player);
+        double mul = Math.max(
+                artifacts.getMultiplier(player, ArtifactService.Category.MINING),
+                artifacts.getMultiplier(player, ArtifactService.Category.FARMING));
+        return amount * mul;
     }
 
     public Economy getEconomy() {

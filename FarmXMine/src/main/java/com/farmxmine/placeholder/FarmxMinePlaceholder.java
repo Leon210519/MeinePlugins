@@ -44,7 +44,12 @@ public class FarmxMinePlaceholder extends PlaceholderExpansion {
         return switch (params) {
             case "mining_level" -> String.valueOf(data.getMiningLevel());
             case "farming_level" -> String.valueOf(data.getFarmingLevel());
-            case "eco_multiplier" -> String.format("%.2f", artifacts.getMultiplier(player));
+            case "eco_multiplier" -> {
+                double mul = Math.max(
+                        artifacts.getMultiplier(player, ArtifactService.Category.MINING),
+                        artifacts.getMultiplier(player, ArtifactService.Category.FARMING));
+                yield String.format("%.2f", mul);
+            }
             case "bossbar_active" -> bossbars.isActive(player) ? "true" : "false";
             case "artifacts_owned" -> String.valueOf(data.getArtifacts().size());
             default -> "";

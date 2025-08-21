@@ -40,6 +40,7 @@ public class InstancingService implements Listener {
 
     private final JavaPlugin plugin;
     private final LevelService level;
+    private final ArtifactService artifacts;
 
     // Vein/Harvest Multiplikator-Erkennung
     private final List<String> veinLore;
@@ -65,9 +66,10 @@ public class InstancingService implements Listener {
 
     // Felder zu Schutz-Bypasses wurden entfernt (WorldGuard etc. wird respektiert, außer override_cancelled=true)
 
-    public InstancingService(JavaPlugin plugin, LevelService level) {
+    public InstancingService(JavaPlugin plugin, LevelService level, ArtifactService artifacts) {
         this.plugin = plugin;
         this.level = level;
+        this.artifacts = artifacts;
 
         this.veinLore = plugin.getConfig().getStringList("compat.veinminer.detect_lore");
         this.veinMax = plugin.getConfig().getInt("compat.veinminer.max_blocks", 64);
@@ -122,10 +124,17 @@ public class InstancingService implements Listener {
             return;
         }
 
-        // Tool-Check für Mining (Pickaxe)
+        // Tool-Checks
         ItemStack tool = player.getInventory().getItemInMainHand();
         String toolName = tool.getType().name();
-        if (mining && !toolName.endsWith("_PICKAXE")) return;
+        if (mining && !toolName.endsWith("_PICKAXE")) {
+            event.setCancelled(true);
+            return;
+        }
+        if (farming && !toolName.endsWith("_HOE")) {
+            event.setCancelled(true);
+            return;
+        }
 
         // Verarbeiten
         handle(event, player, block, loc, set, mining);
@@ -151,7 +160,8 @@ public class InstancingService implements Listener {
         ItemStack tool = player.getInventory().getItemInMainHand();
 
         // Drops simulieren (inkl. Fortune/Verzauberungen via getDrops)
-        List<ItemStack> drops = collectDrops(block, tool, player, mining, count);
+        double multi = artifacts.getMultiplier(player, mining ? ArtifactService.Category.MINING : ArtifactService.Category.FARMING);
+        List<ItemStack> drops = collectDrops(block, tool, player, mining, count, multi);
         for (ItemStack drop : drops) {
             giveDrop(player, block, drop);
         }
@@ -167,7 +177,7 @@ public class InstancingService implements Listener {
         }
 
         // Spieler-Client: Block optisch ersetzen (Fake Break)
-        BlockData replacement = Material.AIR.createBlockData();
+        BlockData replacement = mining ? Material.STONE.createBlockData() : Material.AIR.createBlockData();
 
         set.add(loc);
         // send after server has confirmed cancellation so client doesn't get overwritten
@@ -229,7 +239,7 @@ public class InstancingService implements Listener {
         player.sendBlockChange(block.getLocation(), data);
     }
 
-    private List<ItemStack> collectDrops(Block block, ItemStack tool, Player player, boolean mining, int count) {
+    private List<ItemStack> collectDrops(Block block, ItemStack tool, Player player, boolean mining, int count, double multi) {
         List<ItemStack> drops = new ArrayList<>();
         boolean smelt = mining && hasAutoSmelt(tool);
 
@@ -241,7 +251,8 @@ public class InstancingService implements Listener {
                 outType = SMELTS.getOrDefault(outType, outType);
             }
 
-            ItemStack drop = new ItemStack(outType, Math.max(1, original.getAmount()) * Math.max(1, count));
+            int amt = (int) Math.round(Math.max(1, original.getAmount()) * Math.max(1, count) * multi);
+            ItemStack drop = new ItemStack(outType, Math.max(1, amt));
             drops.add(drop);
         }
         return drops;

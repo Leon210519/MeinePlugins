@@ -33,7 +33,7 @@ public class FarmxMinePlugin extends JavaPlugin {
         artifacts = new ArtifactService(this, storage);
         economy = new EconomyService(this, artifacts);
         levels = new LevelService(this, storage, artifacts, bossbars);
-        instancing = new InstancingService(this, levels);
+        instancing = new InstancingService(this, levels, artifacts);
     }
 
     public void reloadPlugin() {

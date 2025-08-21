@@ -32,12 +32,15 @@ public class ArtifactsCommand implements CommandExecutor {
         for (int id : owned) {
             ItemStack item = new ItemStack(Material.PAPER);
             ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName("Artifact #" + id);
+            String cat = id < artifacts.getTotalArtifacts() / 2 ? "Mining" : "Farming";
+            meta.setDisplayName(cat + " Artifact #" + id);
             item.setItemMeta(meta);
             inv.addItem(item);
         }
         player.openInventory(inv);
-        player.sendMessage("Total artifacts: " + owned.size() + " Multiplier x" + String.format("%.2f", artifacts.getMultiplier(player)));
+        double mine = artifacts.getMultiplier(player, ArtifactService.Category.MINING);
+        double farm = artifacts.getMultiplier(player, ArtifactService.Category.FARMING);
+        player.sendMessage("Mining bonus " + String.format("%.0f", (mine - 1) * 100) + "% Farming bonus " + String.format("%.0f", (farm - 1) * 100) + "%");
         return true;
     }
 }
