@@ -7,12 +7,14 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -38,6 +40,7 @@ public class InstancingService implements Listener {
 
     private final JavaPlugin plugin;
     private final LevelService level;
+    private final ArtifactService artifacts;
 
     // Vein/Harvest Multiplikator-Erkennung
     private final List<String> veinLore;
@@ -52,6 +55,8 @@ public class InstancingService implements Listener {
     // Konfig-Listen
     private final Set<Material> ores;
     private final Set<Material> crops;
+    private final Region miningRegion;
+    private final Region farmingRegion;
 
     private final boolean overrideCancelled;
     private final long respawnTicks;
@@ -61,9 +66,10 @@ public class InstancingService implements Listener {
 
     // Felder zu Schutz-Bypasses wurden entfernt (WorldGuard etc. wird respektiert, außer override_cancelled=true)
 
-    public InstancingService(JavaPlugin plugin, LevelService level) {
+    public InstancingService(JavaPlugin plugin, LevelService level, ArtifactService artifacts) {
         this.plugin = plugin;
         this.level = level;
+        this.artifacts = artifacts;
 
         this.veinLore = plugin.getConfig().getStringList("compat.veinminer.detect_lore");
         this.veinMax = plugin.getConfig().getInt("compat.veinminer.max_blocks", 64);
@@ -73,15 +79,11 @@ public class InstancingService implements Listener {
         this.directToInv = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
         this.voidOverflow = plugin.getConfig().getBoolean("inventory.void_overflow", true);
 
-        this.ores = new HashSet<>();
-        for (String s : plugin.getConfig().getStringList("ores")) {
-            try { this.ores.add(Material.valueOf(s)); } catch (IllegalArgumentException ignored) {}
-        }
+        this.ores = loadMaterials("regions.mine.ores", "mine.ores", "ores");
+        this.crops = loadMaterials("regions.farm.crops", "farm.crops", "crops");
 
-        this.crops = new HashSet<>();
-        for (String s : plugin.getConfig().getStringList("crops")) {
-            try { this.crops.add(Material.valueOf(s)); } catch (IllegalArgumentException ignored) {}
-        }
+        this.miningRegion = parseRegion("regions.mine.bounds", "mine.bounds");
+        this.farmingRegion = parseRegion("regions.farm.bounds", "farm.bounds");
 
         this.overrideCancelled = plugin.getConfig().getBoolean("override_cancelled", false);
         this.respawnTicks = plugin.getConfig().getInt("respawn_seconds", 20) * 20L;
@@ -104,13 +106,16 @@ public class InstancingService implements Listener {
         String worldName = block.getWorld().getName();
         if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
+        Location loc = block.getLocation().toBlockLocation();
         Material type = block.getType();
         boolean mining = ores.contains(type);
         boolean farming = !mining && crops.contains(type) && isMatureCrop(block);
         if (!mining && !farming) return;
 
+        if (mining && miningRegion != null && !miningRegion.contains(loc)) return;
+        if (farming && farmingRegion != null && !farmingRegion.contains(loc)) return;
+
         // Doppelverarbeitung auf gleicher Position verhindern
-        Location loc = block.getLocation().toBlockLocation();
         Set<Location> set = hidden.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>());
         if (set.contains(loc)) {
             event.setCancelled(true);
@@ -119,10 +124,17 @@ public class InstancingService implements Listener {
             return;
         }
 
-        // Tool-Check für Mining (Pickaxe)
+        // Tool-Checks
         ItemStack tool = player.getInventory().getItemInMainHand();
         String toolName = tool.getType().name();
-        if (mining && !toolName.endsWith("_PICKAXE")) return;
+        if (mining && !toolName.endsWith("_PICKAXE")) {
+            event.setCancelled(true);
+            return;
+        }
+        if (farming && !toolName.endsWith("_HOE")) {
+            event.setCancelled(true);
+            return;
+        }
 
         // Verarbeiten
         handle(event, player, block, loc, set, mining);
@@ -148,7 +160,8 @@ public class InstancingService implements Listener {
         ItemStack tool = player.getInventory().getItemInMainHand();
 
         // Drops simulieren (inkl. Fortune/Verzauberungen via getDrops)
-        List<ItemStack> drops = collectDrops(block, tool, player, mining, count);
+        double multi = artifacts.getMultiplier(player, mining ? ArtifactService.Category.MINING : ArtifactService.Category.FARMING);
+        List<ItemStack> drops = collectDrops(block, tool, player, mining, count, multi);
         for (ItemStack drop : drops) {
             giveDrop(player, block, drop);
         }
@@ -164,7 +177,7 @@ public class InstancingService implements Listener {
         }
 
         // Spieler-Client: Block optisch ersetzen (Fake Break)
-        BlockData replacement = Material.AIR.createBlockData();
+        BlockData replacement = mining ? Material.STONE.createBlockData() : Material.AIR.createBlockData();
 
         set.add(loc);
         // send after server has confirmed cancellation so client doesn't get overwritten
@@ -226,7 +239,7 @@ public class InstancingService implements Listener {
         player.sendBlockChange(block.getLocation(), data);
     }
 
-    private List<ItemStack> collectDrops(Block block, ItemStack tool, Player player, boolean mining, int count) {
+    private List<ItemStack> collectDrops(Block block, ItemStack tool, Player player, boolean mining, int count, double multi) {
         List<ItemStack> drops = new ArrayList<>();
         boolean smelt = mining && hasAutoSmelt(tool);
 
@@ -238,7 +251,8 @@ public class InstancingService implements Listener {
                 outType = SMELTS.getOrDefault(outType, outType);
             }
 
-            ItemStack drop = new ItemStack(outType, Math.max(1, original.getAmount()) * Math.max(1, count));
+            int amt = (int) Math.round(Math.max(1, original.getAmount()) * Math.max(1, count) * multi);
+            ItemStack drop = new ItemStack(outType, Math.max(1, amt));
             drops.add(drop);
         }
         return drops;
@@ -266,5 +280,68 @@ public class InstancingService implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         hidden.remove(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onChunkUnload(ChunkUnloadEvent event) {
+        hidden.values().forEach(s -> s.removeIf(loc -> {
+            World w = loc.getWorld();
+            if (w == null || w != event.getWorld()) return false;
+            return (loc.getBlockX() >> 4) == event.getChunk().getX() && (loc.getBlockZ() >> 4) == event.getChunk().getZ();
+        }));
+    }
+
+    private Set<Material> loadMaterials(String... paths) {
+        Set<Material> set = new HashSet<>();
+        for (String p : paths) {
+            for (String s : plugin.getConfig().getStringList(p)) {
+                try { set.add(Material.valueOf(s)); } catch (IllegalArgumentException ignored) {}
+            }
+        }
+        return set;
+    }
+
+    private Region parseRegion(String... paths) {
+        for (String p : paths) {
+            ConfigurationSection sec = plugin.getConfig().getConfigurationSection(p);
+            if (sec == null) continue;
+            String world = sec.getString("world", null);
+            List<Integer> minList = sec.getIntegerList("min");
+            List<Integer> maxList = sec.getIntegerList("max");
+            if (minList.size() == 3 && maxList.size() == 3) {
+                return new Region(world,
+                        Math.min(minList.get(0), maxList.get(0)),
+                        Math.min(minList.get(1), maxList.get(1)),
+                        Math.min(minList.get(2), maxList.get(2)),
+                        Math.max(minList.get(0), maxList.get(0)),
+                        Math.max(minList.get(1), maxList.get(1)),
+                        Math.max(minList.get(2), maxList.get(2)));
+            }
+            ConfigurationSection minSec = sec.getConfigurationSection("min");
+            ConfigurationSection maxSec = sec.getConfigurationSection("max");
+            if (minSec != null && maxSec != null) {
+                int minX = minSec.getInt("x");
+                int minY = minSec.getInt("y");
+                int minZ = minSec.getInt("z");
+                int maxX = maxSec.getInt("x");
+                int maxY = maxSec.getInt("y");
+                int maxZ = maxSec.getInt("z");
+                return new Region(world,
+                        Math.min(minX, maxX), Math.min(minY, maxY), Math.min(minZ, maxZ),
+                        Math.max(minX, maxX), Math.max(minY, maxY), Math.max(minZ, maxZ));
+            }
+        }
+        return null;
+    }
+
+    private record Region(String world, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+        boolean contains(Location loc) {
+            World w = loc.getWorld();
+            if (world != null && (w == null || !w.getName().equals(world))) return false;
+            int x = loc.getBlockX();
+            int y = loc.getBlockY();
+            int z = loc.getBlockZ();
+            return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
+        }
     }
 }
