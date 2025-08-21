@@ -18,48 +18,54 @@ public class ArtifactService {
     private final int totalArtifacts;
     private final double dropChance;
     private final double baseMultiplier;
-    private final boolean multiplicative;
+    private final int maxPerSkill;
 
     public ArtifactService(JavaPlugin plugin, StorageService storage) {
         this.plugin = plugin;
         this.storage = storage;
         this.totalArtifacts = plugin.getConfig().getInt("artifacts.total_unique", 100);
-        this.dropChance = plugin.getConfig().getDouble("artifacts.drop_chance_on_levelup_pct", 4.5) / 100.0;
+        this.dropChance = plugin.getConfig().getDouble("artifacts.drop_chance_on_levelup_pct", 2.0) / 100.0;
         this.baseMultiplier = plugin.getConfig().getDouble("artifacts.base_multiplier_common_pct", 1.0) / 100.0;
-        this.multiplicative = plugin.getConfig().getString("artifacts.apply_mode", "multiplicative").equalsIgnoreCase("multiplicative");
+        this.maxPerSkill = plugin.getConfig().getInt("artifacts.max_per_skill", 20);
     }
 
     public void tryGrant(Player player, Category category) {
         if (!plugin.getConfig().getBoolean("artifacts.enabled", true)) return;
         if (random.nextDouble() > dropChance) return;
         PlayerData data = storage.get(player);
-        List<Integer> available = new ArrayList<>();
         int start = category == Category.MINING ? 0 : totalArtifacts / 2;
         int end = category == Category.MINING ? totalArtifacts / 2 : totalArtifacts;
+        int owned = 0;
+        List<Integer> available = new ArrayList<>();
         for (int i = start; i < end; i++) {
-            if (!data.getArtifacts().contains(i)) available.add(i);
+            if (data.getArtifacts().contains(i)) {
+                owned++;
+            } else {
+                available.add(i);
+            }
         }
-        if (available.isEmpty()) return;
+        if (owned >= maxPerSkill || available.isEmpty()) return;
         int chosen = available.get(random.nextInt(available.size()));
         data.getArtifacts().add(chosen);
         player.sendMessage("§aYou found an artifact! (#" + chosen + ")");
     }
 
-    public double getMultiplier(Player player) {
+    public double getMultiplier(Player player, Category category) {
         PlayerData data = storage.get(player);
-        int count = data.getArtifacts().size();
-        if (multiplicative) {
-            double mul = 1.0;
-            for (int i = 0; i < count; i++) {
-                mul *= (1.0 + baseMultiplier);
-            }
-            return mul;
-        } else {
-            return 1.0 + baseMultiplier * count;
+        int start = category == Category.MINING ? 0 : totalArtifacts / 2;
+        int end = category == Category.MINING ? totalArtifacts / 2 : totalArtifacts;
+        int count = 0;
+        for (int i = start; i < end; i++) {
+            if (data.getArtifacts().contains(i)) count++;
         }
+        return 1.0 + baseMultiplier * count;
     }
 
     public Set<Integer> getArtifacts(Player player) {
         return storage.get(player).getArtifacts();
+    }
+
+    public int getTotalArtifacts() {
+        return totalArtifacts;
     }
 }
