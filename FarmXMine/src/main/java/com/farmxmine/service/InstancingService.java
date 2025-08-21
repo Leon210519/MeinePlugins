@@ -1,7 +1,9 @@
 package com.farmxmine.service;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
@@ -10,62 +12,90 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class InstancingService implements Listener {
     private final JavaPlugin plugin;
     private final LevelService level;
-    private final int respawnSeconds;
     private final List<String> veinLore;
     private final int veinMax;
     private final int harvestMax;
     private final int generalMax;
     private final boolean directToInv;
     private final boolean voidOverflow;
+    private final Set<Material> ores;
+    private final Set<Material> crops;
+    private final boolean overrideCancelled;
+    private final long respawnTicks;
+    private final Map<UUID, Set<Location>> hidden = new HashMap<>();
     // Fields related to bypassing protections have been removed
 
     public InstancingService(JavaPlugin plugin, LevelService level) {
         this.plugin = plugin;
         this.level = level;
-        this.respawnSeconds = plugin.getConfig().getInt("respawn_seconds", 30);
         this.veinLore = plugin.getConfig().getStringList("compat.veinminer.detect_lore");
         this.veinMax = plugin.getConfig().getInt("compat.veinminer.max_blocks", 64);
         this.harvestMax = plugin.getConfig().getInt("compat.harvester.max_blocks", 64);
         this.generalMax = plugin.getConfig().getInt("general.max-broken-blocks", 64);
         this.directToInv = plugin.getConfig().getBoolean("farmxmine.direct_to_inventory", true);
         this.voidOverflow = plugin.getConfig().getBoolean("inventory.void_overflow", true);
+        this.ores = new HashSet<>();
+        for (String s : plugin.getConfig().getStringList("ores")) {
+            try { this.ores.add(Material.valueOf(s)); } catch (IllegalArgumentException ignored) {}
+        }
+        this.crops = new HashSet<>();
+        for (String s : plugin.getConfig().getStringList("crops")) {
+            try { this.crops.add(Material.valueOf(s)); } catch (IllegalArgumentException ignored) {}
+        }
+        this.overrideCancelled = plugin.getConfig().getBoolean("override_cancelled", false);
+        this.respawnTicks = plugin.getConfig().getInt("respawn_seconds", 20) * 20L;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         Block block = event.getBlock();
+
+        if (event.isCancelled() && !overrideCancelled) return;
+        if (block.getWorld().getEnvironment() != World.Environment.NORMAL) return;
 
         String worldName = block.getWorld().getName();
         if (plugin.getConfig().getStringList("general.disabled-worlds").contains(worldName)) return;
 
         Material type = block.getType();
-        boolean mining = isOre(type);
-        boolean farming = !mining && isMatureCrop(block);
+        boolean mining = ores.contains(type);
+        boolean farming = !mining && crops.contains(type) && isMatureCrop(block);
         if (!mining && !farming) return;
+
+        Location loc = block.getLocation().toBlockLocation();
+        Set<Location> set = hidden.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>());
+        if (set.contains(loc)) {
+            event.setCancelled(true);
+            event.setDropItems(false);
+            event.setExpToDrop(0);
+            return;
+        }
 
         ItemStack tool = player.getInventory().getItemInMainHand();
         String toolName = tool.getType().name();
         if (mining && !toolName.endsWith("_PICKAXE")) return;
-        if (farming && !toolName.endsWith("_HOE")) return;
 
         if (mining) {
-            handle(event, player, block, true);
+            handle(event, player, block, loc, set, true);
         } else {
-            handle(event, player, block, false);
+            handle(event, player, block, loc, set, false);
         }
     }
 
@@ -78,7 +108,8 @@ public class InstancingService implements Listener {
         return false;
     }
 
-    private void handle(BlockBreakEvent event, Player player, Block block, boolean mining) {
+    private void handle(BlockBreakEvent event, Player player, Block block, Location loc, Set<Location> set, boolean mining) {
+        int xp = event.getExpToDrop();
         event.setCancelled(true);
         event.setDropItems(false);
         event.setExpToDrop(0);
@@ -93,7 +124,7 @@ public class InstancingService implements Listener {
         } else {
             level.addFarmXp(player, count);
         }
-        BlockData original = block.getBlockData();
+        player.giveExp(xp);
         BlockData replacement;
         if (mining) {
             boolean deepslate = block.getType().name().startsWith("DEEPSLATE_");
@@ -101,8 +132,18 @@ public class InstancingService implements Listener {
         } else {
             replacement = Material.AIR.createBlockData();
         }
+        set.add(loc);
         sendBlockChange(player, block, replacement);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> player.sendBlockChange(block.getLocation(), original), respawnSeconds * 20L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            set.remove(loc);
+            if (!player.isOnline()) return;
+            World world = loc.getWorld();
+            if (world == null) return;
+            int cx = loc.getBlockX() >> 4;
+            int cz = loc.getBlockZ() >> 4;
+            if (!world.isChunkLoaded(cx, cz)) return;
+            player.sendBlockChange(loc, world.getBlockAt(loc).getBlockData());
+        }, respawnTicks);
     }
 
     private int computeCount(Player player, boolean mining) {
@@ -131,11 +172,6 @@ public class InstancingService implements Listener {
         }
     }
 
-    private boolean isOre(Material type) {
-        String n = type.name();
-        return n.endsWith("_ORE") || n.equals("ANCIENT_DEBRIS");
-    }
-
     private void sendBlockChange(Player player, Block block, BlockData data) {
         player.sendBlockChange(block.getLocation(), data);
     }
@@ -145,9 +181,6 @@ public class InstancingService implements Listener {
         boolean smelt = mining && hasAutoSmelt(tool);
         for (ItemStack drop : block.getDrops(tool, player)) {
             Material type = drop.getType();
-            if (!mining && type.name().endsWith("SEEDS")) {
-                continue;
-            }
             if (smelt) {
                 type = SMELTS.getOrDefault(type, type);
                 drop = new ItemStack(type, drop.getAmount());
@@ -173,4 +206,9 @@ public class InstancingService implements Listener {
             Map.entry(Material.GOLD_NUGGET, Material.GOLD_INGOT),
             Map.entry(Material.ANCIENT_DEBRIS, Material.NETHERITE_SCRAP)
     );
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        hidden.remove(event.getPlayer().getUniqueId());
+    }
 }
