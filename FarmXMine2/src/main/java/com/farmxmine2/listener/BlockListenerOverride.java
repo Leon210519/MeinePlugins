@@ -15,8 +15,6 @@ public class BlockListenerOverride implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBreak(BlockBreakEvent event) {
-        if (!event.isCancelled()) return;
-        harvestService.handle(event.getPlayer(), event.getBlock());
-        event.setCancelled(true);
+        harvestService.handleBlockBreak(event.getPlayer(), event.getBlock(), event);
     }
 }

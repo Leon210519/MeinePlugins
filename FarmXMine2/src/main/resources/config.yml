@@ -1,5 +1,5 @@
 general:
-  respawn_seconds: 30
+  respawn_seconds: 20
   play_sounds: false
   require_permissions: false
   override_cancelled: false
