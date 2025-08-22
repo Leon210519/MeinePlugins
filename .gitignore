@@ -1,3 +1,36 @@
-# Ignore Gradle build directories across all submodules
-*/.gradle/
-*/build/
+# Gradle Wrapper (macht bei Codex Ärger)
+gradlew
+gradlew.bat
+gradle/
+
+# Build-Outputs
+/build/
+/out/
+/bin/
+
+# Jars & andere Binärdateien
+*.jar
+*.zip
+*.class
+*.dll
+*.exe
+*.so
+
+# Bilder/Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
