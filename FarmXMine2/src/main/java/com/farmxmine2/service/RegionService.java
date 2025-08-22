@@ -4,6 +4,7 @@ import com.farmxmine2.FarmXMine2Plugin;
 import com.farmxmine2.model.Region;
 import com.farmxmine2.model.TrackType;
 import com.farmxmine2.model.Vec3i;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 
@@ -46,5 +47,24 @@ public class RegionService {
 
     public Region getRegion(TrackType type) {
         return regions.get(type);
+    }
+
+    /**
+     * Determine which configured track a location falls into.
+     * Only the main world "world" is considered valid.
+     *
+     * @param loc location to test
+     * @return matching TrackType or null if none
+     */
+    public TrackType getKind(Location loc) {
+        if (loc.getWorld() == null || !"world".equalsIgnoreCase(loc.getWorld().getName())) {
+            return null;
+        }
+        for (Map.Entry<TrackType, Region> entry : regions.entrySet()) {
+            if (entry.getValue().contains(loc)) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 }

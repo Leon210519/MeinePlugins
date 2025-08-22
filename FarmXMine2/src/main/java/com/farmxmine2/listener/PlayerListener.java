@@ -42,7 +42,7 @@ public class PlayerListener implements Listener {
     public void onChunkUnload(ChunkUnloadEvent event) {
         Chunk chunk = event.getChunk();
         for (Player player : chunk.getWorld().getPlayers()) {
-            harvestService.clear(player); // simple: clears any views in that chunk
+            harvestService.clear(player, chunk);
         }
     }
 }
