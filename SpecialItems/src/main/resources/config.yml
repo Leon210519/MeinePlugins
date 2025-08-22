@@ -37,6 +37,27 @@ effects:
   night_vision: { enabled: true }
   magnet: { enabled: true, range-per-level: 3, max-range: 10 }
   xp_boost: { enabled: true, multiplier-per-level: 0.25 }
+  double_damage:
+    enabled: true
+    chance_per_level: 0.20
+    max_multiplier: 2.0
+  haste_boost:
+    enabled: true
+    refresh_ticks: 20
+  absorption_shield:
+    enabled: true
+    max_amplifier: 4
+    refresh_ticks: 60
+  greenthumb:
+    enabled: true
+    bonus_per_level: 0.15
+    duplicate_seeds: false
+
+rarities:
+  STARFORGED:
+    display: "&d&l✦ Starforged ✦"
+    color: "LIGHT_PURPLE"
+    sort: 999
 
 specialitems:
   harvester_scale: 0.35

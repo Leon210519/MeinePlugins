@@ -20,7 +20,7 @@ public final class TemplateGUI {
 
     public static final String TITLE = ChatColor.AQUA + "SpecialItems Templates";
     private static final int ROWS = 6;
-    // Inventory has 6 rows: top row used for navigation, the rest for item rows.
+    // Inventory has 6 rows: right-most column used for navigation.
 
     public static void open(Player p, int page) {
         if (!p.hasPermission("specialitems.admin")) {
@@ -41,18 +41,30 @@ public final class TemplateGUI {
             list.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
         }
 
-        Rarity[] rarities = Rarity.values();
-        int itemRows = ROWS - 1; // top row reserved for navigation
-        int pages = Math.max(1, (int) Math.ceil(rarities.length / (double) itemRows));
+        List<Rarity> rarityList = new ArrayList<>(Arrays.asList(Rarity.values()));
+        rarityList.remove(Rarity.STARFORGED); // top row dedicated to STARFORGED showcase
+        int itemRows = ROWS - 1; // one row (top) used for showcase
+        int pages = Math.max(1, (int) Math.ceil(rarityList.size() / (double) itemRows));
         if (page < 0) page = 0;
         if (page >= pages) page = pages - 1;
         Inventory inv = Bukkit.createInventory(p, ROWS * 9,
                 TITLE + " §7(" + (page + 1) + "/" + pages + ")");
+        // Showcase STARFORGED items in the top row
+        List<TemplateItems.TemplateItem> starItems = byRarity.getOrDefault(Rarity.STARFORGED, Collections.emptyList());
+        starItems.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
+        int showcaseSlot = 0;
+        for (TemplateItems.TemplateItem t : starItems) {
+            if (showcaseSlot >= 8) break; // slot 8 reserved for filler/nav column
+            ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
+            if (display == null) display = t.stack().clone();
+            inv.setItem(showcaseSlot++, display);
+        }
+        inv.setItem(8, GuiIcons.navFiller());
 
         int startRarity = page * itemRows;
-        int endRarity = Math.min(rarities.length, startRarity + itemRows);
+        int endRarity = Math.min(rarityList.size(), startRarity + itemRows);
         for (int rIndex = startRarity; rIndex < endRarity; rIndex++) {
-            Rarity rarity = rarities[rIndex];
+            Rarity rarity = rarityList.get(rIndex);
             List<TemplateItems.TemplateItem> items = byRarity.getOrDefault(rarity, Collections.emptyList());
 
             int localIndex = rIndex - startRarity;
@@ -67,10 +79,12 @@ public final class TemplateGUI {
             }
         }
 
-        // Navigation bar (top row)
-        inv.setItem(0, GuiIcons.navPrev(page > 0));
-        inv.setItem(4, GuiIcons.navClose());
-        inv.setItem(8, GuiIcons.navNext(page < pages - 1));
+        // Navigation column (right side)
+        inv.setItem(35, GuiIcons.navNext(page < pages - 1));
+        inv.setItem(44, GuiIcons.navPrev(page > 0));
+        inv.setItem(53, GuiIcons.navClose());
+        inv.setItem(17, GuiIcons.navFiller());
+        inv.setItem(26, GuiIcons.navFiller());
         p.openInventory(inv);
     }
 

@@ -287,3 +287,60 @@ templates:
     lore: ["&7Ultimate harvest."]
     enchants: { harvester: 5, replant: 1, telekinesis: 1, haste_touch: 2 }
     rarity: LEGENDARY
+
+  imperial_helm:
+    id: imperial_helm
+    material: NETHERITE_HELMET
+    name: "&dImperial Helm"
+    lore: ["&7Supreme clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 3, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_chest:
+    id: imperial_chest
+    material: NETHERITE_CHESTPLATE
+    name: "&dImperial Chestplate"
+    lore: ["&7Ultimate magnetism."]
+    enchants: { magnet: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_legs:
+    id: imperial_legs
+    material: NETHERITE_LEGGINGS
+    name: "&dImperial Leggings"
+    lore: ["&7Unmatched speed."]
+    enchants: { gears: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_boots:
+    id: imperial_boots
+    material: NETHERITE_BOOTS
+    name: "&dImperial Boots"
+    lore: ["&7Speed, pull and shields."]
+    enchants: { gears: 4, magnet: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_sword:
+    id: imperial_sword
+    material: NETHERITE_SWORD
+    name: "&dImperial Blade"
+    lore: ["&7Pure power."]
+    enchants: { lifesteal: 5, wither: 3, double_damage: 5 }
+    rarity: STARFORGED
+  imperial_axe:
+    id: imperial_axe
+    material: NETHERITE_AXE
+    name: "&dImperial Crusher"
+    lore: ["&7Cleave with fury."]
+    enchants: { wither: 3, double_damage: 5 }
+    rarity: STARFORGED
+  imperial_pick:
+    id: imperial_pick
+    material: NETHERITE_PICKAXE
+    name: "&dImperial Miner"
+    lore: ["&7Max vein miner with haste."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_boost: 5 }
+    rarity: STARFORGED
+  imperial_hoe:
+    id: imperial_hoe
+    material: NETHERITE_HOE
+    name: "&dImperial Harvester"
+    lore: ["&7Master of farms."]
+    enchants: { harvester: 5, replant: 1, telekinesis: 1, greenthumb: 5 }
+    rarity: STARFORGED

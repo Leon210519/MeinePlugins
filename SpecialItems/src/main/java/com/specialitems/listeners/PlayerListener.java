@@ -10,6 +10,11 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -51,6 +56,7 @@ public class PlayerListener implements Listener {
             if (armor != null) for (ItemStack a : armor) candidates.addAll(idsFromItem(a));
 
             for (String id : candidates) {
+                if (!Configs.effectEnabled(id)) continue;
                 var eff = Effects.get(id);
                 if (eff == null) continue;
                 int best = 0;
@@ -65,5 +71,37 @@ public class PlayerListener implements Listener {
                 if (best > 0) eff.onTick(p, main, Math.min(best, eff.maxLevel()));
             }
         }
+    }
+
+    @EventHandler
+    public void onItemHeld(PlayerItemHeldEvent e) {
+        Player p = e.getPlayer();
+        ItemStack newItem = p.getInventory().getItem(e.getNewSlot());
+        if (Effects.size() == 0) {
+            try { Effects.registerDefaults(); } catch (Throwable ignored) {}
+        }
+        Set<String> candidates = new LinkedHashSet<>(Effects.ids());
+        candidates.addAll(idsFromItem(newItem));
+        for (String id : candidates) {
+            if (!Configs.effectEnabled(id)) continue;
+            CustomEffect eff = Effects.get(id);
+            if (eff == null) continue;
+            if (newItem == null || newItem.getType() == Material.AIR || !eff.supports(newItem.getType())) continue;
+            int level = ItemUtil.getEffectLevel(newItem, id);
+            if (level <= 0) continue;
+            eff.onItemHeld(p, newItem, Math.min(level, eff.maxLevel()));
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        Bukkit.getScheduler().runTaskLater(SpecialItemsPlugin.getInstance(), PlayerListener::tickAll, 20L);
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        Player p = e.getPlayer();
+        p.removePotionEffect(PotionEffectType.HASTE);
+        p.removePotionEffect(PotionEffectType.ABSORPTION);
     }
 }

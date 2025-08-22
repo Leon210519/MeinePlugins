@@ -13,7 +13,8 @@ public enum Rarity {
     UNCOMMON(1.05, ChatColor.GREEN),
     RARE(1.10, ChatColor.BLUE),
     EPIC(1.15, ChatColor.LIGHT_PURPLE),
-    LEGENDARY(1.20, ChatColor.GOLD);
+    LEGENDARY(1.20, ChatColor.GOLD),
+    STARFORGED(1.25, ChatColor.LIGHT_PURPLE);
 
     public final double xpMultiplier;
     public final ChatColor color;
