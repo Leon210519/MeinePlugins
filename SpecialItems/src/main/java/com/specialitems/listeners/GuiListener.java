@@ -63,13 +63,13 @@ public class GuiListener implements Listener {
             page = Integer.parseInt(left) - 1;
         } catch (Exception ignored) {}
 
-        if (raw == 45) { // prev
+        if (raw == 0) { // prev
             TemplateGUI.open(p, Math.max(0, page - 1));
             return;
-        } else if (raw == 49) { // close
+        } else if (raw == 4) { // close
             p.closeInventory();
             return;
-        } else if (raw == 53) { // next
+        } else if (raw == 8) { // next
             TemplateGUI.open(p, page + 1);
             return;
         }

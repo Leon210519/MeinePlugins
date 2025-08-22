@@ -5,6 +5,7 @@ import com.specialitems.util.Configs;
 import com.specialitems.util.GuiItemUtil;
 import com.specialitems.SpecialItemsPlugin;
 import com.specialitems.leveling.Keys;
+import com.specialitems.leveling.Rarity;
 import com.specialitems.leveling.RarityUtil;
 import org.bukkit.Material;
 import org.bukkit.Bukkit;
@@ -13,14 +14,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 public final class TemplateGUI {
 
     public static final String TITLE = ChatColor.AQUA + "SpecialItems Templates";
     private static final int ROWS = 6;
-    private static final int PAGE_SIZE = 45;
+    // Inventory has 6 rows: top row used for navigation, the rest for item rows.
 
     public static void open(Player p, int page) {
         if (!p.hasPermission("specialitems.admin")) {
@@ -29,25 +29,48 @@ public final class TemplateGUI {
         }
         List<TemplateItems.TemplateItem> all = TemplateItems.loadAll();
         Keys keys = new Keys(SpecialItemsPlugin.getInstance());
-        all.sort(Comparator
-                .comparing((TemplateItems.TemplateItem t) -> RarityUtil.get(t.stack(), keys).ordinal())
-                .thenComparing(t -> typeOrder(t.stack().getType())));
-        int pages = Math.max(1, (int)Math.ceil(all.size() / (double)PAGE_SIZE));
+
+        // Group template items by rarity so each row can display a full set
+        Map<Rarity, List<TemplateItems.TemplateItem>> byRarity = new EnumMap<>(Rarity.class);
+        for (TemplateItems.TemplateItem t : all) {
+            Rarity r = RarityUtil.get(t.stack(), keys);
+            byRarity.computeIfAbsent(r, k -> new ArrayList<>()).add(t);
+        }
+        // Sort each rarity's items consistently (armor first, then tools)
+        for (List<TemplateItems.TemplateItem> list : byRarity.values()) {
+            list.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
+        }
+
+        Rarity[] rarities = Rarity.values();
+        int itemRows = ROWS - 1; // top row reserved for navigation
+        int pages = Math.max(1, (int) Math.ceil(rarities.length / (double) itemRows));
         if (page < 0) page = 0;
         if (page >= pages) page = pages - 1;
-        Inventory inv = Bukkit.createInventory(p, ROWS*9, TITLE + " §7(" + (page+1) + "/" + pages + ")");
-        int start = page * PAGE_SIZE;
-        int end = Math.min(all.size(), start + PAGE_SIZE);
-        int slot = 0;
-        for (int i = start; i < end; i++) {
-            ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), all.get(i).stack());
-            if (display == null) display = all.get(i).stack().clone();
-            inv.setItem(slot++, display);
+        Inventory inv = Bukkit.createInventory(p, ROWS * 9,
+                TITLE + " §7(" + (page + 1) + "/" + pages + ")");
+
+        int startRarity = page * itemRows;
+        int endRarity = Math.min(rarities.length, startRarity + itemRows);
+        for (int rIndex = startRarity; rIndex < endRarity; rIndex++) {
+            Rarity rarity = rarities[rIndex];
+            List<TemplateItems.TemplateItem> items = byRarity.getOrDefault(rarity, Collections.emptyList());
+
+            int localIndex = rIndex - startRarity;
+            int rowIndex = ROWS - 1 - localIndex; // bottom row -> first rarity in page
+            int rowStart = rowIndex * 9;
+            int slot = rowStart;
+            for (TemplateItems.TemplateItem t : items) {
+                if (slot >= rowStart + 9) break; // leave empty slots if fewer than 9 items
+                ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
+                if (display == null) display = t.stack().clone();
+                inv.setItem(slot++, display);
+            }
         }
-        // nav bar
-        inv.setItem(45, GuiIcons.navPrev(page > 0));
-        inv.setItem(49, GuiIcons.navClose());
-        inv.setItem(53, GuiIcons.navNext(page < pages - 1));
+
+        // Navigation bar (top row)
+        inv.setItem(0, GuiIcons.navPrev(page > 0));
+        inv.setItem(4, GuiIcons.navClose());
+        inv.setItem(8, GuiIcons.navNext(page < pages - 1));
         p.openInventory(inv);
     }
 
