@@ -1,0 +1,20 @@
+name: FarmXMine2
+main: com.farmxmine2.FarmXMine2Plugin
+version: 0.1.0
+api-version: "1.21"
+author: "FarmXMine Team"
+softdepend: [PlaceholderAPI]
+commands:
+  farmxmine:
+    description: FarmXMine2 commands
+    usage: /farmxmine <reload|level [mine|farm]>
+    permission: farmxmine.user
+permissions:
+  farmxmine.user:
+    default: true
+  farmxmine.admin:
+    default: op
+  farmxmine.mine:
+    default: true
+  farmxmine.farm:
+    default: true

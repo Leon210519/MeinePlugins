@@ -1,0 +1,41 @@
+general:
+  respawn_seconds: 30
+  play_sounds: false
+  require_permissions: false
+  override_cancelled: false
+leveling:
+  xp_per_harvest:
+    mine: 3
+    farm: 1
+  curve:
+    type: "pow"
+    pow_base: 40
+    pow_exp: 1.35
+    linear_base: 50
+compat:
+  veinminer:
+    detect_lore: ["Veinminer","Vein Miner"]
+    max_blocks: 64
+regions:
+  mine:
+    world: "world"
+    min: {x:-96,y:-65,z:-95}
+    max: {x:99,y:-2,z:106}
+    default_ore: "COAL_ORE"
+    require_tool: "PICKAXE"
+    ores: ["COAL_ORE","DEEPSLATE_COAL_ORE",
+           "IRON_ORE","DEEPSLATE_IRON_ORE",
+           "GOLD_ORE","DEEPSLATE_GOLD_ORE",
+           "REDSTONE_ORE","DEEPSLATE_REDSTONE_ORE",
+           "LAPIS_ORE","DEEPSLATE_LAPIS_ORE",
+           "COPPER_ORE","DEEPSLATE_COPPER_ORE",
+           "DIAMOND_ORE","DEEPSLATE_DIAMOND_ORE",
+           "EMERALD_ORE","DEEPSLATE_EMERALD_ORE",
+           "NETHER_QUARTZ_ORE"]
+  farm:
+    world: "world"
+    min: {x:85,y:-60,z:48}
+    max: {x:275,y:-20,z:252}
+    default_crop: "WHEAT"
+    require_tool: "HOE"
+    crops: ["WHEAT","CARROTS","POTATOES","BEETROOTS"]
