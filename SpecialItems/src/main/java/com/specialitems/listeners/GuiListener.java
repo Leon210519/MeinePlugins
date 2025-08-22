@@ -63,15 +63,17 @@ public class GuiListener implements Listener {
             page = Integer.parseInt(left) - 1;
         } catch (Exception ignored) {}
 
-        if (raw == 0) { // prev
+        if (raw == 44) { // prev
             TemplateGUI.open(p, Math.max(0, page - 1));
             return;
-        } else if (raw == 4) { // close
+        } else if (raw == 53) { // close
             p.closeInventory();
             return;
-        } else if (raw == 8) { // next
+        } else if (raw == 35) { // next
             TemplateGUI.open(p, page + 1);
             return;
+        } else if (raw == 8 || raw == 17 || raw == 26) {
+            return; // decorative navigation column
         }
 
         // Item click -> give

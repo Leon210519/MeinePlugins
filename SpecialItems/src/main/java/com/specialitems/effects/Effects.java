@@ -34,5 +34,9 @@ public final class Effects {
         register(new com.specialitems.effects.impl.Magnet());
         register(new com.specialitems.effects.impl.Harvester());
         register(new com.specialitems.effects.impl.XpBoost());
+        register(new com.specialitems.effects.impl.DoubleDamage());
+        register(new com.specialitems.effects.impl.HasteBoost());
+        register(new com.specialitems.effects.impl.AbsorptionShield());
+        register(new com.specialitems.effects.impl.Greenthumb());
     }
 }

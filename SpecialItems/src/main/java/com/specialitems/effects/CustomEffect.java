@@ -17,4 +17,5 @@ public interface CustomEffect {
     default void onEntityDamage(Player player, ItemStack weapon, EntityDamageByEntityEvent e, int level) {}
     default void onEntityKill(Player player, ItemStack weapon, EntityDeathEvent e, int level) {}
     default void onTick(Player player, ItemStack item, int level) {}
+    default void onItemHeld(Player player, ItemStack item, int level) {}
 }

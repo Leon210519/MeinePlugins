@@ -71,6 +71,7 @@ public class BlockListener implements Listener {
         candidates.addAll(idsFromItem(tool));
 
         for (String id : candidates) {
+            if (!Configs.effectEnabled(id)) continue;
             CustomEffect eff = Effects.get(id);
             if (eff == null) continue;
             if (!eff.supports(tool.getType())) continue;
@@ -133,6 +134,17 @@ public class BlockListener implements Listener {
                 }
             } else {
                 p.getWorld().dropItemNaturally(b.getLocation(), give);
+            }
+        }
+
+        if (isCrop) {
+            if (Effects.size() == 0) {
+                try { Effects.registerDefaults(); } catch (Throwable ignored) {}
+            }
+            CustomEffect gt = Effects.get("greenthumb");
+            if (gt != null && Configs.effectEnabled("greenthumb")) {
+                int gl = ItemUtil.getEffectLevel(tool, "greenthumb");
+                if (gl > 0) gt.onBlockBreak(p, tool, e, Math.min(gl, gt.maxLevel()));
             }
         }
         return true;

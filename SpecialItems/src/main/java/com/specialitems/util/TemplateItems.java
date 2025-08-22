@@ -94,6 +94,15 @@ public final class TemplateItems {
         return it;
     }
 
+    public static List<TemplateItem> getByRarity(Rarity rarity) {
+        List<TemplateItem> result = new ArrayList<>();
+        for (TemplateItem t : loadAll()) {
+            Rarity r = RarityUtil.get(t.stack(), new Keys(SpecialItemsPlugin.getInstance()));
+            if (r == rarity) result.add(t);
+        }
+        return result;
+    }
+
     /**
      * Attempts to match the given item to a template based on material and
      * display name. If a match is found the template's custom model data is

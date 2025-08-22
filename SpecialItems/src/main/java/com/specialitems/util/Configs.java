@@ -34,4 +34,10 @@ public final class Configs {
 
     public static boolean effectEnabled(String id) { return cfg.getBoolean("effects." + id + ".enabled", true); }
     public static ConfigurationSection effectSection(String id) { return cfg.getConfigurationSection("effects." + id); }
+    public static double effectDouble(String id, String key, double def) {
+        return cfg.getDouble("effects." + id + "." + key, def);
+    }
+    public static int effectInt(String id, String key, int def) {
+        return cfg.getInt("effects." + id + "." + key, def);
+    }
 }

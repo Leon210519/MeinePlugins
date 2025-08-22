@@ -54,6 +54,7 @@ public class CombatListener implements Listener {
         candidates.addAll(idsFromItem(weapon));
 
         for (String id : candidates) {
+            if (!Configs.effectEnabled(id)) continue;
             var eff = Effects.get(id);
             if (eff == null) continue;
             if (!eff.supports(weapon.getType())) continue;
@@ -78,6 +79,7 @@ public class CombatListener implements Listener {
         candidates.addAll(idsFromItem(weapon));
 
         for (String id : candidates) {
+            if (!Configs.effectEnabled(id)) continue;
             var eff = Effects.get(id);
             if (eff == null) continue;
             if (!eff.supports(weapon.getType())) continue;
