@@ -28,6 +28,7 @@ public class PlayerListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         storage.load(id, stats -> levelService.loadStats(id, stats));
+        cooldownService.restorePending(event.getPlayer());
     }
 
     @EventHandler

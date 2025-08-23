@@ -2,8 +2,25 @@ package com.farmxmine2.util;
 
 import org.bukkit.Material;
 
+import java.util.Map;
+
 public final class Materials {
     private Materials() {}
+
+    static final Map<Material, Material> MAIN_PRODUCE = Map.of(
+            Material.WHEAT, Material.WHEAT,
+            Material.CARROTS, Material.CARROT,
+            Material.POTATOES, Material.POTATO,
+            Material.BEETROOTS, Material.BEETROOT
+    );
+
+    public static boolean isCrop(Material m) {
+        return MAIN_PRODUCE.containsKey(m);
+    }
+
+    public static Material mainProduceOf(Material crop) {
+        return MAIN_PRODUCE.get(crop);
+    }
 
     public static boolean isHoe(Material mat) {
         return mat != null && mat.name().endsWith("_HOE");
