@@ -1,13 +1,10 @@
 package com.specialitems.effects.impl;
 
 import com.specialitems.effects.CustomEffect;
-import com.specialitems.util.Configs;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 public class DoubleDamage implements CustomEffect {
     @Override public String id() { return "double_damage"; }
@@ -19,10 +16,6 @@ public class DoubleDamage implements CustomEffect {
     }
     @Override
     public void onEntityDamage(Player player, ItemStack weapon, EntityDamageByEntityEvent e, int level) {
-        if (!Configs.effectEnabled(id())) return;
-        double chance = Configs.effectDouble(id(), "chance_per_level", 0.20) * level;
-        if (ThreadLocalRandom.current().nextDouble() > chance) return;
-        double mult = Math.max(1.0, Configs.effectDouble(id(), "max_multiplier", 2.0));
-        e.setDamage(e.getDamage() * mult);
+        // Handled in CombatListener to apply deterministic scaling.
     }
 }

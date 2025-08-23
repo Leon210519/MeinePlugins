@@ -89,6 +89,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
         // Ticker (kept from your original)
         try {
             Bukkit.getScheduler().runTaskTimer(this, PlayerListener::tickAll, 20L, 10L);
+            Bukkit.getScheduler().runTaskTimer(this, PlayerListener::tickAbsorption, 20L, 80L);
         } catch (Throwable t) {
             Log.warn("Failed to start player tick task: " + t.getMessage());
         }

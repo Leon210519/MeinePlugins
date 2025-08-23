@@ -41,7 +41,11 @@ public enum Rarity {
      */
     public String displayName() {
         String n = name().toLowerCase();
-        n = Character.toUpperCase(n.charAt(0)) + n.substring(1);
+        if (this == STARFORGED) {
+            n = "StarForged";
+        } else {
+            n = Character.toUpperCase(n.charAt(0)) + n.substring(1);
+        }
         return color + n;
     }
 }

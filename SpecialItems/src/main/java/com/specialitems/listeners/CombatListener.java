@@ -47,6 +47,15 @@ public class CombatListener implements Listener {
         ItemStack weapon = p.getInventory().getItemInMainHand();
         if (weapon == null || weapon.getType() == Material.AIR) return;
 
+        String wn = weapon.getType().name();
+        if (wn.endsWith("_SWORD") || wn.endsWith("_AXE")) {
+            int dl = ItemUtil.getEffectLevel(weapon, "double_damage");
+            if (dl > 0) {
+                double mult = dl >= 5 ? 2.0 : 1.0 + 0.2 * dl;
+                e.setDamage(e.getDamage() * mult);
+            }
+        }
+
         if (Effects.size() == 0) {
             try { Effects.registerDefaults(); } catch (Throwable ignored) {}
         }

@@ -20,6 +20,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.Bukkit;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -60,6 +63,11 @@ public class BlockListener implements Listener {
         if (Configs.cfg.getStringList("general.disabled-worlds").contains(p.getWorld().getName())) return;
         ItemStack tool = p.getInventory().getItemInMainHand();
         if (tool == null || tool.getType() == Material.AIR) return;
+
+        int hb = ItemUtil.getEffectLevel(tool, "haste_boost");
+        if (hb > 0) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, 100, hb - 1, true, false, false));
+        }
 
         if (handleSpecialHarvest(p, tool, e)) return;
 
@@ -137,15 +145,19 @@ public class BlockListener implements Listener {
             }
         }
 
-        if (isCrop) {
-            if (Effects.size() == 0) {
-                try { Effects.registerDefaults(); } catch (Throwable ignored) {}
-            }
-            CustomEffect gt = Effects.get("greenthumb");
-            if (gt != null && Configs.effectEnabled("greenthumb")) {
-                int gl = ItemUtil.getEffectLevel(tool, "greenthumb");
-                if (gl > 0) gt.onBlockBreak(p, tool, e, Math.min(gl, gt.maxLevel()));
-            }
+        if (isCrop && ItemUtil.getEffectLevel(tool, "replant") > 0) {
+            int gl = ItemUtil.getEffectLevel(tool, "greenthumb");
+            Material cropType = type;
+            Block oldBlock = b;
+            Bukkit.getScheduler().runTask(SpecialItemsPlugin.getInstance(), () -> {
+                Block nb = oldBlock.getLocation().getBlock();
+                nb.setType(cropType);
+                if (gl > 0 && nb.getBlockData() instanceof Ageable age) {
+                    int max = age.getMaximumAge();
+                    age.setAge(Math.min(gl, max));
+                    nb.setBlockData(age);
+                }
+            });
         }
         return true;
     }

@@ -14,6 +14,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -69,6 +70,25 @@ public class PlayerListener implements Listener {
                     }
                 }
                 if (best > 0) eff.onTick(p, main, Math.min(best, eff.maxLevel()));
+            }
+        }
+    }
+
+    public static void tickAbsorption() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (Configs.cfg.getStringList("general.disabled-worlds").contains(p.getWorld().getName())) continue;
+            ItemStack[] armor = p.getInventory().getArmorContents();
+            int total = 0;
+            if (armor != null) {
+                for (ItemStack a : armor) {
+                    total += ItemUtil.getEffectLevel(a, "absorption_shield");
+                }
+            }
+            if (total > 0) {
+                int amp = Math.min(3, total - 1);
+                p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 120, amp, true, false, false));
+            } else {
+                p.removePotionEffect(PotionEffectType.ABSORPTION);
             }
         }
     }
