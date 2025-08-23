@@ -2,7 +2,6 @@ package com.farmxmine2;
 
 import com.farmxmine2.command.Fm2Command;
 import com.farmxmine2.listener.BlockListener;
-import com.farmxmine2.listener.BlockListenerOverride;
 import com.farmxmine2.listener.PlayerListener;
 import com.farmxmine2.service.*;
 import org.bukkit.ChatColor;
@@ -22,6 +21,7 @@ public class FarmXMine2Plugin extends JavaPlugin {
     private LevelService levelService;
     private BossBarService bossBarService;
     private HarvestService harvestService;
+    private CooldownService cooldownService;
     private BukkitTask autosaveTask;
 
     @Override
@@ -34,14 +34,12 @@ public class FarmXMine2Plugin extends JavaPlugin {
         storageService = new StorageService(this);
         bossBarService = new BossBarService(this);
         levelService = new LevelService(this, storageService, configService);
-        harvestService = new HarvestService(this, configService, levelService);
+        cooldownService = new CooldownService(this);
+        harvestService = new HarvestService(configService, levelService, cooldownService);
 
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new BlockListener(harvestService), this);
-        if (configService.isOverrideCancelled()) {
-            pm.registerEvents(new BlockListenerOverride(harvestService), this);
-        }
-        pm.registerEvents(new PlayerListener(storageService, levelService, harvestService), this);
+        pm.registerEvents(new BlockListener(harvestService, configService), this);
+        pm.registerEvents(new PlayerListener(storageService, levelService, cooldownService), this);
 
         Fm2Command cmd = new Fm2Command(this);
         Objects.requireNonNull(getCommand("fm2")).setExecutor(cmd);
@@ -58,7 +56,7 @@ public class FarmXMine2Plugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (autosaveTask != null) autosaveTask.cancel();
-        harvestService.clearAll();
+        cooldownService.clearAll();
         storageService.saveAllSync(levelService.getAll());
     }
 

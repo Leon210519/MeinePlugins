@@ -1,6 +1,6 @@
 package com.farmxmine2.listener;
 
-import com.farmxmine2.service.HarvestService;
+import com.farmxmine2.service.CooldownService;
 import com.farmxmine2.service.LevelService;
 import com.farmxmine2.service.StorageService;
 import org.bukkit.Chunk;
@@ -16,12 +16,12 @@ import java.util.UUID;
 public class PlayerListener implements Listener {
     private final StorageService storage;
     private final LevelService levelService;
-    private final HarvestService harvestService;
+    private final CooldownService cooldownService;
 
-    public PlayerListener(StorageService storage, LevelService levelService, HarvestService harvestService) {
+    public PlayerListener(StorageService storage, LevelService levelService, CooldownService cooldownService) {
         this.storage = storage;
         this.levelService = levelService;
-        this.harvestService = harvestService;
+        this.cooldownService = cooldownService;
     }
 
     @EventHandler
@@ -35,14 +35,12 @@ public class PlayerListener implements Listener {
         Player p = event.getPlayer();
         storage.save(p.getUniqueId(), levelService.getStats(p.getUniqueId()));
         levelService.remove(p.getUniqueId());
-        harvestService.clear(p);
+        cooldownService.clear(p.getUniqueId());
     }
 
     @EventHandler
     public void onChunkUnload(ChunkUnloadEvent event) {
         Chunk chunk = event.getChunk();
-        for (Player player : chunk.getWorld().getPlayers()) {
-            harvestService.clear(player, chunk);
-        }
+        cooldownService.clear(chunk);
     }
 }
