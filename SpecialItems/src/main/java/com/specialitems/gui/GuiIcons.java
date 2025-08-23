@@ -32,7 +32,7 @@ public final class GuiIcons {
         RARITY_ICONS.put(Rarity.RARE, simple(Material.LAPIS_LAZULI, ChatColor.BLUE + "Rare", null));
         RARITY_ICONS.put(Rarity.EPIC, simple(Material.PURPLE_DYE, ChatColor.LIGHT_PURPLE + "Epic", null));
         RARITY_ICONS.put(Rarity.LEGENDARY, simple(Material.GOLD_INGOT, ChatColor.GOLD + "Legendary", null));
-        RARITY_ICONS.put(Rarity.STARFORGED, simple(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "StarForged", null));
+        RARITY_ICONS.put(Rarity.STARFORGED, simple(Material.NETHER_STAR, ChatColor.DARK_RED + "StarForged", null));
     }
 
     public static ItemStack rarity(Rarity r) {

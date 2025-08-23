@@ -55,8 +55,8 @@ effects:
 
 rarities:
   STARFORGED:
-    display: "&d&l✦ Starforged ✦"
-    color: "LIGHT_PURPLE"
+    display: "&4&l✦ Starforged ✦"
+    color: "DARK_RED"
     sort: 999
 
 specialitems:

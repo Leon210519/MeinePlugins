@@ -21,6 +21,28 @@ public final class TemplateGUI {
     public static final String TITLE = ChatColor.AQUA + "SpecialItems Templates";
     private static final int ROWS = 6;
 
+    private static final Rarity[] ORDER = {
+            Rarity.COMMON,
+            Rarity.UNCOMMON,
+            Rarity.RARE,
+            Rarity.EPIC,
+            Rarity.LEGENDARY,
+            Rarity.STARFORGED
+    };
+
+    static int slotOf(int rowIndex, int colIndex) {
+        return rowIndex * 9 + colIndex;
+    }
+
+    static int rowForRarity(Rarity r) {
+        for (int i = 0; i < ORDER.length; i++) {
+            if (ORDER[i] == r) {
+                return ORDER.length - 1 - i;
+            }
+        }
+        return ORDER.length - 1;
+    }
+
     public static void open(Player p, int page) {
         if (!p.hasPermission("specialitems.admin")) {
             p.sendMessage(ChatColor.translateAlternateColorCodes('&', Configs.msg.getString("no-permission","&cNo permission.")));
@@ -29,59 +51,43 @@ public final class TemplateGUI {
         List<TemplateItems.TemplateItem> all = TemplateItems.loadAll();
         Keys keys = new Keys(SpecialItemsPlugin.getInstance());
 
-        // Group template items by rarity so each row can display a full set
         Map<Rarity, List<TemplateItems.TemplateItem>> byRarity = new EnumMap<>(Rarity.class);
         for (TemplateItems.TemplateItem t : all) {
             Rarity r = RarityUtil.get(t.stack(), keys);
             byRarity.computeIfAbsent(r, k -> new ArrayList<>()).add(t);
         }
-        // Sort each rarity's items consistently (armor first, then tools)
         for (List<TemplateItems.TemplateItem> list : byRarity.values()) {
             list.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
         }
 
-        List<Rarity> rarityList = new ArrayList<>(Arrays.asList(
-                Rarity.LEGENDARY,
-                Rarity.EPIC,
-                Rarity.RARE,
-                Rarity.UNCOMMON,
-                Rarity.COMMON
-        ));
-        int itemRows = ROWS - 1; // one row (top) used for showcase
+        List<Rarity> rarityList = Arrays.asList(ORDER);
+        int itemRows = ROWS;
         int pages = Math.max(1, (int) Math.ceil(rarityList.size() / (double) itemRows));
         if (page < 0) page = 0;
         if (page >= pages) page = pages - 1;
         Inventory inv = Bukkit.createInventory(p, ROWS * 9,
                 TITLE + " §7(" + (page + 1) + "/" + pages + ")");
-        // Showcase STARFORGED items in the top row
-        List<TemplateItems.TemplateItem> starItems = byRarity.getOrDefault(Rarity.STARFORGED, Collections.emptyList());
-        starItems.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
-        int showcaseSlot = 0;
-        for (TemplateItems.TemplateItem t : starItems) {
-            if (showcaseSlot >= 6) break; // slots 6-8 used for navigation
-            ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
-            if (display == null) display = t.stack().clone();
-            inv.setItem(showcaseSlot++, display);
-        }
-        inv.setItem(6, GuiIcons.navPrev(page > 0));
-        inv.setItem(7, GuiIcons.navNext(page < pages - 1));
-        inv.setItem(8, GuiIcons.navClose());
 
-        int startRarity = page * itemRows;
-        int endRarity = Math.min(rarityList.size(), startRarity + itemRows);
-        for (int rIndex = startRarity; rIndex < endRarity; rIndex++) {
+        inv.setItem(slotOf(0, 8), GuiIcons.navNext(page < pages - 1));
+        inv.setItem(slotOf(1, 8), GuiIcons.navPrev(page > 0));
+        inv.setItem(slotOf(2, 8), GuiIcons.navClose());
+        inv.setItem(slotOf(3, 8), GuiIcons.navFiller());
+        inv.setItem(slotOf(4, 8), GuiIcons.navFiller());
+        inv.setItem(slotOf(5, 8), GuiIcons.navFiller());
+
+        int start = page * itemRows;
+        int end = Math.min(rarityList.size(), start + itemRows);
+        for (int rIndex = start; rIndex < end; rIndex++) {
             Rarity rarity = rarityList.get(rIndex);
+            int rowIndex = rowForRarity(rarity) - start;
             List<TemplateItems.TemplateItem> items = byRarity.getOrDefault(rarity, Collections.emptyList());
 
-            int localIndex = rIndex - startRarity;
-            int rowIndex = ROWS - 1 - localIndex; // bottom row -> first rarity in page
-            int rowStart = rowIndex * 9;
-            int slot = rowStart;
             for (TemplateItems.TemplateItem t : items) {
-                if (slot >= rowStart + 9) break; // leave empty slots if fewer than 9 items
+                int col = typeOrder(t.stack().getType());
+                if (col < 0 || col > 7) continue;
                 ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
                 if (display == null) display = t.stack().clone();
-                inv.setItem(slot++, display);
+                inv.setItem(slotOf(rowIndex, col), display);
             }
         }
 
