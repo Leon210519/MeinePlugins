@@ -1,21 +1,45 @@
 package com.farmxmine2.util;
 
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.inventory.ItemStack;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 /** Utility helpers for material classification. */
 public final class Materials {
+    private static final Set<Material> ORE_ALLOWLIST = EnumSet.of(
+            Material.COAL_ORE, Material.DEEPSLATE_COAL_ORE,
+            Material.IRON_ORE, Material.DEEPSLATE_IRON_ORE,
+            Material.GOLD_ORE, Material.DEEPSLATE_GOLD_ORE,
+            Material.COPPER_ORE, Material.DEEPSLATE_COPPER_ORE,
+            Material.REDSTONE_ORE, Material.DEEPSLATE_REDSTONE_ORE,
+            Material.LAPIS_ORE, Material.DEEPSLATE_LAPIS_ORE,
+            Material.DIAMOND_ORE, Material.DEEPSLATE_DIAMOND_ORE,
+            Material.EMERALD_ORE, Material.DEEPSLATE_EMERALD_ORE,
+            Material.NETHER_QUARTZ_ORE, Material.NETHER_GOLD_ORE,
+            Material.ANCIENT_DEBRIS
+    );
+
+    private static final Set<Material> CROPS = EnumSet.of(
+            Material.WHEAT,
+            Material.CARROTS,
+            Material.POTATOES,
+            Material.BEETROOTS,
+            Material.NETHER_WART
+    );
+
     private Materials() {}
 
-    public static boolean isOre(Material mat, Set<Material> ores) {
-        return ores.contains(mat);
+    public static boolean isOre(Material mat) {
+        return ORE_ALLOWLIST.contains(mat);
     }
 
-    public static boolean isCrop(Material mat, Set<Material> crops) {
-        return crops.contains(mat);
+    public static boolean isCrop(Material mat) {
+        return CROPS.contains(mat);
     }
 
     public static boolean isMature(Block block) {
@@ -23,31 +47,12 @@ public final class Materials {
         return age.getAge() == age.getMaximumAge();
     }
 
-    public static boolean isHoe(Material mat) {
-        return mat != null && mat.name().endsWith("_HOE");
+    public static boolean hasPickaxe(ItemStack tool) {
+        return tool != null && tool.getType().name().endsWith("_PICKAXE");
     }
 
-    public static boolean isPickaxe(Material mat) {
-        return mat != null && mat.name().endsWith("_PICKAXE");
-    }
-
-    public static int pickaxeLevel(Material mat) {
-        return switch (mat) {
-            case WOODEN_PICKAXE, GOLDEN_PICKAXE -> 0;
-            case STONE_PICKAXE -> 1;
-            case IRON_PICKAXE -> 2;
-            case DIAMOND_PICKAXE -> 3;
-            case NETHERITE_PICKAXE -> 4;
-            default -> -1;
-        };
-    }
-
-    public static int requiredLevel(Material ore) {
-        return switch (ore) {
-            case COPPER_ORE, DEEPSLATE_COPPER_ORE, IRON_ORE, DEEPSLATE_IRON_ORE, LAPIS_ORE, DEEPSLATE_LAPIS_ORE -> 1;
-            case GOLD_ORE, DEEPSLATE_GOLD_ORE, REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE,
-                    DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE, EMERALD_ORE, DEEPSLATE_EMERALD_ORE -> 2;
-            default -> 0; // coal, nether quartz etc.
-        };
+    public static boolean isMineableByPickaxe(Material mat) {
+        return Tag.MINEABLE_PICKAXE.isTagged(mat) || ORE_ALLOWLIST.contains(mat);
     }
 }
+
