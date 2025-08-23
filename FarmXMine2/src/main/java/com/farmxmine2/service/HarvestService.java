@@ -5,6 +5,7 @@ import com.farmxmine2.model.BlockKey;
 import com.farmxmine2.model.TrackType;
 import com.farmxmine2.util.ItemUtil;
 import com.farmxmine2.util.Materials;
+import com.farmxmine2.util.Visuals;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,8 +39,8 @@ public class HarvestService {
         }
 
         Material type = b.getType();
-        boolean isOre = config.isMiningEnabled() && Materials.isOre(type, config.getMiningOres());
-        boolean isCrop = config.isFarmingEnabled() && Materials.isCrop(type, config.getFarmingCrops()) && Materials.isMature(b);
+        boolean isOre = config.isMiningEnabled() && Materials.isOre(type);
+        boolean isCrop = config.isFarmingEnabled() && Materials.isCrop(type) && Materials.isMature(b);
         if (!isOre && !isCrop) {
             return;
         }
@@ -57,13 +58,33 @@ public class HarvestService {
         BlockKey key = BlockKey.of(b);
         UUID id = p.getUniqueId();
         if (cooldownService.isCooling(id, key)) {
+            if (isOre) {
+                sendStoneVisual(p, loc);
+            } else {
+                sendAirVisual(p, loc);
+            }
             return;
         }
         long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
         cooldownService.start(id, key, endMs);
 
+        if (isCrop) {
+            sendAirVisual(p, loc);
+        } else {
+            sendStoneVisual(p, loc);
+        }
+
         // compute drops independent of visuals
-        Collection<ItemStack> drops = b.getDrops(tool, p);
+        Collection<ItemStack> drops;
+        if (isOre) {
+            boolean hasPickaxe = Materials.hasPickaxe(tool);
+            boolean mineable = Materials.isMineableByPickaxe(mat);
+            boolean correctTool = hasPickaxe && mineable;
+            drops = correctTool ? b.getDrops(tool, p) : java.util.Collections.emptyList();
+        } else {
+            drops = b.getDrops(tool, p);
+        }
+
         if (!drops.isEmpty()) {
             ItemUtil.giveAll(p, drops);
         }
@@ -75,34 +96,32 @@ public class HarvestService {
             levelService.addXp(p, TrackType.FARM);
         }
 
-        // visuals
-        if (isOre) {
-            BlockData stone = Bukkit.createBlockData(Material.STONE);
-            p.sendBlockChange(loc, stone);
-            Bukkit.getScheduler().runTask(plugin, () -> p.sendBlockChange(loc, stone));
-        } else {
-            BlockData air = Bukkit.createBlockData(Material.AIR);
-            p.sendBlockChange(loc, air);
-            Bukkit.getScheduler().runTask(plugin, () -> p.sendBlockChange(loc, air));
-        }
-
         // restoration after cooldown
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (!p.isOnline()) {
-                cooldownService.end(id, key);
-                return;
-            }
-            BlockData restore = loc.getWorld().getBlockAt(loc).getBlockData();
-            if (isCrop) {
-                BlockData d = restore;
-                if (d instanceof Ageable a && a.getAge() < a.getMaximumAge()) {
-                    Ageable full = (Ageable) Bukkit.createBlockData(mat);
-                    full.setAge(full.getMaximumAge());
-                    restore = full;
+            try {
+                if (!p.isOnline()) {
+                    return;
                 }
+                BlockData restore = loc.getWorld().getBlockAt(loc).getBlockData();
+                if (isCrop) {
+                    if (!(restore instanceof Ageable) || ((Ageable) restore).getAge() < ((Ageable) restore).getMaximumAge()) {
+                        Ageable full = (Ageable) Bukkit.createBlockData(mat);
+                        full.setAge(full.getMaximumAge());
+                        restore = full;
+                    }
+                }
+                p.sendBlockChange(loc, restore);
+            } finally {
+                cooldownService.end(id, key);
             }
-            p.sendBlockChange(loc, restore);
-            cooldownService.end(id, key);
         }, config.getRespawnSeconds() * 20L);
+    }
+
+    private void sendAirVisual(Player player, Location loc) {
+        Visuals.show(plugin, player, loc, Material.AIR);
+    }
+
+    private void sendStoneVisual(Player player, Location loc) {
+        Visuals.show(plugin, player, loc, Material.STONE);
     }
 }
