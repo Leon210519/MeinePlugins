@@ -12,10 +12,10 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FarmxMineCommand implements CommandExecutor, TabCompleter {
+public class Fm2Command implements CommandExecutor, TabCompleter {
     private final FarmXMine2Plugin plugin;
 
-    public FarmxMineCommand(FarmXMine2Plugin plugin) {
+    public Fm2Command(FarmXMine2Plugin plugin) {
         this.plugin = plugin;
     }
 
@@ -23,28 +23,29 @@ public class FarmxMineCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) return false;
         if (args[0].equalsIgnoreCase("reload")) {
-            if (!sender.hasPermission("farmxmine.admin")) {
+            if (!sender.hasPermission("farmxmine2.admin")) {
                 sender.sendMessage("No permission");
                 return true;
             }
             plugin.reloadConfig();
-            plugin.getRegionService().reload();
+            plugin.getConfigService().reload();
             sender.sendMessage(plugin.color(plugin.getMessages().getString("reloaded")));
             return true;
         }
         if (args[0].equalsIgnoreCase("level")) {
-            if (!(sender instanceof Player)) {
+            if (!(sender instanceof Player player)) {
                 sender.sendMessage("Players only");
                 return true;
             }
-            Player p = (Player) sender;
-            TrackType type = TrackType.MINE;
-            if (args.length > 1 && args[1].equalsIgnoreCase("farm")) type = TrackType.FARM;
-            PlayerStats ps = plugin.getLevelService().getStats(p.getUniqueId());
-            int level = ps.getLevel(type);
-            int xp = ps.getXp(type);
-            int needed = plugin.getLevelService().xpNeeded(level);
-            sender.sendMessage(type.name().toLowerCase() + " level " + level + " (" + xp + "/" + needed + ")");
+            PlayerStats ps = plugin.getLevelService().getStats(player.getUniqueId());
+            int mineLevel = ps.getLevel(TrackType.MINE);
+            int mineXp = ps.getXp(TrackType.MINE);
+            int mineNeeded = plugin.getLevelService().xpNeeded(mineLevel);
+            int farmLevel = ps.getLevel(TrackType.FARM);
+            int farmXp = ps.getXp(TrackType.FARM);
+            int farmNeeded = plugin.getLevelService().xpNeeded(farmLevel);
+            player.sendMessage(plugin.color("&aMine&7: Lv. " + mineLevel + " (" + mineXp + "/" + mineNeeded + " XP)"));
+            player.sendMessage(plugin.color("&aFarm&7: Lv. " + farmLevel + " (" + farmXp + "/" + farmNeeded + " XP)"));
             return true;
         }
         return false;
@@ -56,9 +57,6 @@ public class FarmxMineCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             if ("reload".startsWith(args[0].toLowerCase())) list.add("reload");
             if ("level".startsWith(args[0].toLowerCase())) list.add("level");
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("level")) {
-            if ("mine".startsWith(args[1].toLowerCase())) list.add("mine");
-            if ("farm".startsWith(args[1].toLowerCase())) list.add("farm");
         }
         return list;
     }

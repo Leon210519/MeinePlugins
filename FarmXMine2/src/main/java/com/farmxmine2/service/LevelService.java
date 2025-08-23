@@ -1,11 +1,9 @@
 package com.farmxmine2.service;
 
 import com.farmxmine2.FarmXMine2Plugin;
-import com.farmxmine2.model.CurveConfig;
 import com.farmxmine2.model.PlayerStats;
 import com.farmxmine2.model.TrackType;
 import org.bukkit.entity.Player;
-import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.Map;
 import java.util.UUID;
@@ -14,20 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LevelService {
     private final FarmXMine2Plugin plugin;
     private final StorageService storage;
+    private final ConfigService config;
     private final Map<UUID, PlayerStats> stats = new ConcurrentHashMap<>();
-    private final int mineXpPer;
-    private final int farmXpPer;
-    private final CurveConfig curve;
 
-    public LevelService(FarmXMine2Plugin plugin, StorageService storage) {
+    public LevelService(FarmXMine2Plugin plugin, StorageService storage, ConfigService config) {
         this.plugin = plugin;
         this.storage = storage;
-        ConfigurationSection level = plugin.getConfig().getConfigurationSection("leveling");
-        ConfigurationSection xpSec = level.getConfigurationSection("xp_per_harvest");
-        mineXpPer = xpSec.getInt("mine");
-        farmXpPer = xpSec.getInt("farm");
-        ConfigurationSection curveSec = level.getConfigurationSection("curve");
-        curve = new CurveConfig(curveSec.getString("type"), curveSec.getDouble("pow_base"), curveSec.getDouble("pow_exp"), curveSec.getInt("linear_base"));
+        this.config = config;
     }
 
     public PlayerStats getStats(UUID uuid) {
@@ -43,7 +34,7 @@ public class LevelService {
     }
 
     public void addXp(Player player, TrackType type) {
-        int amount = type == TrackType.MINE ? mineXpPer : farmXpPer;
+        int amount = type == TrackType.MINE ? config.getMineXpPer() : config.getFarmXpPer();
         PlayerStats ps = getStats(player.getUniqueId());
         ps.addXp(type, amount);
         boolean leveled = false;
@@ -58,15 +49,12 @@ public class LevelService {
                     .replace("%track%", type.name().toLowerCase());
             player.sendMessage(msg);
         }
+        player.sendActionBar("+" + amount + " XP");
         plugin.getBossBarService().update(player, type);
     }
 
     public int xpNeeded(int level) {
-        if (curve.type().equalsIgnoreCase("pow")) {
-            return (int) Math.ceil(curve.powBase() * Math.pow(level <= 0 ? 1 : level, curve.powExp()));
-        } else {
-            return curve.linearBase() + (level * curve.linearBase());
-        }
+        return config.getBaseXpPerLevel() + level * config.getXpGrowthPerLevel();
     }
 
     public StorageService getStorage() { return storage; }

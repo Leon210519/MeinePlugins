@@ -5,16 +5,12 @@ api-version: "1.21"
 author: "FarmXMine Team"
 softdepend: [PlaceholderAPI]
 commands:
-  farmxmine:
+  fm2:
     description: FarmXMine2 commands
-    usage: /farmxmine <reload|level [mine|farm]>
-    permission: farmxmine.user
+    usage: /fm2 <reload|level>
+    permission: farmxmine2.level
 permissions:
-  farmxmine.user:
+  farmxmine2.level:
     default: true
-  farmxmine.admin:
+  farmxmine2.admin:
     default: op
-  farmxmine.mine:
-    default: true
-  farmxmine.farm:
-    default: true

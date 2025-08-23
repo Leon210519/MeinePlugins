@@ -1,3 +1,3 @@
-prefix: "&a[FarmXMine2]&r"
-level-up: "&6You reached level %level% in %track%!"
+prefix: "&aFarmxMine&7"
+level-up: "&aFarmxMine&7: &f%track%&7 leveled up to &a%level%&7!"
 reloaded: "&aConfig reloaded."
