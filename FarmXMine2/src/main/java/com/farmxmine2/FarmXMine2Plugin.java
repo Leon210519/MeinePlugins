@@ -35,7 +35,7 @@ public class FarmXMine2Plugin extends JavaPlugin {
         bossBarService = new BossBarService(this);
         levelService = new LevelService(this, storageService, configService);
         cooldownService = new CooldownService(this);
-        harvestService = new HarvestService(configService, levelService, cooldownService);
+        harvestService = new HarvestService(this, configService, levelService, cooldownService);
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockListener(harvestService, configService), this);
