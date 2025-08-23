@@ -2,10 +2,10 @@ package com.farmxmine2.service;
 
 import com.farmxmine2.FarmXMine2Plugin;
 import com.farmxmine2.model.BlockPosKey;
-import com.farmxmine2.model.Region;
 import com.farmxmine2.model.TrackType;
-import org.bukkit.Chunk;
+import com.farmxmine2.util.Materials;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -20,74 +20,68 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class HarvestService {
     private final FarmXMine2Plugin plugin;
-    private final RegionService regionService;
+    private final ConfigService config;
     private final LevelService levelService;
-    private final BossBarService bossBarService;
-    private final VeinMinerCompat veinMiner;
     private final Map<UUID, Map<BlockPosKey, StoredBlock>> views = new ConcurrentHashMap<>();
 
     private record StoredBlock(BlockData data, BukkitTask task) {}
 
-    public HarvestService(FarmXMine2Plugin plugin, RegionService regionService, LevelService levelService, BossBarService bossBarService, VeinMinerCompat veinMiner) {
+    public HarvestService(FarmXMine2Plugin plugin, ConfigService config, LevelService levelService) {
         this.plugin = plugin;
-        this.regionService = regionService;
+        this.config = config;
         this.levelService = levelService;
-        this.bossBarService = bossBarService;
-        this.veinMiner = veinMiner;
     }
 
     public void handleBlockBreak(Player player, Block block, BlockBreakEvent event) {
-        TrackType track = regionService.getKind(block.getLocation());
-        if (track == null) return;
-        if (plugin.getConfig().getBoolean("general.require_permissions")) {
-            if (track == TrackType.MINE && !player.hasPermission("farmxmine.mine")) return;
-            if (track == TrackType.FARM && !player.hasPermission("farmxmine.farm")) return;
-        }
-        ItemStack tool = player.getInventory().getItemInMainHand();
-        Region region = regionService.getRegion(track);
-        String req = region.getRequireTool();
-        if (req != null && !req.isEmpty()) {
-            if (tool == null || !tool.getType().name().endsWith("_" + req)) return;
-        }
-        BlockData data = block.getBlockData();
-        if (track == TrackType.FARM && data instanceof Ageable age && age.getAge() != age.getMaximumAge()) {
+        if (block.getWorld() == null || !block.getWorld().getName().equalsIgnoreCase(config.getMainWorld())) {
             return;
         }
-        if (track == TrackType.MINE && veinMiner.hasVeinMiner(tool)) {
-            Set<Block> blocks = veinMiner.collect(block, region);
-            for (Block b : blocks) {
-                processBlock(player, b, region, track, tool, event);
-            }
-        } else {
-            processBlock(player, block, region, track, tool, event);
+        Material type = block.getType();
+        TrackType track = null;
+        if (config.isMiningEnabled() && config.getMiningOres().contains(type)) {
+            track = TrackType.MINE;
+        } else if (config.isFarmingEnabled() && config.getFarmingCrops().contains(type)) {
+            track = TrackType.FARM;
         }
-    }
+        if (track == null) return;
 
-    private void processBlock(Player player, Block block, Region region, TrackType track, ItemStack tool, BlockBreakEvent event) {
-        if (!region.isAllowed(block.getType())) return;
-        event.setCancelled(true);
-        BlockData original = block.getBlockData();
-        final BlockData restore;
-        if (track == TrackType.FARM && original instanceof Ageable age) {
-            Ageable clone = (Ageable) age.clone();
-            clone.setAge(clone.getMaximumAge());
-            restore = clone;
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        if (track == TrackType.MINE) {
+            if (!Materials.isPickaxe(tool.getType())) return;
+            if (Materials.pickaxeLevel(tool.getType()) < Materials.requiredLevel(type)) return;
         } else {
-            restore = original;
+            if (!Materials.isHoe(tool.getType())) return;
+            BlockData data = block.getBlockData();
+            if (data instanceof Ageable age && age.getAge() != age.getMaximumAge()) return;
         }
+
+        BlockPosKey key = BlockPosKey.of(block);
+        Map<BlockPosKey, StoredBlock> playerMap = views.computeIfAbsent(player.getUniqueId(), id -> new HashMap<>());
+        if (playerMap.containsKey(key)) return; // cooldown
+
+        event.setCancelled(true);
+        event.setDropItems(false);
+        event.setExpToDrop(0);
+
+        BlockData original = block.getBlockData();
         Collection<ItemStack> drops = block.getDrops(tool, player);
         for (ItemStack drop : drops) {
-            player.getInventory().addItem(drop);
+            Map<Integer, ItemStack> leftover = player.getInventory().addItem(drop);
+            for (ItemStack l : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), l);
+            }
         }
-        player.sendBlockChange(block.getLocation(), Material.AIR.createBlockData());
-        long delay = plugin.getConfig().getInt("general.respawn_seconds") * 20L;
-        Map<BlockPosKey, StoredBlock> playerMap = views.computeIfAbsent(player.getUniqueId(), id -> new HashMap<>());
-        BlockPosKey key = BlockPosKey.of(block);
+
+        BlockData fake = track == TrackType.MINE ? Material.STONE.createBlockData() : Material.AIR.createBlockData();
+        player.sendBlockChange(block.getLocation(), fake);
+        long delay = config.getRespawnSeconds() * 20L;
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            player.sendBlockChange(key.toLocation(), restore);
-            playerMap.remove(key);
+            player.sendBlockChange(block.getLocation(), original);
+            Map<BlockPosKey, StoredBlock> m = views.get(player.getUniqueId());
+            if (m != null) m.remove(key);
         }, delay);
-        playerMap.put(key, new StoredBlock(restore, task));
+        playerMap.put(key, new StoredBlock(original, task));
+
         levelService.addXp(player, track);
     }
 
@@ -99,7 +93,6 @@ public class HarvestService {
                 player.sendBlockChange(e.getKey().toLocation(), e.getValue().data);
             }
         }
-        bossBarService.remove(player);
     }
 
     public void clear(Player player, Chunk chunk) {
