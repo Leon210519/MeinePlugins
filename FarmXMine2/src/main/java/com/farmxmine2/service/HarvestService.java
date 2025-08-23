@@ -61,27 +61,48 @@ public class HarvestService {
             return;
         }
 
-        long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
-        cooldownService.start(uuid, key, endMs);
-
         event.setCancelled(true);
         event.setDropItems(false);
         event.setExpToDrop(0);
 
-        Collection<ItemStack> drops = block.getDrops(tool, player);
-        for (ItemStack drop : drops) {
-            Map<Integer, ItemStack> leftover = player.getInventory().addItem(drop);
-            for (ItemStack l : leftover.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), l);
-            }
-        }
+        long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
+        cooldownService.start(uuid, key, endMs);
 
         if (track == TrackType.MINE) {
             player.sendBlockChange(block.getLocation(), Bukkit.createBlockData(Material.STONE));
+            Collection<ItemStack> drops = block.getDrops(tool, player);
+            for (ItemStack drop : drops) {
+                Map<Integer, ItemStack> leftover = player.getInventory().addItem(drop);
+                for (ItemStack l : leftover.values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), l);
+                }
+            }
         } else {
             player.sendBlockChange(block.getLocation(), Bukkit.createBlockData(Material.AIR));
+            Collection<ItemStack> raw = block.getDrops(tool, player);
+            Material wanted = Materials.mainProduceOf(block.getType());
+            int total = 0;
+            for (ItemStack it : raw) {
+                if (it == null) continue;
+                if (it.getType() == wanted) total += it.getAmount();
+            }
+            if (total > 0) {
+                giveToPlayerOrDrop(player, wanted, total);
+            }
         }
 
         levelService.addXp(player, track);
+    }
+
+    private void giveToPlayerOrDrop(Player player, Material mat, int amount) {
+        while (amount > 0) {
+            int stackAmount = Math.min(amount, mat.getMaxStackSize());
+            ItemStack stack = new ItemStack(mat, stackAmount);
+            Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack);
+            for (ItemStack l : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), l);
+            }
+            amount -= stackAmount;
+        }
     }
 }

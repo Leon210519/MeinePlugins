@@ -98,5 +98,16 @@ public class CooldownService {
         }
     }
 
+    public void restorePending(Player player) {
+        Map<BlockVec, CooldownEntry> map = cooldowns.get(player.getUniqueId());
+        if (map == null) return;
+        for (BlockVec vec : map.keySet()) {
+            World world = Bukkit.getWorld(vec.world());
+            if (world == null || !world.isChunkLoaded(vec.x() >> 4, vec.z() >> 4)) continue;
+            Location loc = new Location(world, vec.x(), vec.y(), vec.z());
+            player.sendBlockChange(loc, world.getBlockAt(loc).getBlockData());
+        }
+    }
+
     private record CooldownEntry(long endMs, BukkitTask task) {}
 }
