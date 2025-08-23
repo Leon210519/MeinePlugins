@@ -20,7 +20,6 @@ public final class TemplateGUI {
 
     public static final String TITLE = ChatColor.AQUA + "SpecialItems Templates";
     private static final int ROWS = 6;
-    // Inventory has 6 rows: right-most column used for navigation.
 
     public static void open(Player p, int page) {
         if (!p.hasPermission("specialitems.admin")) {
@@ -41,8 +40,13 @@ public final class TemplateGUI {
             list.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
         }
 
-        List<Rarity> rarityList = new ArrayList<>(Arrays.asList(Rarity.values()));
-        rarityList.remove(Rarity.STARFORGED); // top row dedicated to STARFORGED showcase
+        List<Rarity> rarityList = new ArrayList<>(Arrays.asList(
+                Rarity.LEGENDARY,
+                Rarity.EPIC,
+                Rarity.RARE,
+                Rarity.UNCOMMON,
+                Rarity.COMMON
+        ));
         int itemRows = ROWS - 1; // one row (top) used for showcase
         int pages = Math.max(1, (int) Math.ceil(rarityList.size() / (double) itemRows));
         if (page < 0) page = 0;
@@ -54,12 +58,14 @@ public final class TemplateGUI {
         starItems.sort(Comparator.comparing(t -> typeOrder(t.stack().getType())));
         int showcaseSlot = 0;
         for (TemplateItems.TemplateItem t : starItems) {
-            if (showcaseSlot >= 8) break; // slot 8 reserved for filler/nav column
+            if (showcaseSlot >= 6) break; // slots 6-8 used for navigation
             ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
             if (display == null) display = t.stack().clone();
             inv.setItem(showcaseSlot++, display);
         }
-        inv.setItem(8, GuiIcons.navFiller());
+        inv.setItem(6, GuiIcons.navPrev(page > 0));
+        inv.setItem(7, GuiIcons.navNext(page < pages - 1));
+        inv.setItem(8, GuiIcons.navClose());
 
         int startRarity = page * itemRows;
         int endRarity = Math.min(rarityList.size(), startRarity + itemRows);
@@ -79,12 +85,6 @@ public final class TemplateGUI {
             }
         }
 
-        // Navigation column (right side)
-        inv.setItem(35, GuiIcons.navNext(page < pages - 1));
-        inv.setItem(44, GuiIcons.navPrev(page > 0));
-        inv.setItem(53, GuiIcons.navClose());
-        inv.setItem(17, GuiIcons.navFiller());
-        inv.setItem(26, GuiIcons.navFiller());
         p.openInventory(inv);
     }
 
