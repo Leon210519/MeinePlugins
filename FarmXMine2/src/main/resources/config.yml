@@ -1,7 +1,7 @@
 general:
   respawn_seconds: 20
   main_world: "world"
-  override_cancelled: false
+  override_cancelled: true
 mining:
   enabled: true
   require_tool: PICKAXE

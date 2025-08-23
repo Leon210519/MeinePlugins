@@ -1,13 +1,13 @@
 package com.farmxmine2.service;
 
 import com.farmxmine2.FarmXMine2Plugin;
-import com.farmxmine2.model.BlockVec;
+import com.farmxmine2.model.BlockKey;
+import com.farmxmine2.util.Scheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,99 +15,83 @@ import java.util.concurrent.ConcurrentHashMap;
 /** Tracks per-player block cooldowns and restores visuals after expiry. */
 public class CooldownService {
     private final FarmXMine2Plugin plugin;
-    private final Map<UUID, Map<BlockVec, CooldownEntry>> cooldowns = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<BlockKey, Long>> cooldowns = new ConcurrentHashMap<>();
 
     public CooldownService(FarmXMine2Plugin plugin) {
         this.plugin = plugin;
     }
 
-    public boolean isCooling(UUID uuid, BlockVec vec) {
-        Map<BlockVec, CooldownEntry> map = cooldowns.get(uuid);
+    public boolean isCooling(UUID uuid, BlockKey key) {
+        Map<BlockKey, Long> map = cooldowns.get(uuid);
         if (map == null) return false;
-        CooldownEntry entry = map.get(vec);
-        if (entry == null) return false;
-        if (System.currentTimeMillis() >= entry.endMs) {
-            map.remove(vec);
+        Long end = map.get(key);
+        if (end == null) return false;
+        if (System.currentTimeMillis() >= end) {
+            map.remove(key);
             return false;
         }
         return true;
     }
 
-    public void start(UUID uuid, BlockVec vec, long endMs) {
-        Map<BlockVec, CooldownEntry> map = cooldowns.computeIfAbsent(uuid, u -> new ConcurrentHashMap<>());
-        CooldownEntry existing = map.get(vec);
-        if (existing != null) {
-            existing.task.cancel();
-        }
-        long delayTicks = Math.max(1L, (endMs - System.currentTimeMillis()) / 50L);
-        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> restore(uuid, vec), delayTicks);
-        map.put(vec, new CooldownEntry(endMs, task));
+    public void start(UUID uuid, BlockKey key, long endMs) {
+        Map<BlockKey, Long> map = cooldowns.computeIfAbsent(uuid, u -> new ConcurrentHashMap<>());
+        map.put(key, endMs);
+        long delayMs = endMs - System.currentTimeMillis();
+        Scheduler.restoreLater(plugin, () -> restore(uuid, key), delayMs);
     }
 
-    private void restore(UUID uuid, BlockVec vec) {
-        Map<BlockVec, CooldownEntry> map = cooldowns.get(uuid);
+    private void restore(UUID uuid, BlockKey key) {
+        Map<BlockKey, Long> map = cooldowns.get(uuid);
         if (map == null) return;
-        CooldownEntry entry = map.get(vec);
-        if (entry == null || System.currentTimeMillis() < entry.endMs) return;
+        Long end = map.get(key);
+        if (end == null || System.currentTimeMillis() < end) return;
 
         Player player = Bukkit.getPlayer(uuid);
         if (player == null) {
-            map.remove(vec);
+            map.remove(key);
             return;
         }
-        World world = Bukkit.getWorld(vec.world());
-        if (world == null || !world.isChunkLoaded(vec.x() >> 4, vec.z() >> 4)) {
-            map.remove(vec);
+        World world = Bukkit.getWorld(key.world());
+        if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) {
+            map.remove(key);
             return;
         }
-        Location loc = new Location(world, vec.x(), vec.y(), vec.z());
+        Location loc = new Location(world, key.x(), key.y(), key.z());
         player.sendBlockChange(loc, world.getBlockAt(loc).getBlockData());
-        map.remove(vec);
+        map.remove(key);
         if (map.isEmpty()) {
             cooldowns.remove(uuid);
         }
     }
 
     public void clear(UUID uuid) {
-        Map<BlockVec, CooldownEntry> map = cooldowns.remove(uuid);
-        if (map != null) {
-            for (CooldownEntry entry : map.values()) {
-                entry.task.cancel();
-            }
-        }
+        cooldowns.remove(uuid);
     }
 
     public void clear(Chunk chunk) {
-        for (Iterator<Map.Entry<UUID, Map<BlockVec, CooldownEntry>>> it = cooldowns.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<UUID, Map<BlockVec, CooldownEntry>> e = it.next();
-            Map<BlockVec, CooldownEntry> map = e.getValue();
+        for (Iterator<Map.Entry<UUID, Map<BlockKey, Long>>> it = cooldowns.entrySet().iterator(); it.hasNext(); ) {
+            Map<BlockKey, Long> map = it.next().getValue();
             map.entrySet().removeIf(en -> {
-                BlockVec v = en.getKey();
-                boolean sameChunk = v.world().equalsIgnoreCase(chunk.getWorld().getName()) &&
+                BlockKey v = en.getKey();
+                return v.world().equalsIgnoreCase(chunk.getWorld().getName()) &&
                         (v.x() >> 4) == chunk.getX() && (v.z() >> 4) == chunk.getZ();
-                if (sameChunk) en.getValue().task.cancel();
-                return sameChunk;
             });
             if (map.isEmpty()) it.remove();
         }
     }
 
     public void clearAll() {
-        for (UUID uuid : new ArrayList<>(cooldowns.keySet())) {
-            clear(uuid);
-        }
+        cooldowns.clear();
     }
 
     public void restorePending(Player player) {
-        Map<BlockVec, CooldownEntry> map = cooldowns.get(player.getUniqueId());
+        Map<BlockKey, Long> map = cooldowns.get(player.getUniqueId());
         if (map == null) return;
-        for (BlockVec vec : map.keySet()) {
-            World world = Bukkit.getWorld(vec.world());
-            if (world == null || !world.isChunkLoaded(vec.x() >> 4, vec.z() >> 4)) continue;
-            Location loc = new Location(world, vec.x(), vec.y(), vec.z());
+        for (BlockKey key : map.keySet()) {
+            World world = Bukkit.getWorld(key.world());
+            if (world == null || !world.isChunkLoaded(key.x() >> 4, key.z() >> 4)) continue;
+            Location loc = new Location(world, key.x(), key.y(), key.z());
             player.sendBlockChange(loc, world.getBlockAt(loc).getBlockData());
         }
     }
-
-    private record CooldownEntry(long endMs, BukkitTask task) {}
 }

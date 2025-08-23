@@ -1,25 +1,26 @@
 package com.farmxmine2.util;
 
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
 
-import java.util.Map;
+import java.util.Set;
 
+/** Utility helpers for material classification. */
 public final class Materials {
     private Materials() {}
 
-    static final Map<Material, Material> MAIN_PRODUCE = Map.of(
-            Material.WHEAT, Material.WHEAT,
-            Material.CARROTS, Material.CARROT,
-            Material.POTATOES, Material.POTATO,
-            Material.BEETROOTS, Material.BEETROOT
-    );
-
-    public static boolean isCrop(Material m) {
-        return MAIN_PRODUCE.containsKey(m);
+    public static boolean isOre(Material mat, Set<Material> ores) {
+        return ores.contains(mat);
     }
 
-    public static Material mainProduceOf(Material crop) {
-        return MAIN_PRODUCE.get(crop);
+    public static boolean isCrop(Material mat, Set<Material> crops) {
+        return crops.contains(mat);
+    }
+
+    public static boolean isMature(Block block) {
+        if (!(block.getBlockData() instanceof Ageable age)) return false;
+        return age.getAge() == age.getMaximumAge();
     }
 
     public static boolean isHoe(Material mat) {
