@@ -74,8 +74,8 @@ public final class TemplateItems {
         if (cmd != null) {
             ItemMeta m = it.getItemMeta();
             if (m != null) {
-                m.setCustomModelData(null); // normalize any previous wrong type
-                m.setCustomModelData(cmd);  // REQUIRED for resource-pack overrides
+                m.setCustomModelData(null);  // normalize any previous wrong stored type
+                m.setCustomModelData(cmd);   // set correct integer CustomModelData for RP overrides
                 it.setItemMeta(m);
             }
         }
