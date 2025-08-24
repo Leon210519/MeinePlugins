@@ -19,6 +19,10 @@ commands:
     description: Show CustomModelData of the held item
     usage: /si_cmdcheck
     permission: specialitems.debug
+  si_cmdfix:
+    description: Normalize held item CustomModelData to integer
+    usage: /si_cmdfix
+    permission: specialitems.debug
 permissions:
   specialitems.admin:
     description: Allows using admin SpecialItems subcommands

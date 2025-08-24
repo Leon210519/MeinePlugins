@@ -34,3 +34,38 @@ gradle/
 # OS
 .DS_Store
 Thumbs.db
+# Build artifacts
+/build/
+/target/
+/out/
+/bin/
+/.gradle/
+/.venv/
+/env/
+/tmp/
+/local/
+/cache/
+/server/
+/run/
+/logs/
+*.log
+# IDE/OS files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+/.DS_Store
+Thumbs.db
+# Archives/binaries (keep releases out of PRs)
+*.zip
+*.tar
+*.tar.gz
+*.7z
+# World/sandbox (if present)
+world/
+/world_nether/
+/world_the_end/
+# Mistaken local plugin drop-ins at repo root
+/plugins/
