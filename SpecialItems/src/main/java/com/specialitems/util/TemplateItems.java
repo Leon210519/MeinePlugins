@@ -67,7 +67,7 @@ public final class TemplateItems {
             }
         }
 
-        Integer cmd = readCmd(t);
+        Integer cmd = readModelData(t);
         if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
             org.bukkit.inventory.meta.ItemMeta m = it.getItemMeta();
@@ -97,11 +97,24 @@ public final class TemplateItems {
         return new TemplateItem(id, it, cmd);
     }
 
-    private static Integer readCmd(ConfigurationSection t) {
+    private static Integer readModelData(ConfigurationSection t) {
         if (t == null) return null;
-        if (t.isInt("custom_model_data")) return t.getInt("custom_model_data");
-        if (t.isInt("model-data")) return t.getInt("model-data");
-        if (t.isInt("model_data")) return t.getInt("model_data");
+        Integer v = readModelDataKey(t, "custom_model_data");
+        if (v != null) return v;
+        v = readModelDataKey(t, "model-data");
+        if (v != null) return v;
+        return readModelDataKey(t, "model_data");
+    }
+
+    private static Integer readModelDataKey(ConfigurationSection sec, String key) {
+        if (sec.isInt(key)) return sec.getInt(key);
+        Object raw = sec.get(key);
+        if (raw == null) return null;
+        if (raw instanceof Number n) return n.intValue();
+        if (raw instanceof String s) {
+            s = s.trim();
+            if (s.matches("\\d+")) return Integer.parseInt(s);
+        }
         return null;
     }
 
