@@ -68,15 +68,12 @@ public final class TemplateItems {
         }
 
         Integer cmd = readCmd(t);
-        if (cmd == null) {
-            cmd = computeCmdFallback(mat, t.getString("rarity"));
-        }
+        if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
             org.bukkit.inventory.meta.ItemMeta m = it.getItemMeta();
             if (m != null) {
-                // ensure correct integer component; avoid legacy wrong types
-                m.setCustomModelData(null);
-                m.setCustomModelData(cmd);
+                m.setCustomModelData(null);     // normalize legacy wrong type
+                m.setCustomModelData(cmd);      // set proper integer CMD
                 it.setItemMeta(m);
             }
         }
