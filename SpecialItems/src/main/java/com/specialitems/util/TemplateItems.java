@@ -153,6 +153,7 @@ public final class TemplateItems {
         if (tmpl == null) return false;
         ItemMeta tmeta = tmpl.stack().getItemMeta();
         if (tmeta == null || !tmeta.hasCustomModelData()) return false;
+        meta.setCustomModelData(null);
         meta.setCustomModelData(tmeta.getCustomModelData());
         item.setItemMeta(meta);
         return true;
