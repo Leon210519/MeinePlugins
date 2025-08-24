@@ -72,10 +72,11 @@ public final class TemplateItems {
             cmd = computeCmdFallback(mat, t.getString("rarity"));
         }
         if (cmd != null) {
-            ItemMeta m = it.getItemMeta();
+            org.bukkit.inventory.meta.ItemMeta m = it.getItemMeta();
             if (m != null) {
-                m.setCustomModelData(null);  // normalize any previous wrong stored type
-                m.setCustomModelData(cmd);   // set correct integer CustomModelData for RP overrides
+                // ensure correct integer component; avoid legacy wrong types
+                m.setCustomModelData(null);
+                m.setCustomModelData(cmd);
                 it.setItemMeta(m);
             }
         }
@@ -103,7 +104,7 @@ public final class TemplateItems {
         return null;
     }
 
-    private static Integer computeCmdFallback(Material mat, String rarityStr) {
+    private static Integer computeCmdFallback(org.bukkit.Material mat, String rarityStr) {
         if (mat == null || rarityStr == null) return null;
         String m = mat.name();
         int base;
