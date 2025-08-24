@@ -73,8 +73,12 @@ public final class TemplateItems {
             org.bukkit.inventory.meta.ItemMeta m = it.getItemMeta();
             if (m != null) {
                 m.setCustomModelData(null);     // normalize legacy wrong type
-                m.setCustomModelData(cmd);      // set proper integer CMD
                 it.setItemMeta(m);
+                m = it.getItemMeta();
+                if (m != null) {
+                    m.setCustomModelData(cmd);      // set proper integer CMD
+                    it.setItemMeta(m);
+                }
             }
         }
 
@@ -154,6 +158,9 @@ public final class TemplateItems {
         ItemMeta tmeta = tmpl.stack().getItemMeta();
         if (tmeta == null || !tmeta.hasCustomModelData()) return false;
         meta.setCustomModelData(null);
+        item.setItemMeta(meta);
+        meta = item.getItemMeta();
+        if (meta == null) return false;
         meta.setCustomModelData(tmeta.getCustomModelData());
         item.setItemMeta(meta);
         return true;

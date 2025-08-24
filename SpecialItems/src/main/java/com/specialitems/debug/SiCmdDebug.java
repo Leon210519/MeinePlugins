@@ -24,8 +24,12 @@ public final class SiCmdDebug implements CommandExecutor {
             ItemMeta m = it.getItemMeta();
             if (m != null) {
                 m.setCustomModelData(null);
-                m.setCustomModelData(val);
                 it.setItemMeta(m);
+                m = it.getItemMeta();
+                if (m != null) {
+                    m.setCustomModelData(val);
+                    it.setItemMeta(m);
+                }
             }
             p.getInventory().addItem(it);
             p.sendMessage("Given " + mat + " with CMD=" + val);
