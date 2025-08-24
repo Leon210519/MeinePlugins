@@ -22,7 +22,11 @@ public final class SiCmdDebug implements CommandExecutor {
             try { val = Integer.parseInt(a[1]); } catch (Exception e) { p.sendMessage("CMD must be integer"); return true; }
             ItemStack it = new ItemStack(mat);
             ItemMeta m = it.getItemMeta();
-            if (m != null) { m.setCustomModelData(val); it.setItemMeta(m); }
+            if (m != null) {
+                m.setCustomModelData(null);
+                m.setCustomModelData(val);
+                it.setItemMeta(m);
+            }
             p.getInventory().addItem(it);
             p.sendMessage("Given " + mat + " with CMD=" + val);
             return true;
