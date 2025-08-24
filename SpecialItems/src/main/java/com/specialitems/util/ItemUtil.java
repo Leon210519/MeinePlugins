@@ -4,6 +4,7 @@ import com.specialitems.SpecialItemsPlugin;
 import com.specialitems.effects.Effects;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -61,6 +62,20 @@ public final class ItemUtil {
         } catch (Throwable ignored) {
             return 0.0;
         }
+    }
+
+    public static Integer readInt(ConfigurationSection sec, String path) {
+        Object raw = sec.get(path);
+        if (raw == null) return null;
+        if (raw instanceof Number n) return n.intValue();
+        if (raw instanceof String s) {
+            s = s.trim();
+            if (s.matches("\\d+(\\.0+)?")) {
+                int dot = s.indexOf('.');
+                return Integer.parseInt(dot >= 0 ? s.substring(0, dot) : s);
+            }
+        }
+        return null;
     }
 
     public static void removeLoreLinePrefix(List<String> lore, String prefix) {
