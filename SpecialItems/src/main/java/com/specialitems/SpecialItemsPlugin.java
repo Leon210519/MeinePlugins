@@ -80,6 +80,17 @@ public class SpecialItemsPlugin extends JavaPlugin {
         } else {
             Log.warn("Command 'bin' not found in plugin.yml!");
         }
+        if (getCommand("si_givecmd") != null && getCommand("si_cmdcheck") != null) {
+            try {
+                var dbg = new com.specialitems.debug.SiCmdDebug();
+                getCommand("si_givecmd").setExecutor(dbg);
+                getCommand("si_cmdcheck").setExecutor(dbg);
+            } catch (Throwable t) {
+                Log.warn("Failed to set executor for debug commands: " + t.getMessage());
+            }
+        } else {
+            Log.warn("Debug commands not found in plugin.yml!");
+        }
 
         // --- Leveling system (NEW) ---
         this.leveling = new LevelingService(this);

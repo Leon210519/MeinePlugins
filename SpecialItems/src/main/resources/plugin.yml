@@ -11,7 +11,17 @@ commands:
     description: View deleted special items (admin)
     usage: /bin
     permission: specialitems.admin
+  si_givecmd:
+    description: Give a test item with CustomModelData
+    usage: /si_givecmd <material> <cmd>
+    permission: specialitems.debug
+  si_cmdcheck:
+    description: Show CustomModelData of the held item
+    usage: /si_cmdcheck
+    permission: specialitems.debug
 permissions:
   specialitems.admin:
     description: Allows using admin SpecialItems subcommands
+    default: op
+  specialitems.debug:
     default: op
