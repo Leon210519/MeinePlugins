@@ -47,8 +47,8 @@ public class HarvestService {
         }
 
         Material type = b.getType();
-        boolean isOre = config.isMiningEnabled() && Materials.isOre(type);
-        boolean isCrop = config.isFarmingEnabled() && Materials.isCrop(type) && Materials.isMature(b);
+        boolean isOre = config.isMiningEnabled() && config.getMiningOres().contains(type);
+        boolean isCrop = config.isFarmingEnabled() && config.getFarmingCrops().contains(type) && Materials.isMature(b);
         if (!isOre && !isCrop) {
             return;
         }
@@ -154,8 +154,8 @@ public class HarvestService {
             return;
         }
         Material type = b.getType();
-        boolean isOre = config.isMiningEnabled() && Materials.isOre(type);
-        boolean isCrop = config.isFarmingEnabled() && Materials.isCrop(type) && Materials.isMature(b);
+        boolean isOre = config.isMiningEnabled() && config.getMiningOres().contains(type);
+        boolean isCrop = config.isFarmingEnabled() && config.getFarmingCrops().contains(type) && Materials.isMature(b);
         if (!isOre && !isCrop) {
             return;
         }
@@ -175,8 +175,8 @@ public class HarvestService {
             return;
         }
         Material type = b.getType();
-        boolean isOre = config.isMiningEnabled() && Materials.isOre(type);
-        boolean isCrop = config.isFarmingEnabled() && Materials.isCrop(type) && Materials.isMature(b);
+        boolean isOre = config.isMiningEnabled() && config.getMiningOres().contains(type);
+        boolean isCrop = config.isFarmingEnabled() && config.getFarmingCrops().contains(type) && Materials.isMature(b);
         if (!isOre && !isCrop) {
             return;
         }

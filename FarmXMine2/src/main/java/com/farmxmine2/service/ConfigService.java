@@ -1,9 +1,12 @@
 package com.farmxmine2.service;
 
 import com.farmxmine2.FarmXMine2Plugin;
+import com.farmxmine2.util.Materials;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,10 +39,26 @@ public class ConfigService {
         overrideCancelled = cfg.getBoolean("general.override_cancelled");
         miningEnabled = cfg.getBoolean("mining.enabled");
         miningRequireTool = cfg.getString("mining.require_tool", "PICKAXE");
-        miningOres = cfg.getStringList("mining.ores").stream().map(Material::valueOf).collect(Collectors.toSet());
+        miningOres = cfg.getStringList("mining.ores").stream()
+                .map(s -> {
+                    try { return Material.valueOf(s); } catch (IllegalArgumentException ex) { return null; }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(Material.class)));
+        if (miningOres.isEmpty()) {
+            miningOres = Materials.allOres();
+        }
         farmingEnabled = cfg.getBoolean("farming.enabled");
         farmingRequireTool = cfg.getString("farming.require_tool", "HOE");
-        farmingCrops = cfg.getStringList("farming.crops").stream().map(Material::valueOf).collect(Collectors.toSet());
+        farmingCrops = cfg.getStringList("farming.crops").stream()
+                .map(s -> {
+                    try { return Material.valueOf(s); } catch (IllegalArgumentException ex) { return null; }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(Material.class)));
+        if (farmingCrops.isEmpty()) {
+            farmingCrops = Materials.allCrops();
+        }
         mineXpPer = cfg.getInt("leveling.xp_per_harvest.mine");
         farmXpPer = cfg.getInt("leveling.xp_per_harvest.farm");
         baseXpPerLevel = cfg.getInt("leveling.base_xp_per_level");

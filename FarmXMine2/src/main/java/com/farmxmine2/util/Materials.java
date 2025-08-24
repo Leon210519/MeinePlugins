@@ -54,5 +54,15 @@ public final class Materials {
     public static boolean isMineableByPickaxe(Material mat) {
         return Tag.MINEABLE_PICKAXE.isTagged(mat) || ORE_ALLOWLIST.contains(mat);
     }
+
+    /** Returns an independent set of all default ores. */
+    public static Set<Material> allOres() {
+        return EnumSet.copyOf(ORE_ALLOWLIST);
+    }
+
+    /** Returns an independent set of all default crops. */
+    public static Set<Material> allCrops() {
+        return EnumSet.copyOf(CROPS);
+    }
 }
 
