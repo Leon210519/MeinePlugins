@@ -68,10 +68,14 @@ public final class TemplateItems {
         }
 
         Integer cmd = readCmd(t);
+        if (cmd == null) {
+            cmd = computeCmdFallback(mat, t.getString("rarity"));
+        }
         if (cmd != null) {
             ItemMeta m = it.getItemMeta();
             if (m != null) {
-                m.setCustomModelData(cmd);
+                m.setCustomModelData(null); // normalize any previous wrong type
+                m.setCustomModelData(cmd);  // REQUIRED for resource-pack overrides
                 it.setItemMeta(m);
             }
         }
@@ -97,6 +101,32 @@ public final class TemplateItems {
         if (t.isInt("model-data")) return t.getInt("model-data");
         if (t.isInt("model_data")) return t.getInt("model_data");
         return null;
+    }
+
+    private static Integer computeCmdFallback(Material mat, String rarityStr) {
+        if (mat == null || rarityStr == null) return null;
+        String m = mat.name();
+        int base;
+        if (m.endsWith("_SWORD")) base = 1000;
+        else if (m.endsWith("_PICKAXE")) base = 1100;
+        else if (m.endsWith("_HOE")) base = 1200;
+        else if (m.endsWith("_AXE")) base = 1300;
+        else if (m.endsWith("_HELMET")) base = 2000;
+        else if (m.endsWith("_CHESTPLATE")) base = 2100;
+        else if (m.endsWith("_LEGGINGS")) base = 2200;
+        else if (m.endsWith("_BOOTS")) base = 2300;
+        else return null;
+
+        String r = rarityStr.toUpperCase(java.util.Locale.ROOT);
+        int off =
+            r.equals("COMMON") ? 1 :
+            r.equals("UNCOMMON") ? 2 :
+            r.equals("RARE") ? 3 :
+            r.equals("EPIC") ? 4 :
+            r.equals("LEGENDARY") ? 5 :
+            r.equals("STARFORGED") ? 6 : 0;
+
+        return (off == 0 ? null : base + off);
     }
 
     public static List<TemplateItem> getByRarity(Rarity rarity) {
