@@ -10,7 +10,6 @@ public final class SiCmdFix implements CommandExecutor{
 
     if(m!=null&&raw instanceof Number){ int v=((Number)raw).intValue(); m.setCustomModelData(null); m.setCustomModelData(v); it.setItemMeta(m); p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData normalized to integer: "+v); }
 
-
     else if(TemplateItems.applyTemplateMeta(it)){ p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData applied from template."); }
     else p.sendMessage("No CMD on this item.");
     return true;
