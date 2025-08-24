@@ -86,8 +86,10 @@ public class SiCommand implements CommandExecutor {
                     sender.sendMessage(ChatColor.RED + "Template not found: " + tid);
                     return true;
                 }
-                ItemStack item = TemplateItems.buildFrom(tid, tsec);
-                target.getInventory().addItem(item);
+                TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(tid, tsec);
+                if (tmpl != null) {
+                    target.getInventory().addItem(tmpl.stack());
+                }
                 sender.sendMessage(ChatColor.GREEN + "Gave " + ChatColor.YELLOW + tid + ChatColor.GREEN + " to " + ChatColor.YELLOW + target.getName());
                 return true;
             }
