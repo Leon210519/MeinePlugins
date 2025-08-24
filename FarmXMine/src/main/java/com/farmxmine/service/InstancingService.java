@@ -21,6 +21,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,29 @@ public class InstancingService implements Listener {
     // pro Spieler versteckte Blockpositionen
     private final Map<UUID, Set<Location>> hidden = new HashMap<>();
 
+    // Fallback-Liste aller Vanilla-Erze (1.21.4)
+    private static final Material[] DEFAULT_ORES = {
+            Material.COAL_ORE,
+            Material.IRON_ORE,
+            Material.COPPER_ORE,
+            Material.GOLD_ORE,
+            Material.REDSTONE_ORE,
+            Material.DIAMOND_ORE,
+            Material.EMERALD_ORE,
+            Material.LAPIS_ORE,
+            Material.DEEPSLATE_COAL_ORE,
+            Material.DEEPSLATE_IRON_ORE,
+            Material.DEEPSLATE_COPPER_ORE,
+            Material.DEEPSLATE_GOLD_ORE,
+            Material.DEEPSLATE_REDSTONE_ORE,
+            Material.DEEPSLATE_DIAMOND_ORE,
+            Material.DEEPSLATE_EMERALD_ORE,
+            Material.DEEPSLATE_LAPIS_ORE,
+            Material.NETHER_QUARTZ_ORE,
+            Material.NETHER_GOLD_ORE,
+            Material.ANCIENT_DEBRIS
+    };
+
     public InstancingService(JavaPlugin plugin, LevelService level, ArtifactService artifacts) {
         this.plugin = plugin;
         this.level = level;
@@ -71,7 +95,7 @@ public class InstancingService implements Listener {
 
         // Ores/Crops laden (robust) + Defaults
         Set<Material> tmpOres = loadMaterials("regions.mine.ores", "mine.ores", "ores");
-        if (tmpOres.isEmpty()) tmpOres.add(Material.COAL_ORE);
+        if (tmpOres.isEmpty()) tmpOres.addAll(Arrays.asList(DEFAULT_ORES));
         this.ores = tmpOres;
 
         Set<Material> tmpCrops = loadMaterials("regions.farm.crops", "farm.crops", "crops");
