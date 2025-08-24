@@ -99,23 +99,11 @@ public final class TemplateItems {
 
     private static Integer readModelData(ConfigurationSection t) {
         if (t == null) return null;
-        Integer v = readModelDataKey(t, "custom_model_data");
+        Integer v = ItemUtil.readInt(t, "custom_model_data");
         if (v != null) return v;
-        v = readModelDataKey(t, "model-data");
+        v = ItemUtil.readInt(t, "model-data");
         if (v != null) return v;
-        return readModelDataKey(t, "model_data");
-    }
-
-    private static Integer readModelDataKey(ConfigurationSection sec, String key) {
-        if (sec.isInt(key)) return sec.getInt(key);
-        Object raw = sec.get(key);
-        if (raw == null) return null;
-        if (raw instanceof Number n) return n.intValue();
-        if (raw instanceof String s) {
-            s = s.trim();
-            if (s.matches("\\d+")) return Integer.parseInt(s);
-        }
-        return null;
+        return ItemUtil.readInt(t, "model_data");
     }
 
     private static Integer computeCmdFallback(org.bukkit.Material mat, String rarityStr) {
