@@ -14,7 +14,7 @@ import java.util.*;
 
 public final class TemplateItems {
 
-    public record TemplateItem(String id, ItemStack stack) {}
+    public record TemplateItem(String id, ItemStack stack, Integer customModelData) {}
 
     private TemplateItems() {}
 
@@ -23,7 +23,6 @@ public final class TemplateItems {
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         BY_MAT_NAME.clear();
-        CustomModels.reset();
         var sec = Configs.templates.getConfigurationSection("templates");
         if (sec == null) return list;
         List<String> keys = new ArrayList<>(sec.getKeys(false));
@@ -31,20 +30,21 @@ public final class TemplateItems {
         for (String key : keys) {
             ConfigurationSection tsec = sec.getConfigurationSection(key);
             String tid = (tsec == null ? key : tsec.getString("id", key));
-            ItemStack it = buildFrom(tid, tsec);
-            if (it != null) {
-                list.add(new TemplateItem(tid, it));
+            TemplateItem tmpl = buildFrom(tid, tsec);
+            if (tmpl != null) {
+                list.add(tmpl);
+                ItemStack it = tmpl.stack();
                 ItemMeta meta = it.getItemMeta();
                 if (meta != null && meta.hasDisplayName()) {
                     String k = it.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
-                    BY_MAT_NAME.put(k, new TemplateItem(tid, it));
+                    BY_MAT_NAME.put(k, tmpl);
                 }
             }
         }
         return list;
     }
 
-    public static ItemStack buildFrom(String id, ConfigurationSection t) {
+    public static TemplateItem buildFrom(String id, ConfigurationSection t) {
         if (t == null) return null;
         Material mat = Material.matchMaterial(t.getString("material", "STONE"));
         if (mat == null) mat = Material.STONE;
@@ -67,17 +67,14 @@ public final class TemplateItems {
             }
         }
 
-        try {
-            int explicit = t.getInt("custom_model_data", 0);
-            int cmd = CustomModels.register(id, explicit);
-            if (cmd > 0) {
-                ItemMeta m = it.getItemMeta();
-                if (m != null) {
-                    m.setCustomModelData(cmd);
-                    it.setItemMeta(m);
-                }
+        Integer cmd = readCmd(t);
+        if (cmd != null) {
+            ItemMeta m = it.getItemMeta();
+            if (m != null) {
+                m.setCustomModelData(cmd);
+                it.setItemMeta(m);
             }
-        } catch (Throwable ignored) {}
+        }
 
         try {
             Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), it, id);
@@ -91,7 +88,15 @@ public final class TemplateItems {
             } catch (Throwable ignored) {}
         }
 
-        return it;
+        return new TemplateItem(id, it, cmd);
+    }
+
+    private static Integer readCmd(ConfigurationSection t) {
+        if (t == null) return null;
+        if (t.isInt("custom_model_data")) return t.getInt("custom_model_data");
+        if (t.isInt("model-data")) return t.getInt("model-data");
+        if (t.isInt("model_data")) return t.getInt("model_data");
+        return null;
     }
 
     public static List<TemplateItem> getByRarity(Rarity rarity) {
