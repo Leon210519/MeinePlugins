@@ -8,7 +8,11 @@ public final class SiCmdFix implements CommandExecutor{
     if(it==null||it.getType().isAir()){ p.sendMessage("Hold an item."); return true; }
     ItemMeta m=it.getItemMeta(); Map<String,Object> metaMap=(m!=null?m.serialize():null); Object raw=(metaMap!=null?metaMap.get("custom-model-data"):null);
 
-    if(m!=null&&raw instanceof Number){ int v=((Number)raw).intValue(); m.setCustomModelData(null); it.setItemMeta(m); m=it.getItemMeta(); if(m!=null){ m.setCustomModelData(v); it.setItemMeta(m); } p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData normalized to integer: "+v); }
+    Integer val=null;
+    if(raw instanceof Number n) val=n.intValue();
+    else if(raw instanceof String str){ str=str.trim(); if(str.matches("\\d+")) val=Integer.parseInt(str); }
+
+    if(m!=null&&val!=null){ m.setCustomModelData(null); it.setItemMeta(m); m=it.getItemMeta(); if(m!=null){ m.setCustomModelData(val); it.setItemMeta(m); } p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData normalized to integer: "+val); }
 
     else if(TemplateItems.applyTemplateMeta(it)){ p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData applied from template."); }
     else p.sendMessage("No CMD on this item.");
