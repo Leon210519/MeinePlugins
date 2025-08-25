@@ -5,9 +5,9 @@ import com.specialitems.effects.CustomEffect;
 import com.specialitems.effects.Effects;
 import com.specialitems.util.Configs;
 import com.specialitems.util.ItemUtil;
+import com.specialitems.util.TemplateItems;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
@@ -115,6 +115,32 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
+        var inv = p.getInventory();
+
+        ItemStack[] contents = inv.getContents();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack item = contents[i];
+            if (TemplateItems.applyTemplateMeta(item)) {
+                inv.setItem(i, item);
+            }
+            try {
+                SpecialItemsPlugin.getInstance().leveling().initItem(item);
+            } catch (Throwable ignored) {}
+        }
+
+        ItemStack[] armor = inv.getArmorContents();
+        for (int i = 0; i < armor.length; i++) {
+            ItemStack item = armor[i];
+            if (TemplateItems.applyTemplateMeta(item)) {
+                armor[i] = item;
+            }
+            try {
+                SpecialItemsPlugin.getInstance().leveling().initItem(item);
+            } catch (Throwable ignored) {}
+        }
+        inv.setArmorContents(armor);
+
         Bukkit.getScheduler().runTaskLater(SpecialItemsPlugin.getInstance(), PlayerListener::tickAll, 20L);
     }
 
