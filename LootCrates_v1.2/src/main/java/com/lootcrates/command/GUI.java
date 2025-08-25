@@ -54,17 +54,51 @@ public class GUI {
         p.openInventory(inv);
     }
 
-    /** Try to open a crate by consuming a key in main hand, then roll with 5-slot center line. */
-    public static void tryOpenWithKey(LootCratesPlugin plugin, Player p, Crate c){
-        ItemStack hand = p.getInventory().getItemInMainHand();
+    /**
+     * Try to open a crate by consuming a matching key item. The main hand and
+     * off-hand are always searched. If {@code searchInventory} is true, the
+     * rest of the player inventory is also scanned for the key. The player is
+     * informed which slot supplied the key.
+     */
+    public static void tryOpenWithKey(LootCratesPlugin plugin, Player p, Crate c, boolean searchInventory){
         ItemStack key = c.key.createItem(1);
-        if (hand == null || !hand.isSimilar(key)){
-            p.sendMessage("§cHold a " + Color.cc(c.display) + "§c key in your main hand.");
-            return;
+        String fromSlot = null;
+
+        // main hand
+        ItemStack hand = p.getInventory().getItemInMainHand();
+        if (hand != null && hand.isSimilar(key)){
+            hand.setAmount(hand.getAmount()-1);
+            p.getInventory().setItemInMainHand(hand.getAmount() > 0 ? hand : null);
+            fromSlot = "main hand";
+        } else {
+            // off-hand
+            ItemStack off = p.getInventory().getItemInOffHand();
+            if (off != null && off.isSimilar(key)){
+                off.setAmount(off.getAmount()-1);
+                p.getInventory().setItemInOffHand(off.getAmount() > 0 ? off : null);
+                fromSlot = "off-hand";
+            } else if (searchInventory) {
+                // scan full inventory
+                int slot = -1;
+                for (int i = 0; i < p.getInventory().getSize(); i++){
+                    ItemStack it = p.getInventory().getItem(i);
+                    if (it != null && it.isSimilar(key)) { slot = i; break; }
+                }
+                if (slot >= 0){
+                    ItemStack it = p.getInventory().getItem(slot);
+                    it.setAmount(it.getAmount()-1);
+                    p.getInventory().setItem(slot, it.getAmount() > 0 ? it : null);
+                    fromSlot = "slot " + (slot+1);
+                }
+            }
         }
-        // consume 1
-        hand.setAmount(hand.getAmount()-1);
-        p.getInventory().setItemInMainHand(hand.getAmount() > 0 ? hand : null);
+
+        if (fromSlot == null){
+            p.sendMessage("§cYou need a " + Color.cc(c.display) + "§c key.");
+            return;
+        } else {
+            p.sendMessage("§eKey taken from " + fromSlot + ".");
+        }
 
         // Open rolling GUI
         Inventory inv = Bukkit.createInventory(null, 27, Color.cc("&8Opening: " + c.display));

@@ -53,7 +53,7 @@ public class CrateCommand implements CommandExecutor {
                 if (args.length < 2){ p.sendMessage("§cUsage: /crate open <CRATE>"); return true; }
                 Crate c = plugin.crates().get(args[1]);
                 if (c == null){ p.sendMessage("§cUnknown crate."); return true; }
-                GUI.tryOpenWithKey(plugin, p, c);
+                GUI.tryOpenWithKey(plugin, p, c, true);
             }
             case "preview" -> {
                 if (!(sender instanceof Player p)){ sender.sendMessage("§cPlayers only."); return true; }
