@@ -164,20 +164,15 @@ public final class TemplateItems {
             Object nms = asNmsCopy.invoke(null, item);
             // Strip the data-component based field introduced in 1.20+
             try {
-                var getComponents = nms.getClass().getMethod("getComponents");
-                Object comps = getComponents.invoke(nms);
-                if (comps != null) {
-                    var contains = comps.getClass().getMethod("contains", String.class);
-                    String compKey = "minecraft:custom_model_data";
-                    if ((Boolean) contains.invoke(comps, compKey)) {
-                        var remove = comps.getClass().getMethod("remove", String.class);
-                        remove.invoke(comps, compKey);
-                        var setComponents = nms.getClass().getMethod("setComponents", comps.getClass());
-                        setComponents.invoke(nms, comps);
-                        var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                        ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                        item.setItemMeta(cleaned.getItemMeta());
-                    }
+                Class<?> comps = Class.forName("net.minecraft.world.item.component.DataComponents");
+                Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
+                var has = nms.getClass().getMethod("has", type.getClass());
+                if ((Boolean) has.invoke(nms, type)) {
+                    var remove = nms.getClass().getMethod("remove", type.getClass());
+                    remove.invoke(nms, type);
+                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                    item.setItemMeta(cleaned.getItemMeta());
                 }
             } catch (Throwable ignored) {}
             // Legacy NBT tag fallback for older items
