@@ -68,6 +68,27 @@ public final class CustomModelDataUtil {
             if (meta != null) {
                 meta.setCustomModelData(allowed);
                 item.setItemMeta(meta);
+
+                try {
+                    Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+                    var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
+                    Object nms = asNmsCopy.invoke(null, item);
+                    var getOrCreateTag = nms.getClass().getMethod("getOrCreateTag");
+                    Object tag = getOrCreateTag.invoke(nms);
+                    try {
+                        tag.getClass().getMethod("putInt", String.class, int.class).invoke(tag, "CustomModelData", allowed);
+                    } catch (NoSuchMethodException ex) {
+                        try {
+                            tag.getClass().getMethod("setInt", String.class, int.class).invoke(tag, "CustomModelData", allowed);
+                        } catch (NoSuchMethodException ignored) {}
+                    }
+                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+                    setTag.invoke(nms, tag);
+                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                    ItemStack withTag = (ItemStack) asBukkitCopy.invoke(null, nms);
+                    item.setItemMeta(withTag.getItemMeta());
+                } catch (Throwable ignored) {}
+
             }
         }
     }
