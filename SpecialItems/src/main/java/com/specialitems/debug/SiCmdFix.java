@@ -1,19 +1,63 @@
 package com.specialitems.debug;
-import org.bukkit.command.*; import org.bukkit.entity.Player;
-import org.bukkit.inventory.*; import org.bukkit.inventory.meta.ItemMeta; import java.util.Map; import com.specialitems.util.TemplateItems; import com.specialitems.util.ItemUtil;
-public final class SiCmdFix implements CommandExecutor{
-  @Override public boolean onCommand(CommandSender s, Command c, String l, String[] a){
-    if(!(s instanceof Player p)){ s.sendMessage("Player only"); return true; }
-    ItemStack it=p.getInventory().getItemInMainHand();
-    if(it==null||it.getType().isAir()){ p.sendMessage("Hold an item."); return true; }
-    ItemMeta m=it.getItemMeta(); Map<String,Object> metaMap=(m!=null?m.serialize():null); Object raw=(metaMap!=null?metaMap.get("custom-model-data"):null);
 
-    Integer val = ItemUtil.toInt(raw);
+import com.specialitems.util.ItemUtil;
+import com.specialitems.util.TemplateItems;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
-    if(m!=null&&val!=null){ m.setCustomModelData(null); it.setItemMeta(m); m=it.getItemMeta(); if(m!=null){ m.setCustomModelData(val); it.setItemMeta(m); } p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData normalized to integer: "+val); }
+public final class SiCmdFix implements CommandExecutor {
+    @Override
+    public boolean onCommand(CommandSender s, Command c, String l, String[] a) {
+        if (!(s instanceof Player p)) { s.sendMessage("Player only"); return true; }
+        ItemStack it = p.getInventory().getItemInMainHand();
+        if (it == null || it.getType().isAir()) { p.sendMessage("Hold an item."); return true; }
 
-    else if(TemplateItems.applyTemplateMeta(it)){ p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData applied from template."); }
-    else p.sendMessage("No CMD on this item.");
-    return true;
-  }
+        ItemMeta m = it.getItemMeta();
+        Integer val = null;
+
+        // Read the raw NBT tag and remove any existing CustomModelData entry
+        try {
+            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+            var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
+            Object nms = asNmsCopy.invoke(null, it);
+            var getTag = nms.getClass().getMethod("getTag");
+            Object tag = getTag.invoke(nms);
+            if (tag != null) {
+                var contains = tag.getClass().getMethod("contains", String.class);
+                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
+                    var get = tag.getClass().getMethod("get", String.class);
+                    Object raw = get.invoke(tag, "CustomModelData");
+                    String str;
+                    try { str = (String) raw.getClass().getMethod("asString").invoke(raw); }
+                    catch (NoSuchMethodException ex) { str = raw.toString(); }
+                    val = ItemUtil.toInt(str);
+                    var remove = tag.getClass().getMethod("remove", String.class);
+                    remove.invoke(tag, "CustomModelData");
+                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+                    setTag.invoke(nms, tag);
+                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                    m = cleaned.getItemMeta();
+                    it.setItemMeta(m);
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        if (m != null && val != null) {
+            m.setCustomModelData(val);
+            it.setItemMeta(m);
+            p.getInventory().setItemInMainHand(it);
+            p.sendMessage("CustomModelData normalized to integer: " + val);
+        } else if (TemplateItems.applyTemplateMeta(it)) {
+            p.getInventory().setItemInMainHand(it);
+            p.sendMessage("CustomModelData applied from template.");
+        } else {
+            p.sendMessage("No CMD on this item.");
+        }
+        return true;
+    }
 }
