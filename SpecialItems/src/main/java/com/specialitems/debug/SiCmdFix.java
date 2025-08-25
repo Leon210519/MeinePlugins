@@ -1,6 +1,6 @@
 package com.specialitems.debug;
 import org.bukkit.command.*; import org.bukkit.entity.Player;
-import org.bukkit.inventory.*; import org.bukkit.inventory.meta.ItemMeta; import java.util.Map; import com.specialitems.util.TemplateItems;
+import org.bukkit.inventory.*; import org.bukkit.inventory.meta.ItemMeta; import java.util.Map; import com.specialitems.util.TemplateItems; import com.specialitems.util.ItemUtil;
 public final class SiCmdFix implements CommandExecutor{
   @Override public boolean onCommand(CommandSender s, Command c, String l, String[] a){
     if(!(s instanceof Player p)){ s.sendMessage("Player only"); return true; }
@@ -8,9 +8,7 @@ public final class SiCmdFix implements CommandExecutor{
     if(it==null||it.getType().isAir()){ p.sendMessage("Hold an item."); return true; }
     ItemMeta m=it.getItemMeta(); Map<String,Object> metaMap=(m!=null?m.serialize():null); Object raw=(metaMap!=null?metaMap.get("custom-model-data"):null);
 
-    Integer val=null;
-    if(raw instanceof Number n) val=n.intValue();
-    else if(raw instanceof String str){ str=str.trim(); if(str.matches("\\d+")) val=Integer.parseInt(str); }
+    Integer val = ItemUtil.toInt(raw);
 
     if(m!=null&&val!=null){ m.setCustomModelData(null); it.setItemMeta(m); m=it.getItemMeta(); if(m!=null){ m.setCustomModelData(val); it.setItemMeta(m); } p.getInventory().setItemInMainHand(it); p.sendMessage("CustomModelData normalized to integer: "+val); }
 
