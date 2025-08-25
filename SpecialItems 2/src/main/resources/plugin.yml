@@ -1,0 +1,31 @@
+name: SpecialItems2
+main: com.specialitems2.SpecialItems2Plugin
+version: 1.0.0
+api-version: '1.21'
+author: You
+commands:
+  si2:
+    description: SpecialItems2 command
+    usage: /si2
+  bin2:
+    description: View deleted special items (admin)
+    usage: /bin2
+    permission: specialitems2.admin
+  si2_givecmd:
+    description: Give a test item with CustomModelData
+    usage: /si2_givecmd <material> <cmd>
+    permission: specialitems2.debug
+  si2_cmdcheck:
+    description: Show CustomModelData of the held item
+    usage: /si2_cmdcheck
+    permission: specialitems2.debug
+  si2_cmdfix:
+    description: Normalize held item CustomModelData to integer
+    usage: /si2_cmdfix
+    permission: specialitems2.debug
+permissions:
+  specialitems2.admin:
+    description: Allows using admin SpecialItems2 subcommands
+    default: op
+  specialitems2.debug:
+    default: op
