@@ -157,11 +157,30 @@ public final class TemplateItems {
         // Overwrite any existing CMD, removing legacy floating point values
         meta.setCustomModelData(null);
         item.setItemMeta(meta);
-        // Ensure the raw NBT tag is cleared as well
+        // Ensure the raw item components/NBT tag are cleared as well
         try {
             Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
             var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
             Object nms = asNmsCopy.invoke(null, item);
+            // Strip the data-component based field introduced in 1.20+
+            try {
+                var getComponents = nms.getClass().getMethod("getComponents");
+                Object comps = getComponents.invoke(nms);
+                if (comps != null) {
+                    var contains = comps.getClass().getMethod("contains", String.class);
+                    String compKey = "minecraft:custom_model_data";
+                    if ((Boolean) contains.invoke(comps, compKey)) {
+                        var remove = comps.getClass().getMethod("remove", String.class);
+                        remove.invoke(comps, compKey);
+                        var setComponents = nms.getClass().getMethod("setComponents", comps.getClass());
+                        setComponents.invoke(nms, comps);
+                        var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                        ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                        item.setItemMeta(cleaned.getItemMeta());
+                    }
+                }
+            } catch (Throwable ignored) {}
+            // Legacy NBT tag fallback for older items
             var getTag = nms.getClass().getMethod("getTag");
             Object tag = getTag.invoke(nms);
             if (tag != null) {
