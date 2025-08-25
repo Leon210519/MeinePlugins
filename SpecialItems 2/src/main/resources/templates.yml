@@ -1,0 +1,394 @@
+# SpecialItems templates (expanded)
+# Place into plugins/SpecialItems/templates.yml
+templates:
+
+  # ==== RARITY SETS ====
+  common_helm:
+    id: common_helm
+    material: IRON_HELMET
+    custom_model_data: 2001
+    name: "&7Scout Helm"
+    lore: ["&7Basic protection."]
+    enchants: { night_vision: 1 }
+    rarity: COMMON
+  common_chest:
+    id: common_chest
+    material: IRON_CHESTPLATE
+    custom_model_data: 2101
+    name: "&7Scout Chestplate"
+    lore: ["&7Weak magnet."]
+    enchants: { magnet: 1 }
+    rarity: COMMON
+  common_legs:
+    id: common_legs
+    material: IRON_LEGGINGS
+    custom_model_data: 2201
+    name: "&7Scout Leggings"
+    lore: ["&7Slight speed."]
+    enchants: { gears: 1 }
+    rarity: COMMON
+  common_boots:
+    id: common_boots
+    material: IRON_BOOTS
+    custom_model_data: 2301
+    name: "&7Scout Boots"
+    lore: ["&7Minor speed & pull."]
+    enchants: { gears: 1, magnet: 1 }
+    rarity: COMMON
+  common_sword:
+    id: common_sword
+    material: IRON_SWORD
+    custom_model_data: 1001
+    name: "&7Scout Blade"
+    lore: ["&7Light lifesteal."]
+    enchants: { lifesteal: 1 }
+    rarity: COMMON
+  common_pick:
+    id: common_pick
+    material: IRON_PICKAXE
+    custom_model_data: 1101
+    name: "&7Scout Miner"
+    lore: ["&7Small vein miner."]
+    enchants: { veinminer: 1 }
+    rarity: COMMON
+  common_axe:
+    id: common_axe
+    material: IRON_AXE
+    custom_model_data: 1301
+    name: "&7Scout Crusher"
+    lore: ["&7Chance for double strike."]
+    enchants: { doublestrike: 1 }
+    rarity: COMMON
+  common_hoe:
+    id: common_hoe
+    material: IRON_HOE
+    custom_model_data: 1201
+    name: "&7Scout Harvester"
+    lore: ["&7Tiny harvest."]
+    enchants: { harvester: 1, replant: 1 }
+    rarity: COMMON
+
+  uncommon_helm:
+    id: uncommon_helm
+    material: DIAMOND_HELMET
+    custom_model_data: 2002
+    name: "&aHunter Helm"
+    lore: ["&7Keeps vision underground."]
+    enchants: { night_vision: 1 }
+    rarity: UNCOMMON
+  uncommon_chest:
+    id: uncommon_chest
+    material: DIAMOND_CHESTPLATE
+    custom_model_data: 2102
+    name: "&aHunter Chestplate"
+    lore: ["&7Better magnet."]
+    enchants: { magnet: 2 }
+    rarity: UNCOMMON
+  uncommon_legs:
+    id: uncommon_legs
+    material: DIAMOND_LEGGINGS
+    custom_model_data: 2202
+    name: "&aHunter Leggings"
+    lore: ["&7Faster stride."]
+    enchants: { gears: 2 }
+    rarity: UNCOMMON
+  uncommon_boots:
+    id: uncommon_boots
+    material: DIAMOND_BOOTS
+    custom_model_data: 2302
+    name: "&aHunter Boots"
+    lore: ["&7Speed and pull."]
+    enchants: { gears: 2, magnet: 1 }
+    rarity: UNCOMMON
+  uncommon_sword:
+    id: uncommon_sword
+    material: DIAMOND_SWORD
+    custom_model_data: 1002
+    name: "&aHunter Blade"
+    lore: ["&7Improved lifesteal."]
+    enchants: { lifesteal: 2 }
+    rarity: UNCOMMON
+  uncommon_pick:
+    id: uncommon_pick
+    material: DIAMOND_PICKAXE
+    custom_model_data: 1102
+    name: "&aHunter Miner"
+    lore: ["&7Vein miner with telekinesis."]
+    enchants: { veinminer: 2, telekinesis: 1 }
+    rarity: UNCOMMON
+  uncommon_axe:
+    id: uncommon_axe
+    material: DIAMOND_AXE
+    custom_model_data: 1302
+    name: "&aHunter Crusher"
+    lore: ["&7Double strike."]
+    enchants: { doublestrike: 2 }
+    rarity: UNCOMMON
+  uncommon_hoe:
+    id: uncommon_hoe
+    material: DIAMOND_HOE
+    custom_model_data: 1202
+    name: "&aHunter Harvester"
+    lore: ["&7Wider harvest."]
+    enchants: { harvester: 2, replant: 1 }
+    rarity: UNCOMMON
+
+  rare_helm:
+    id: rare_helm
+    material: NETHERITE_HELMET
+    custom_model_data: 2003
+    name: "&9Champion Helm"
+    lore: ["&7Night vision and XP."]
+    enchants: { night_vision: 1, xp_boost: 1 }
+    rarity: RARE
+  rare_chest:
+    id: rare_chest
+    material: NETHERITE_CHESTPLATE
+    custom_model_data: 2103
+    name: "&9Champion Chestplate"
+    lore: ["&7Strong magnet."]
+    enchants: { magnet: 2 }
+    rarity: RARE
+  rare_legs:
+    id: rare_legs
+    material: NETHERITE_LEGGINGS
+    custom_model_data: 2203
+    name: "&9Champion Leggings"
+    lore: ["&7Quick stride."]
+    enchants: { gears: 3 }
+    rarity: RARE
+  rare_boots:
+    id: rare_boots
+    material: NETHERITE_BOOTS
+    custom_model_data: 2303
+    name: "&9Champion Boots"
+    lore: ["&7Speed and pull."]
+    enchants: { gears: 3, magnet: 2 }
+    rarity: RARE
+  rare_sword:
+    id: rare_sword
+    material: NETHERITE_SWORD
+    custom_model_data: 1003
+    name: "&9Champion Blade"
+    lore: ["&7Lifesteal and double strike."]
+    enchants: { lifesteal: 3, doublestrike: 1 }
+    rarity: RARE
+  rare_pick:
+    id: rare_pick
+    material: NETHERITE_PICKAXE
+    custom_model_data: 1103
+    name: "&9Champion Miner"
+    lore: ["&73x3 vein miner."]
+    enchants: { veinminer: 3, telekinesis: 1 }
+    rarity: RARE
+  rare_axe:
+    id: rare_axe
+    material: NETHERITE_AXE
+    custom_model_data: 1303
+    name: "&9Champion Crusher"
+    lore: ["&7Heavy double strike."]
+    enchants: { doublestrike: 2, wither: 1 }
+    rarity: RARE
+  rare_hoe:
+    id: rare_hoe
+    material: NETHERITE_HOE
+    custom_model_data: 1203
+    name: "&9Champion Harvester"
+    lore: ["&75x5 harvest."]
+    enchants: { harvester: 3, replant: 1, telekinesis: 1 }
+    rarity: RARE
+
+  epic_helm:
+    id: epic_helm
+    material: NETHERITE_HELMET
+    custom_model_data: 2004
+    name: "&dMythic Helm"
+    lore: ["&7Clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 2 }
+    rarity: EPIC
+  epic_chest:
+    id: epic_chest
+    material: NETHERITE_CHESTPLATE
+    custom_model_data: 2104
+    name: "&dMythic Chestplate"
+    lore: ["&7Powerful magnet."]
+    enchants: { magnet: 3 }
+    rarity: EPIC
+  epic_legs:
+    id: epic_legs
+    material: NETHERITE_LEGGINGS
+    custom_model_data: 2204
+    name: "&dMythic Leggings"
+    lore: ["&7Sprint like the wind."]
+    enchants: { gears: 3 }
+    rarity: EPIC
+  epic_boots:
+    id: epic_boots
+    material: NETHERITE_BOOTS
+    custom_model_data: 2304
+    name: "&dMythic Boots"
+    lore: ["&7Fast with strong pull."]
+    enchants: { gears: 3, magnet: 3 }
+    rarity: EPIC
+  epic_sword:
+    id: epic_sword
+    material: NETHERITE_SWORD
+    custom_model_data: 1004
+    name: "&dMythic Blade"
+    lore: ["&7High lifesteal and strikes."]
+    enchants: { lifesteal: 4, doublestrike: 2, wither: 1 }
+    rarity: EPIC
+  epic_pick:
+    id: epic_pick
+    material: NETHERITE_PICKAXE
+    custom_model_data: 1104
+    name: "&dMythic Miner"
+    lore: ["&7Huge veins and smelt."]
+    enchants: { veinminer: 4, autosmelt: 1, telekinesis: 1 }
+    rarity: EPIC
+  epic_axe:
+    id: epic_axe
+    material: NETHERITE_AXE
+    custom_model_data: 1304
+    name: "&dMythic Crusher"
+    lore: ["&7Devastating blows."]
+    enchants: { doublestrike: 3, wither: 2 }
+    rarity: EPIC
+  epic_hoe:
+    id: epic_hoe
+    material: NETHERITE_HOE
+    custom_model_data: 1204
+    name: "&dMythic Harvester"
+    lore: ["&7Mass harvest & haste."]
+    enchants: { harvester: 4, replant: 1, telekinesis: 1, haste_touch: 1 }
+    rarity: EPIC
+
+  legendary_helm:
+    id: legendary_helm
+    material: NETHERITE_HELMET
+    custom_model_data: 2005
+    name: "&6Omega Helm"
+    lore: ["&7Ultimate clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 3 }
+    rarity: LEGENDARY
+  legendary_chest:
+    id: legendary_chest
+    material: NETHERITE_CHESTPLATE
+    custom_model_data: 2105
+    name: "&6Omega Chestplate"
+    lore: ["&7Ultimate magnet."]
+    enchants: { magnet: 4 }
+    rarity: LEGENDARY
+  legendary_legs:
+    id: legendary_legs
+    material: NETHERITE_LEGGINGS
+    custom_model_data: 2205
+    name: "&6Omega Leggings"
+    lore: ["&7Supreme speed."]
+    enchants: { gears: 4 }
+    rarity: LEGENDARY
+  legendary_boots:
+    id: legendary_boots
+    material: NETHERITE_BOOTS
+    custom_model_data: 2305
+    name: "&6Omega Boots"
+    lore: ["&7Fastest with strongest pull."]
+    enchants: { gears: 4, magnet: 4 }
+    rarity: LEGENDARY
+  legendary_sword:
+    id: legendary_sword
+    material: NETHERITE_SWORD
+    custom_model_data: 1005
+    name: "&6Omega Blade"
+    lore: ["&7Extreme lifesteal, strikes and wither."]
+    enchants: { lifesteal: 5, doublestrike: 3, wither: 3 }
+    rarity: LEGENDARY
+  legendary_pick:
+    id: legendary_pick
+    material: NETHERITE_PICKAXE
+    custom_model_data: 1105
+    name: "&6Omega Miner"
+    lore: ["&7Max vein miner & smelt."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_touch: 1 }
+    rarity: LEGENDARY
+  legendary_axe:
+    id: legendary_axe
+    material: NETHERITE_AXE
+    custom_model_data: 1305
+    name: "&6Omega Crusher"
+    lore: ["&7Crushing strikes."]
+    enchants: { doublestrike: 4, wither: 3 }
+    rarity: LEGENDARY
+  legendary_hoe:
+    id: legendary_hoe
+    material: NETHERITE_HOE
+    custom_model_data: 1205
+    name: "&6Omega Harvester"
+    lore: ["&7Ultimate harvest."]
+    enchants: { harvester: 5, replant: 1, telekinesis: 1, haste_touch: 2 }
+    rarity: LEGENDARY
+
+  imperial_helm:
+    id: imperial_helm
+    material: NETHERITE_HELMET
+    custom_model_data: 2006
+    name: "&4Imperial Helm"
+    lore: ["&7Supreme clarity and XP."]
+    enchants: { night_vision: 1, xp_boost: 3, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_chest:
+    id: imperial_chest
+    material: NETHERITE_CHESTPLATE
+    custom_model_data: 2106
+    name: "&4Imperial Chestplate"
+    lore: ["&7Ultimate magnetism."]
+    enchants: { magnet: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_legs:
+    id: imperial_legs
+    material: NETHERITE_LEGGINGS
+    custom_model_data: 2206
+    name: "&4Imperial Leggings"
+    lore: ["&7Unmatched speed."]
+    enchants: { gears: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_boots:
+    id: imperial_boots
+    material: NETHERITE_BOOTS
+    custom_model_data: 2306
+    name: "&4Imperial Boots"
+    lore: ["&7Speed, pull and shields."]
+    enchants: { gears: 4, magnet: 4, absorption_shield: 4 }
+    rarity: STARFORGED
+  imperial_sword:
+    id: imperial_sword
+    material: NETHERITE_SWORD
+    custom_model_data: 1006
+    name: "&4Imperial Blade"
+    lore: ["&7Pure power."]
+    enchants: { lifesteal: 5, wither: 3, double_damage: 5 }
+    rarity: STARFORGED
+  imperial_axe:
+    id: imperial_axe
+    material: NETHERITE_AXE
+    custom_model_data: 1306
+    name: "&4Imperial Crusher"
+    lore: ["&7Cleave with fury."]
+    enchants: { wither: 3, double_damage: 5 }
+    rarity: STARFORGED
+  imperial_pick:
+    id: imperial_pick
+    material: NETHERITE_PICKAXE
+    custom_model_data: 1106
+    name: "&4Imperial Miner"
+    lore: ["&7Max vein miner with haste."]
+    enchants: { veinminer: 5, autosmelt: 1, telekinesis: 1, haste_boost: 5 }
+    rarity: STARFORGED
+  imperial_hoe:
+    id: imperial_hoe
+    material: NETHERITE_HOE
+    custom_model_data: 1206
+    name: "&4Imperial Harvester"
+    lore: ["&7Master of farms."]
+    enchants: { harvester: 5, replant: 1, telekinesis: 1, greenthumb: 5 }
+    rarity: STARFORGED

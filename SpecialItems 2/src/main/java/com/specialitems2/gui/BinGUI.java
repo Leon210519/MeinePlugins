@@ -1,0 +1,40 @@
+package com.specialitems2.gui;
+
+import com.specialitems2.bin.Bin;
+import com.specialitems2.util.Configs;
+import com.specialitems2.util.GuiItemUtil;
+import com.specialitems2.util.CustomModelDataUtil;
+import com.specialitems2.SpecialItems2Plugin;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.List;
+
+public final class BinGUI {
+    public static final String TITLE = ChatColor.DARK_RED + "Special Item Bin";
+    private static final int SIZE = 6 * 9;
+
+    private BinGUI() {}
+
+    public static void open(Player p) {
+        if (!p.hasPermission("specialitems2.admin")) {
+            p.sendMessage(ChatColor.translateAlternateColorCodes('&', Configs.msg.getString("no-permission","&cNo permission.")));
+            return;
+        }
+        Inventory inv = Bukkit.createInventory(p, SIZE, TITLE);
+        List<ItemStack> items = Bin.getItems();
+        int i = 0;
+        for (ItemStack it : items) {
+            if (i >= SIZE - 1) break;
+            ItemStack display = GuiItemUtil.forDisplay(SpecialItems2Plugin.getInstance(), it);
+            if (display == null) display = it.clone();
+            CustomModelDataUtil.normalize(display);
+            inv.setItem(i++, display);
+        }
+        inv.setItem(SIZE - 1, GuiIcons.navClose());
+        p.openInventory(inv);
+    }
+}

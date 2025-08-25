@@ -69,3 +69,5 @@ world/
 /world_the_end/
 # Mistaken local plugin drop-ins at repo root
 /plugins/
+**/.gradle/
+**/build/
