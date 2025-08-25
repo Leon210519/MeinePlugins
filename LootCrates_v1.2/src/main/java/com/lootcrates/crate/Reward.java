@@ -57,7 +57,8 @@ public class Reward {
             }
         } else if (type == Type.SPECIAL_ITEM) {
             String tid = sec.getString("template");
-            r.item = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
+            TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(tid, Configs.templates.getConfigurationSection("templates." + tid));
+            r.item = (tmpl != null ? tmpl.stack().clone() : null);
             r.itemAmount = sec.getInt("amount", 1);
             if (r.item != null) r.item.setAmount(Math.max(1, r.itemAmount));
             // Default display for SPECIAL_ITEM = built item (clone). May be overridden by display-section below.
