@@ -4,6 +4,7 @@ import com.specialitems.bin.Bin;
 import com.specialitems.gui.BinGUI;
 import com.specialitems.gui.TemplateGUI;
 import com.specialitems.util.Configs;
+import com.specialitems.util.TemplateItems;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -79,7 +80,10 @@ public class GuiListener implements Listener {
         // Item click -> give
         ItemStack clicked = e.getCurrentItem();
         if (clicked == null) return;
-        p.getInventory().addItem(clicked.clone());
+        ItemStack give = clicked.clone();
+        // Reapply template data so custom model data is written as an integer
+        TemplateItems.applyTemplateMeta(give);
+        p.getInventory().addItem(give);
         p.sendMessage(ChatColor.GREEN + "Given: " + (clicked.getItemMeta()!=null ? clicked.getItemMeta().getDisplayName() : clicked.getType().name()));
     }
 }
