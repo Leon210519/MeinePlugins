@@ -68,6 +68,7 @@ public final class CustomModelDataUtil {
             if (meta != null) {
                 meta.setCustomModelData(allowed);
                 item.setItemMeta(meta);
+
                 try {
                     Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
                     var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
@@ -87,6 +88,7 @@ public final class CustomModelDataUtil {
                     ItemStack withTag = (ItemStack) asBukkitCopy.invoke(null, nms);
                     item.setItemMeta(withTag.getItemMeta());
                 } catch (Throwable ignored) {}
+
             }
         }
     }
