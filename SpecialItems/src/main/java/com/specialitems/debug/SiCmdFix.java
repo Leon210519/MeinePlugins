@@ -19,30 +19,60 @@ public final class SiCmdFix implements CommandExecutor {
         ItemMeta m = it.getItemMeta();
         Integer val = null;
 
-        // Read the raw NBT tag and remove any existing CustomModelData entry
+        // Read raw item components/NBT and remove any existing CustomModelData entry
         try {
             Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
             var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
             Object nms = asNmsCopy.invoke(null, it);
-            var getTag = nms.getClass().getMethod("getTag");
-            Object tag = getTag.invoke(nms);
-            if (tag != null) {
-                var contains = tag.getClass().getMethod("contains", String.class);
-                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
-                    var get = tag.getClass().getMethod("get", String.class);
-                    Object raw = get.invoke(tag, "CustomModelData");
-                    String str;
-                    try { str = (String) raw.getClass().getMethod("asString").invoke(raw); }
-                    catch (NoSuchMethodException ex) { str = raw.toString(); }
-                    val = ItemUtil.toInt(str);
-                    var remove = tag.getClass().getMethod("remove", String.class);
-                    remove.invoke(tag, "CustomModelData");
-                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-                    setTag.invoke(nms, tag);
-                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                    m = cleaned.getItemMeta();
-                    it.setItemMeta(m);
+            // New data-component based storage introduced in 1.20+ uses namespaced keys
+            // such as "minecraft:custom_model_data".  Check for this first and strip it.
+            try {
+                var getComponents = nms.getClass().getMethod("getComponents");
+                Object comps = getComponents.invoke(nms);
+                if (comps != null) {
+                    var contains = comps.getClass().getMethod("contains", String.class);
+                    String key = "minecraft:custom_model_data";
+                    if ((Boolean) contains.invoke(comps, key)) {
+                        var get = comps.getClass().getMethod("get", String.class);
+                        Object raw = get.invoke(comps, key);
+                        double dbl;
+                        try { dbl = (double) raw.getClass().getMethod("asDouble").invoke(raw); }
+                        catch (NoSuchMethodException ex) { dbl = Double.parseDouble(raw.toString()); }
+                        val = (int) Math.round(dbl);
+                        var remove = comps.getClass().getMethod("remove", String.class);
+                        remove.invoke(comps, key);
+                        var setComponents = nms.getClass().getMethod("setComponents", comps.getClass());
+                        setComponents.invoke(nms, comps);
+                        var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                        ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                        m = cleaned.getItemMeta();
+                        it.setItemMeta(m);
+                    }
+                }
+            } catch (Throwable ignored) {}
+
+            // Legacy NBT tag fallback for older items
+            if (val == null) {
+                var getTag = nms.getClass().getMethod("getTag");
+                Object tag = getTag.invoke(nms);
+                if (tag != null) {
+                    var contains = tag.getClass().getMethod("contains", String.class);
+                    if ((Boolean) contains.invoke(tag, "CustomModelData")) {
+                        var get = tag.getClass().getMethod("get", String.class);
+                        Object raw = get.invoke(tag, "CustomModelData");
+                        String str;
+                        try { str = (String) raw.getClass().getMethod("asString").invoke(raw); }
+                        catch (NoSuchMethodException ex) { str = raw.toString(); }
+                        val = ItemUtil.toInt(str);
+                        var remove = tag.getClass().getMethod("remove", String.class);
+                        remove.invoke(tag, "CustomModelData");
+                        var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+                        setTag.invoke(nms, tag);
+                        var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                        ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                        m = cleaned.getItemMeta();
+                        it.setItemMeta(m);
+                    }
                 }
             }
         } catch (Throwable ignored) {}
