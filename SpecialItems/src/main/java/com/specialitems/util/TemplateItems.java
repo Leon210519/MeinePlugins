@@ -156,6 +156,30 @@ public final class TemplateItems {
         if (tmeta == null || !tmeta.hasCustomModelData()) return false;
         // Overwrite any existing CMD, removing legacy floating point values
         meta.setCustomModelData(null);
+        item.setItemMeta(meta);
+        // Ensure the raw NBT tag is cleared as well
+        try {
+            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+            var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
+            Object nms = asNmsCopy.invoke(null, item);
+            var getTag = nms.getClass().getMethod("getTag");
+            Object tag = getTag.invoke(nms);
+            if (tag != null) {
+                var contains = tag.getClass().getMethod("contains", String.class);
+                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
+                    var remove = tag.getClass().getMethod("remove", String.class);
+                    remove.invoke(tag, "CustomModelData");
+                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+                    setTag.invoke(nms, tag);
+                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
+                    item.setItemMeta(cleaned.getItemMeta());
+                }
+            }
+        } catch (Throwable ignored) {}
+        // Finally apply the integer value from the template
+        meta = item.getItemMeta();
+        if (meta == null) return false;
         meta.setCustomModelData(tmeta.getCustomModelData());
         item.setItemMeta(meta);
         return true;
