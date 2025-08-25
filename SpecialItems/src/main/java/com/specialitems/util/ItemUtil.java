@@ -66,6 +66,11 @@ public final class ItemUtil {
 
     public static Integer readInt(ConfigurationSection sec, String path) {
         Object raw = sec.get(path);
+        return toInt(raw);
+    }
+
+    /** Converts various object representations of numbers or numeric strings to an integer. */
+    public static Integer toInt(Object raw) {
         if (raw == null) return null;
         if (raw instanceof Number n) return n.intValue();
         if (raw instanceof String s) {

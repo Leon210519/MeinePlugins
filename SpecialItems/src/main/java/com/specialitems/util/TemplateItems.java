@@ -70,15 +70,11 @@ public final class TemplateItems {
         Integer cmd = readModelData(t);
         if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
-            org.bukkit.inventory.meta.ItemMeta m = it.getItemMeta();
+            ItemMeta m = it.getItemMeta();
             if (m != null) {
-                m.setCustomModelData(null);     // normalize legacy wrong type
+                // Always write CMD as an integer via the Bukkit API
+                m.setCustomModelData(cmd);
                 it.setItemMeta(m);
-                m = it.getItemMeta();
-                if (m != null) {
-                    m.setCustomModelData(cmd);      // set proper integer CMD
-                    it.setItemMeta(m);
-                }
             }
         }
 
@@ -158,10 +154,8 @@ public final class TemplateItems {
         if (tmpl == null) return false;
         ItemMeta tmeta = tmpl.stack().getItemMeta();
         if (tmeta == null || !tmeta.hasCustomModelData()) return false;
+        // Overwrite any existing CMD, removing legacy floating point values
         meta.setCustomModelData(null);
-        item.setItemMeta(meta);
-        meta = item.getItemMeta();
-        if (meta == null) return false;
         meta.setCustomModelData(tmeta.getCustomModelData());
         item.setItemMeta(meta);
         return true;
