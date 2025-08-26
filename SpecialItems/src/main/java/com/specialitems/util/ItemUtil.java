@@ -87,6 +87,30 @@ public final class ItemUtil {
         if (meta == null) return item;
         meta.setCustomModelData(Integer.valueOf(cmd));
         item.setItemMeta(meta);
+
+        // Also write legacy NBT tag for resource pack lookups and to purge float values.
+        try {
+            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+            Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+            var getOrCreateTag = nms.getClass().getMethod("getOrCreateTag");
+            Object tag = getOrCreateTag.invoke(nms);
+            try {
+                tag.getClass().getMethod("putInt", String.class, int.class)
+                        .invoke(tag, "CustomModelData", cmd);
+            } catch (NoSuchMethodException ex) {
+                try {
+                    tag.getClass().getMethod("setInt", String.class, int.class)
+                            .invoke(tag, "CustomModelData", cmd);
+                } catch (NoSuchMethodException ignored) {}
+            }
+            var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+            setTag.invoke(nms, tag);
+            var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
+            ItemStack withTag = (ItemStack) asBukkitCopy.invoke(null, nms);
+            item.setItemMeta(withTag.getItemMeta());
+        } catch (Throwable ignored) {}
+
+
         return item;
     }
 

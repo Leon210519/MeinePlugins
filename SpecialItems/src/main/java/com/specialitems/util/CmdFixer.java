@@ -13,14 +13,35 @@ public final class CmdFixer {
      * Bukkit API. If the item has no meta or CMD, it is returned unchanged.
      */
     public static ItemStack normalize(ItemStack item) {
-        if (item == null) return null;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return item;
-        Integer cmd = meta.getCustomModelData();
-        if (cmd == null) return item;
 
-        // Reapply via Bukkit API to ensure integer storage
-        ItemUtil.forceSetCustomModelData(item, cmd);
+        if (item == null || item.getType().isAir()) return item;
+        ItemMeta meta = item.getItemMeta();
+        Integer cmd = null;
+        if (meta != null && meta.hasCustomModelData()) {
+            cmd = meta.getCustomModelData();
+        } else {
+            // Attempt to read legacy float tag
+            try {
+                Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+                Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+                Object tag = nms.getClass().getMethod("getTag").invoke(nms);
+                if (tag != null) {
+                    var contains = tag.getClass().getMethod("contains", String.class);
+                    if ((Boolean) contains.invoke(tag, "CustomModelData")) {
+                        var get = tag.getClass().getMethod("get", String.class);
+                        Object raw = get.invoke(tag, "CustomModelData");
+                        String str;
+                        try { str = (String) raw.getClass().getMethod("asString").invoke(raw); }
+                        catch (NoSuchMethodException ex) { str = raw.toString(); }
+                        try { cmd = Integer.parseInt(str.split("[.]")[0]); } catch (Exception ignored) {}
+                    }
+                }
+            } catch (Throwable ignored) {}
+        }
+        if (cmd != null) {
+            ItemUtil.forceSetCustomModelData(item, cmd);
+        }
+
         return item;
     }
 }
