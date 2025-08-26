@@ -10,6 +10,7 @@ import com.specialitems.util.Configs;
 import com.specialitems.util.ItemUtil;
 import com.specialitems.util.Tagger;
 import com.specialitems.util.TemplateItems;
+import com.specialitems.util.GuiItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -88,7 +89,13 @@ public class SiCommand implements CommandExecutor {
                 }
                 TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(tid, tsec);
                 if (tmpl != null) {
-                    target.getInventory().addItem(tmpl.stack());
+                    ItemStack give = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), tmpl.stack());
+                    if (give == null) {
+                        give = tmpl.stack().clone();
+                    }
+                    // Ensure any legacy floating point CMD tags are normalized
+                    TemplateItems.applyTemplateMeta(give);
+                    target.getInventory().addItem(give);
                 }
                 sender.sendMessage(ChatColor.GREEN + "Gave " + ChatColor.YELLOW + tid + ChatColor.GREEN + " to " + ChatColor.YELLOW + target.getName());
                 return true;
