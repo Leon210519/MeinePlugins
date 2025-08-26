@@ -64,22 +64,38 @@ public final class ItemUtil {
         }
     }
 
+    // ---- Integer config reader (canonical) ----
     public static Integer readInt(ConfigurationSection sec, String path) {
-        Object raw = sec.get(path);
-        return toInt(raw);
-    }
+        if (sec == null || path == null) return null;
+        if (sec.isInt(path)) return sec.getInt(path);
 
-    /** Converts various object representations of numbers or numeric strings to an integer. */
-    public static Integer toInt(Object raw) {
-        if (raw == null) return null;
-        if (raw instanceof Number n) return n.intValue();
-        if (raw instanceof String s) {
-            s = s.trim();
-            if (s.matches("^\\d+(?:\\.\\d+)?[fFdD]?$")) {
-                return (int) Double.parseDouble(s);
+        if (sec.isString(path)) {
+            String s = sec.getString(path);
+            if (s != null && s.matches("^-?\\d+$")) {
+                try {
+                    return Integer.parseInt(s);
+                } catch (NumberFormatException ignored) {}
             }
         }
-        return null;
+        return null; // caller must log a precise error
+    }
+
+    // ---- Force set CMD on an item (canonical) ----
+    public static ItemStack forceSetCustomModelData(ItemStack item, int cmd) {
+        if (item == null) return null;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        meta.setCustomModelData(Integer.valueOf(cmd));
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    // ---- Read CMD from item ----
+    public static Integer getCustomModelData(ItemStack item) {
+        if (item == null) return null;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return null;
+        return meta.getCustomModelData(); // returns Integer
     }
 
     public static void removeLoreLinePrefix(List<String> lore, String prefix) {

@@ -8,6 +8,8 @@ import com.specialitems.listeners.CombatListener;
 import com.specialitems.listeners.PlayerListener;
 import com.specialitems.listeners.GuiListener;
 import com.specialitems.listeners.BinListener;
+import com.specialitems.listeners.JoinFixListener;
+import com.specialitems.listeners.InventorySanityListener;
 import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
 import com.specialitems.util.TemplateItems;
@@ -44,8 +46,9 @@ public class SpecialItemsPlugin extends JavaPlugin {
         try {
             // Load configs/messages if your Configs helper does that.
             Configs.load(this);
-            // Preload templates to resolve custom model data mappings
             TemplateItems.loadAll();
+            Log.info("Loaded " + TemplateItems.loadedCount() + " templates; skipped " + TemplateItems.skippedNonIntCount() + " due to invalid CMD.");
+            Log.info("Rarities with sets: " + TemplateItems.byRarity().keySet());
         } catch (Throwable t) {
             Log.warn("Configs.load failed: " + t.getMessage());
         }
@@ -56,6 +59,8 @@ public class SpecialItemsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new CombatListener(), this);
             getServer().getPluginManager().registerEvents(new GuiListener(), this);
             getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+            getServer().getPluginManager().registerEvents(new JoinFixListener(), this);
+            getServer().getPluginManager().registerEvents(new InventorySanityListener(), this);
             getServer().getPluginManager().registerEvents(new BinListener(this), this);
         } catch (Throwable t) {
             Log.warn("Listener registration failed: " + t.getMessage());

@@ -12,139 +12,185 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
 
+/** Loader and registries for item templates. */
 public final class TemplateItems {
 
-    public record TemplateItem(String id, ItemStack stack, Integer customModelData) {}
+    public record TemplateItem(String id, ItemStack stack, int customModelData, Rarity rarity) {}
+
+    private static final Map<String, TemplateItem> BY_ID = new HashMap<>();
+    private static final Map<String, TemplateItem> BY_MAT_CMD = new HashMap<>();
+    private static final Map<Rarity, TemplateItem> BY_RARITY = new EnumMap<>(Rarity.class);
+    private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
+
+    private static int loadedCount = 0;
+    private static int skippedNonInt = 0;
 
     private TemplateItems() {}
 
-    private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
-
-    public static java.util.List<TemplateItem> loadAll() {
-        java.util.List<TemplateItem> list = new java.util.ArrayList<>();
+    /** Loads all templates from configuration, rebuilding registries. */
+    public static void loadAll() {
+        BY_ID.clear();
+        BY_MAT_CMD.clear();
+        BY_RARITY.clear();
         BY_MAT_NAME.clear();
-        var sec = Configs.templates.getConfigurationSection("templates");
-        if (sec == null) return list;
-        List<String> keys = new ArrayList<>(sec.getKeys(false));
+        loadedCount = 0;
+        skippedNonInt = 0;
+
+        ConfigurationSection root = Configs.templates.getConfigurationSection("templates");
+        if (root == null) return;
+
+        List<String> keys = new ArrayList<>(root.getKeys(false));
         Collections.sort(keys);
+        Keys keysHelper = new Keys(SpecialItemsPlugin.getInstance());
+
         for (String key : keys) {
-            ConfigurationSection tsec = sec.getConfigurationSection(key);
-            String tid = (tsec == null ? key : tsec.getString("id", key));
-            TemplateItem tmpl = buildFrom(tid, tsec);
-            if (tmpl != null) {
-                list.add(tmpl);
-                ItemStack it = tmpl.stack();
-                ItemMeta meta = it.getItemMeta();
-                if (meta != null && meta.hasDisplayName()) {
-                    String k = it.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
-                    BY_MAT_NAME.put(k, tmpl);
+            ConfigurationSection sec = root.getConfigurationSection(key);
+            if (sec == null) continue;
+
+            String id = sec.getString("id", key);
+
+            Material mat = Material.matchMaterial(sec.getString("material", ""));
+            if (mat == null) {
+                Log.warn("Unknown material at templates." + key + ".material");
+                continue;
+            }
+
+            Integer cmd = ItemUtil.readInt(sec, "custom_model_data");
+            if (cmd == null) {
+                skippedNonInt++;
+                Log.warn("Invalid non-integer custom_model_data at templates." + key + ".custom_model_data; use plain integer (e.g. 9001). Skipped.");
+                continue;
+            }
+
+            ItemStack stack = new ItemStack(mat);
+            ItemMeta meta = stack.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', sec.getString("name", "&fSpecial Item")));
+                List<String> lore = new ArrayList<>();
+                for (String l : sec.getStringList("lore")) {
+                    lore.add(ChatColor.translateAlternateColorCodes('&', l));
+                }
+                meta.setLore(lore);
+                stack.setItemMeta(meta);
+            }
+
+            ConfigurationSection ench = sec.getConfigurationSection("enchants");
+            if (ench != null) {
+                for (String eid : ench.getKeys(false)) {
+                    int lvl = ench.getInt(eid, 1);
+                    stack = ItemUtil.withEffect(stack, eid, lvl);
                 }
             }
+
+            ItemUtil.forceSetCustomModelData(stack, cmd);
+
+            Rarity rarity = null;
+            String rarStr = sec.getString("rarity");
+            if (rarStr != null) {
+                try {
+                    rarity = Rarity.fromString(rarStr);
+                    RarityUtil.set(stack, keysHelper, rarity);
+                } catch (Throwable ignored) {}
+            }
+
+            try { Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), stack, id); } catch (Throwable ignored) {}
+
+            TemplateItem tmpl = new TemplateItem(id, stack, cmd, rarity);
+            BY_ID.put(id, tmpl);
+            BY_MAT_CMD.put(mat.name() + "#" + cmd, tmpl);
+
+            ItemMeta metaCheck = stack.getItemMeta();
+            if (metaCheck != null && metaCheck.hasDisplayName()) {
+                String nameKey = mat.name() + "|" + ChatColor.stripColor(metaCheck.getDisplayName());
+                BY_MAT_NAME.put(nameKey, tmpl);
+            }
+
+            if (rarity != null) {
+                if (!BY_RARITY.containsKey(rarity)) {
+                    BY_RARITY.put(rarity, tmpl);
+                } else {
+                    Log.info("Template '" + id + "' skipped for rarity " + rarity + " (one set per rarity)." );
+                }
+            }
+
+            loadedCount++;
         }
-        return list;
     }
 
-    public static TemplateItem buildFrom(String id, ConfigurationSection t) {
-        if (t == null) return null;
-        Material mat = Material.matchMaterial(t.getString("material", "STONE"));
-        if (mat == null) mat = Material.STONE;
-        ItemStack it = new ItemStack(mat);
-        ItemMeta meta = it.getItemMeta();
+    /** Builds a TemplateItem from a configuration section without registering it. */
+    public static TemplateItem buildFrom(String id, ConfigurationSection sec) {
+        if (sec == null) return null;
+
+        Material mat = Material.matchMaterial(sec.getString("material", ""));
+        if (mat == null) {
+            Log.warn("Unknown material for template " + id);
+            return null;
+        }
+
+        Integer cmd = ItemUtil.readInt(sec, "custom_model_data");
+        if (cmd == null) {
+            Log.warn("Invalid non-integer custom_model_data at templates." + id + ".custom_model_data; use plain integer (e.g. 9001). Skipped.");
+        }
+
+        ItemStack stack = new ItemStack(mat);
+        ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', t.getString("name","&fSpecial Item")));
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', sec.getString("name", "&fSpecial Item")));
             List<String> lore = new ArrayList<>();
-            for (String l : t.getStringList("lore")) lore.add(ChatColor.translateAlternateColorCodes('&', l));
-
+            for (String l : sec.getStringList("lore")) {
+                lore.add(ChatColor.translateAlternateColorCodes('&', l));
+            }
             meta.setLore(lore);
-            it.setItemMeta(meta);
+            stack.setItemMeta(meta);
         }
 
-        var enchSec = t.getConfigurationSection("enchants");
-        if (enchSec != null) {
-            for (String eid : enchSec.getKeys(false)) {
-                int lvl = enchSec.getInt(eid, 1);
-                it = ItemUtil.withEffect(it, eid, lvl);
+        ConfigurationSection ench = sec.getConfigurationSection("enchants");
+        if (ench != null) {
+            for (String eid : ench.getKeys(false)) {
+                int lvl = ench.getInt(eid, 1);
+                stack = ItemUtil.withEffect(stack, eid, lvl);
             }
         }
 
-        Integer cmd = readModelData(t);
-        if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
-            ItemMeta m = it.getItemMeta();
-            if (m != null) {
-                // Always write CMD as an integer via the Bukkit API
-                m.setCustomModelData(cmd);
-                it.setItemMeta(m);
-            }
+            ItemUtil.forceSetCustomModelData(stack, cmd);
         }
 
-        try {
-            Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), it, id);
-        } catch (Throwable ignored) {}
-
-        String rar = t.getString("rarity");
-        if (rar != null) {
+        Rarity rarity = null;
+        String rarStr = sec.getString("rarity");
+        if (rarStr != null) {
             try {
-                Rarity r = Rarity.fromString(rar);
-                RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
+                rarity = Rarity.fromString(rarStr);
+                RarityUtil.set(stack, new Keys(SpecialItemsPlugin.getInstance()), rarity);
             } catch (Throwable ignored) {}
         }
 
-        return new TemplateItem(id, it, cmd);
+        if (cmd == null) return null;
+        try { Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), stack, id); } catch (Throwable ignored) {}
+        return new TemplateItem(id, stack, cmd, rarity);
     }
 
-    private static Integer readModelData(ConfigurationSection t) {
-        if (t == null) return null;
-        Integer v = ItemUtil.readInt(t, "custom_model_data");
-        if (v != null) return v;
-        v = ItemUtil.readInt(t, "model-data");
-        if (v != null) return v;
-        return ItemUtil.readInt(t, "model_data");
+    public static Map<Rarity, TemplateItem> byRarity() {
+        return Collections.unmodifiableMap(BY_RARITY);
     }
 
-    private static Integer computeCmdFallback(org.bukkit.Material mat, String rarityStr) {
-        if (mat == null || rarityStr == null) return null;
-        String m = mat.name();
-        int base;
-        if (m.endsWith("_SWORD")) base = 1000;
-        else if (m.endsWith("_PICKAXE")) base = 1100;
-        else if (m.endsWith("_HOE")) base = 1200;
-        else if (m.endsWith("_AXE")) base = 1300;
-        else if (m.endsWith("_HELMET")) base = 2000;
-        else if (m.endsWith("_CHESTPLATE")) base = 2100;
-        else if (m.endsWith("_LEGGINGS")) base = 2200;
-        else if (m.endsWith("_BOOTS")) base = 2300;
-        else return null;
-
-        String r = rarityStr.toUpperCase(java.util.Locale.ROOT);
-        int off =
-            r.equals("COMMON") ? 1 :
-            r.equals("UNCOMMON") ? 2 :
-            r.equals("RARE") ? 3 :
-            r.equals("EPIC") ? 4 :
-            r.equals("LEGENDARY") ? 5 :
-            r.equals("STARFORGED") ? 6 : 0;
-
-        return (off == 0 ? null : base + off);
+    public static Map<String, TemplateItem> byMatCmd() {
+        return Collections.unmodifiableMap(BY_MAT_CMD);
     }
 
-    public static List<TemplateItem> getByRarity(Rarity rarity) {
-        List<TemplateItem> result = new ArrayList<>();
-        for (TemplateItem t : loadAll()) {
-            Rarity r = RarityUtil.get(t.stack(), new Keys(SpecialItemsPlugin.getInstance()));
-            if (r == rarity) result.add(t);
-        }
-        return result;
+    public static Map<String, TemplateItem> byId() {
+        return Collections.unmodifiableMap(BY_ID);
     }
 
-    /**
-     * Attempts to match the given item to a template based on material and
-     * display name. If a match is found the template's custom model data is
-     * applied to the item.
-     *
-     * @param item item to update
-     * @return true if a template match was applied
-     */
+    public static List<TemplateItem> getAll() {
+        return new ArrayList<>(BY_ID.values());
+    }
+
+    public static int loadedCount() { return loadedCount; }
+
+    public static int skippedNonIntCount() { return skippedNonInt; }
+
+    /** Attempts to match the given item to a template and apply its CMD. */
     public static boolean applyTemplateMeta(ItemStack item) {
         if (item == null) return false;
         ItemMeta meta = item.getItemMeta();
@@ -152,50 +198,8 @@ public final class TemplateItems {
         String key = item.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
         TemplateItem tmpl = BY_MAT_NAME.get(key);
         if (tmpl == null) return false;
-        ItemMeta tmeta = tmpl.stack().getItemMeta();
-        if (tmeta == null || !tmeta.hasCustomModelData()) return false;
-        // Overwrite any existing CMD, removing legacy floating point values
-        meta.setCustomModelData(null);
-        item.setItemMeta(meta);
-        // Ensure the raw item components/NBT tag are cleared as well
-        try {
-            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
-            var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
-            Object nms = asNmsCopy.invoke(null, item);
-            // Strip the data-component based field introduced in 1.20+
-            try {
-                Class<?> comps = Class.forName("net.minecraft.world.item.component.DataComponents");
-                Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
-                var has = nms.getClass().getMethod("has", type.getClass());
-                if ((Boolean) has.invoke(nms, type)) {
-                    var remove = nms.getClass().getMethod("remove", type.getClass());
-                    remove.invoke(nms, type);
-                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                    item.setItemMeta(cleaned.getItemMeta());
-                }
-            } catch (Throwable ignored) {}
-            // Legacy NBT tag fallback for older items
-            var getTag = nms.getClass().getMethod("getTag");
-            Object tag = getTag.invoke(nms);
-            if (tag != null) {
-                var contains = tag.getClass().getMethod("contains", String.class);
-                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
-                    var remove = tag.getClass().getMethod("remove", String.class);
-                    remove.invoke(tag, "CustomModelData");
-                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-                    setTag.invoke(nms, tag);
-                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                    item.setItemMeta(cleaned.getItemMeta());
-                }
-            }
-        } catch (Throwable ignored) {}
-        // Finally apply the integer value from the template
-        meta = item.getItemMeta();
-        if (meta == null) return false;
-        meta.setCustomModelData(tmeta.getCustomModelData());
-        item.setItemMeta(meta);
+        ItemUtil.forceSetCustomModelData(item, tmpl.customModelData());
         return true;
     }
 }
+
