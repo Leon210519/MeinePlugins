@@ -13,6 +13,7 @@ public final class CmdFixer {
      * Bukkit API. If the item has no meta or CMD, it is returned unchanged.
      */
     public static ItemStack normalize(ItemStack item) {
+
         if (item == null || item.getType().isAir()) return item;
         ItemMeta meta = item.getItemMeta();
         Integer cmd = null;
@@ -40,6 +41,7 @@ public final class CmdFixer {
         if (cmd != null) {
             ItemUtil.forceSetCustomModelData(item, cmd);
         }
+
         return item;
     }
 }
