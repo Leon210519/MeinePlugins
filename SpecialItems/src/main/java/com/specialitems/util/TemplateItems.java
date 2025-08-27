@@ -73,8 +73,7 @@ public final class TemplateItems {
             ItemMeta m = it.getItemMeta();
             if (m != null) {
                 // Always write CMD as an integer via the Bukkit API
-                m.setCustomModelData(cmd);
-                it.setItemMeta(m);
+                it = ItemUtil.forceSetCustomModelDataBoth(it, cmd);
             }
         }
 
@@ -192,10 +191,9 @@ public final class TemplateItems {
             }
         } catch (Throwable ignored) {}
         // Finally apply the integer value from the template
-        meta = item.getItemMeta();
-        if (meta == null) return false;
-        meta.setCustomModelData(tmeta.getCustomModelData());
-        item.setItemMeta(meta);
+        Integer val = (tmeta.hasCustomModelData() ? tmeta.getCustomModelData() : null);
+        if (val == null) return false;
+        item = ItemUtil.forceSetCustomModelDataBoth(item, val);
         return true;
-    }
+     }
 }

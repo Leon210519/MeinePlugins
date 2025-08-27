@@ -65,22 +65,40 @@ public final class ItemUtil {
     }
 
     public static Integer readInt(ConfigurationSection sec, String path) {
-        Object raw = sec.get(path);
-        return toInt(raw);
-    }
+    if (sec == null || path == null) return null;
+    Object raw = sec.get(path);
+    return toInt(raw);
+}
 
-    /** Converts various object representations of numbers or numeric strings to an integer. */
+/** Converts various object representations of numbers or numeric strings to a strict integer (no fractional part). */
+    public static Integer readInt(ConfigurationSection sec, String path) {
+    if (sec == null || path == null) return null;
+    Object raw = sec.get(path);
+    return toInt(raw);
+}
+
+    /** Strict: akzeptiert nur ganze Zahlen (oder x.0) */
     public static Integer toInt(Object raw) {
-        if (raw == null) return null;
-        if (raw instanceof Number n) return n.intValue();
+    if (raw == null) return null;
+    try {
+        if (raw instanceof Number n) {
+            double d = n.doubleValue();
+            long l = Math.round(d);
+            if (Math.abs(d - l) < 1e-9) {
+                if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE) return (int) l;
+            }
+            return null; // hatte Nachkommastellen
+        }
         if (raw instanceof String s) {
             s = s.trim();
-            if (s.matches("^\\d+(?:\\.\\d+)?[fFdD]?$")) {
-                return (int) Double.parseDouble(s);
-            }
+            if (s.matches("^-?\\d+$")) return Integer.parseInt(s);                // "1102"
+            if (s.matches("^-?\\d+\\.0+[fFdD]?$"))                                // "1102.0"
+                return Integer.parseInt(s.substring(0, s.indexOf('.')));
+            return null; // z.B. "1102.5" -> invalid
         }
-        return null;
-    }
+     } catch (Throwable ignored) {}
+     return null;
+}
 
     public static void removeLoreLinePrefix(List<String> lore, String prefix) {
         if (lore == null || prefix == null) return;
@@ -99,4 +117,72 @@ public final class ItemUtil {
         while (n >= 1) { sb.append("I"); n -= 1; }
         return sb.toString();
     }
+    public static ItemStack forceSetCustomModelDataBoth(ItemStack item, int cmd) {
+    if (item == null) return null;
+
+    // A) Bukkit-API (setzt Data Component)
+    ItemMeta meta = item.getItemMeta();
+    if (meta != null) {
+        meta.setCustomModelData(cmd);
+        item.setItemMeta(meta);
+    }
+
+    // B) Legacy-NBT "CustomModelData" zusätzlich setzen (für maximale RP-Kompatibilität)
+    try {
+        Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+        Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+
+        // getTag / new CompoundTag
+        var getTag = nms.getClass().getMethod("getTag");
+        Object tag = getTag.invoke(nms);
+        if (tag == null) {
+            Class<?> compoundTag = Class.forName("net.minecraft.nbt.CompoundTag");
+            tag = compoundTag.getConstructor().newInstance();
+        }
+
+        // putInt("CustomModelData", cmd)
+        var putInt = tag.getClass().getMethod("putInt", String.class, int.class);
+        putInt.invoke(tag, "CustomModelData", cmd);
+
+        var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+        setTag.invoke(nms, tag);
+
+        item = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
+    } catch (Throwable ignored) {
+        // macht nichts – die Data Component ist trotzdem gesetzt
+    }
+    return item;
+  }
+    public static ItemStack forceSetCustomModelDataBoth(ItemStack item, int cmd) {
+    if (item == null) return null;
+
+    // 1) Bukkit-API -> Data Component (neu)
+    ItemMeta meta = item.getItemMeta();
+    if (meta != null) {
+        meta.setCustomModelData(cmd);
+        item.setItemMeta(meta);
+    }
+
+    // 2) Legacy-NBT zusätzlich setzen (Kompatibilität)
+    try {
+        Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+        Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+
+        var getTag = nms.getClass().getMethod("getTag");
+        Object tag = getTag.invoke(nms);
+        if (tag == null) {
+            Class<?> compoundTag = Class.forName("net.minecraft.nbt.CompoundTag");
+            tag = compoundTag.getConstructor().newInstance();
+        }
+        var putInt = tag.getClass().getMethod("putInt", String.class, int.class);
+        putInt.invoke(tag, "CustomModelData", cmd);
+
+        var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+        setTag.invoke(nms, tag);
+
+        item = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
+    } catch (Throwable ignored) {}
+    return item;
+  }
+
 }
