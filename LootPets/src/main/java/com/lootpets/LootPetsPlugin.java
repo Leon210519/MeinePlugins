@@ -7,12 +7,17 @@ import com.lootpets.gui.PetsGUI;
 import com.lootpets.listener.EggListener;
 import com.lootpets.service.BoostService;
 import com.lootpets.service.EggService;
+import com.lootpets.service.LootPetsExpansion;
+import com.lootpets.service.PermissionTierService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.service.RarityRegistry;
 import com.lootpets.service.SlotService;
+import net.milkbowl.vault.permission.Permission;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -28,6 +33,8 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetsGUI petsGUI;
     private EggService eggService;
     private BoostService boostService;
+    private LootPetsExpansion papiExpansion;
+    private PermissionTierService permissionTierService;
     private int levelTask = -1;
 
     @Override
@@ -51,7 +58,15 @@ public class LootPetsPlugin extends JavaPlugin {
         petService = new PetService(this);
         eggService = new EggService(this, petService, petRegistry, rarityRegistry);
         boostService = new BoostService(this, petService, petRegistry, rarityRegistry);
-        petService.addChangeListener(boostService::invalidate);
+        petService.addChangeListener(uuid -> {
+            boostService.invalidate(uuid);
+            if (papiExpansion != null) {
+                papiExpansion.invalidate(uuid);
+            }
+            if (permissionTierService != null) {
+                permissionTierService.invalidate(uuid);
+            }
+        });
         LootPetsAPI.init(boostService);
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
 
@@ -60,6 +75,27 @@ public class LootPetsPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
+
+        if (getConfig().getBoolean("placeholders.enabled", true)) {
+            if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+                papiExpansion = new LootPetsExpansion(this);
+                papiExpansion.register();
+            } else {
+                getLogger().info("PAPI not found, placeholders disabled");
+            }
+        }
+
+        ConfigurationSection ptSec = getConfig().getConfigurationSection("permission_tiers");
+        if (ptSec != null && ptSec.getBoolean("enabled", false)) {
+            RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
+            if (rsp != null) {
+                permissionTierService = new PermissionTierService(this, boostService, rsp.getProvider(), ptSec);
+                permissionTierService.start();
+                petService.addChangeListener(permissionTierService::invalidate);
+            } else {
+                getLogger().info("Vault Permission not found, permission tiers disabled");
+            }
+        }
 
         int interval = getConfig().getInt("leveling_runtime.tick_interval_seconds", 30);
         levelTask = getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
@@ -91,6 +127,13 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         if (boostService != null) {
             boostService.clearAll();
+        }
+        if (papiExpansion != null) {
+            papiExpansion.unregister();
+            papiExpansion.clearAll();
+        }
+        if (permissionTierService != null) {
+            permissionTierService.stop();
         }
         LootPetsAPI.shutdown();
     }

@@ -4,6 +4,8 @@ version: 0.5.0
 api-version: '1.21'
 softdepend:
   - SpecialItems
+  - PlaceholderAPI
+  - Vault
 commands:
   pets:
     description: Open your pets GUI

@@ -52,3 +52,23 @@ boosts:
 
 caps:
   global_multiplier_max: 6.0
+
+placeholders:
+  enabled: true
+  format:
+    percent_decimals: 0
+    raw_decimals: 2
+    star_symbol: "★"
+    list_delimiter: ", "
+    colorize_names: true
+
+permission_tiers:
+  enabled: false
+  update_interval_seconds: 10
+  node_mode: "REPLACE"
+  prefix: "lootpets.tier."
+  tiers:
+    - { min: 1.00, max: 1.10, node: "1" }
+    - { min: 1.10, max: 1.25, node: "2" }
+    - { min: 1.25, max: 1.50, node: "3" }
+    - { min: 1.50, max: 999.0, node: "4" }
