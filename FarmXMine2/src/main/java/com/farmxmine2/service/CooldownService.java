@@ -25,6 +25,21 @@ public class CooldownService {
         return true;
     }
 
+    /** Returns remaining cooldown in milliseconds or 0 if none. */
+    public long getRemaining(UUID uuid, BlockKey key) {
+        Map<BlockKey, Long> map = cooldowns.get(uuid);
+        if (map == null) return 0L;
+        Long end = map.get(key);
+        if (end == null) return 0L;
+        long remaining = end - System.currentTimeMillis();
+        if (remaining <= 0L) {
+            map.remove(key);
+            if (map.isEmpty()) cooldowns.remove(uuid);
+            return 0L;
+        }
+        return remaining;
+    }
+
     public void start(UUID uuid, BlockKey key, long endMs) {
         Map<BlockKey, Long> map = cooldowns.computeIfAbsent(uuid, u -> new ConcurrentHashMap<>());
         map.put(key, endMs);

@@ -60,8 +60,37 @@ public class HarvestService {
         BlockKey key = BlockKey.of(b);
         UUID id = p.getUniqueId();
 
+        // tool gating before cooldown start
+        if (isOre) {
+            String req = config.getMiningRequireTool();
+            if (req != null && !req.equalsIgnoreCase("NONE") && (tool == null || !tool.getType().name().endsWith("_" + req))) {
+                String msg = plugin.color(plugin.getMessages().getString("wrong-tool", "&cYou need a %tool%"))
+                        .replace("%tool%", req.toLowerCase());
+                p.sendMessage(msg);
+                e.setCancelled(true);
+                e.setDropItems(false);
+                e.setExpToDrop(0);
+                return;
+            }
+        } else if (isCrop) {
+            String req = config.getFarmingRequireTool();
+            if (req != null && !req.equalsIgnoreCase("NONE") && (tool == null || !tool.getType().name().endsWith("_" + req))) {
+                String msg = plugin.color(plugin.getMessages().getString("wrong-tool", "&cYou need a %tool%"))
+                        .replace("%tool%", req.toLowerCase());
+                p.sendMessage(msg);
+                e.setCancelled(true);
+                e.setDropItems(false);
+                e.setExpToDrop(0);
+                return;
+            }
+        }
+
         // earliest cooldown and inflight gates
         if (cooldownService.isCooling(id, key)) {
+            long remaining = (cooldownService.getRemaining(id, key) + 999L) / 1000L;
+            String msg = plugin.color(plugin.getMessages().getString("cooldown", "&cWait %seconds%s"))
+                    .replace("%seconds%", String.valueOf(remaining));
+            p.sendActionBar(msg);
             if (isCrop) {
                 sendAirVisual(p, loc);
             } else {
@@ -162,6 +191,10 @@ public class HarvestService {
         BlockKey key = BlockKey.of(b);
         if (cooldownService.isCooling(p.getUniqueId(), key)) {
             e.setCancelled(true);
+            long remaining = (cooldownService.getRemaining(p.getUniqueId(), key) + 999L) / 1000L;
+            String msg = plugin.color(plugin.getMessages().getString("cooldown", "&cWait %seconds%s"))
+                    .replace("%seconds%", String.valueOf(remaining));
+            p.sendActionBar(msg);
             if (isCrop) {
                 sendAirVisual(p, b.getLocation());
             } else {
@@ -183,6 +216,10 @@ public class HarvestService {
         BlockKey key = BlockKey.of(b);
         if (cooldownService.isCooling(p.getUniqueId(), key)) {
             e.setCancelled(true);
+            long remaining = (cooldownService.getRemaining(p.getUniqueId(), key) + 999L) / 1000L;
+            String msg = plugin.color(plugin.getMessages().getString("cooldown", "&cWait %seconds%s"))
+                    .replace("%seconds%", String.valueOf(remaining));
+            p.sendActionBar(msg);
             if (isCrop) {
                 sendAirVisual(p, b.getLocation());
             } else {
