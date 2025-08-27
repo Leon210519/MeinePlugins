@@ -4,7 +4,6 @@ import com.farmxmine2.FarmXMine2Plugin;
 import com.farmxmine2.model.TrackType;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
@@ -25,7 +24,7 @@ public class BossBarService {
 
     public void update(Player player, TrackType type) {
         UUID id = player.getUniqueId();
-        BossBar bar = bars.computeIfAbsent(id, k -> Bukkit.createBossBar("", BarColor.BLUE, BarStyle.SOLID, BarFlag.CREATE_FOG));
+        BossBar bar = bars.computeIfAbsent(id, k -> Bukkit.createBossBar("", BarColor.BLUE, BarStyle.SOLID));
         int level = plugin.getLevelService().getStats(id).getLevel(type);
         int xp = plugin.getLevelService().getStats(id).getXp(type);
         int needed = plugin.getLevelService().xpNeeded(level);
