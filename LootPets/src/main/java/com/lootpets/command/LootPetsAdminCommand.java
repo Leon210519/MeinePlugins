@@ -1,8 +1,11 @@
 package com.lootpets.command;
 
 import com.lootpets.LootPetsPlugin;
+import com.lootpets.api.EarningType;
 import com.lootpets.model.OwnedPetState;
 import com.lootpets.model.PetDefinition;
+import com.lootpets.service.BoostBreakdown;
+import com.lootpets.service.BoostService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.util.Colors;
@@ -12,18 +15,22 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Optional;
 
 public class LootPetsAdminCommand implements CommandExecutor {
 
     private final LootPetsPlugin plugin;
     private final PetService petService;
     private final PetRegistry petRegistry;
+    private final BoostService boostService;
 
-    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry) {
+    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry, BoostService boostService) {
         this.plugin = plugin;
         this.petService = petService;
         this.petRegistry = petRegistry;
+        this.boostService = boostService;
     }
 
     @Override
@@ -38,6 +45,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "simulateegg" -> handleSimulateEgg(sender, args);
             case "setlevel" -> handleSetLevel(sender, args);
             case "setstars" -> handleSetStars(sender, args);
+            case "calc" -> handleCalc(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -172,5 +180,48 @@ public class LootPetsAdminCommand implements CommandExecutor {
         }
         petService.setStars(target.getUniqueId(), petId, stars);
         sender.sendMessage(Colors.color(plugin.getLang().getString("setstars-updated").replace("%pet%", petId).replace("%stars%", String.valueOf(stars))));
+    }
+
+    private void handleCalc(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        Optional<EarningType> opt = EarningType.parse(args[2]);
+        if (opt.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("calc-unknown-type")));
+            return;
+        }
+        BoostBreakdown bd = boostService.getBreakdown(target, opt.get());
+        sender.sendMessage(Colors.color(plugin.getLang().getString("calc-header")
+                .replace("%player%", target.getName())
+                .replace("%type%", opt.get().name())
+                .replace("%mode%", bd.stackingMode().name())));
+        for (BoostBreakdown.PetContribution pc : bd.contributions()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("calc-entry")
+                    .replace("%pet%", pc.petId())
+                    .replace("%rarity%", String.valueOf(pc.rarityId()))
+                    .replace("%level%", String.valueOf(pc.level()))
+                    .replace("%stars%", String.valueOf(pc.stars()))
+                    .replace("%weight%", format(pc.weight()))
+                    .replace("%factor%", format(pc.typedFactor()))));
+        }
+        sender.sendMessage(Colors.color(plugin.getLang().getString("calc-uncapped")
+                .replace("%uncapped%", format(bd.uncappedResult()))));
+        sender.sendMessage(Colors.color(plugin.getLang().getString("calc-final")
+                .replace("%final%", format(bd.finalMultiplier()))));
+    }
+
+    private String format(double d) {
+        return format(BigDecimal.valueOf(d));
+    }
+
+    private String format(BigDecimal bd) {
+        return bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
     }
 }

@@ -1,9 +1,11 @@
 package com.lootpets;
 
+import com.lootpets.api.LootPetsAPI;
 import com.lootpets.command.LootPetsAdminCommand;
 import com.lootpets.command.PetsCommand;
 import com.lootpets.gui.PetsGUI;
 import com.lootpets.listener.EggListener;
+import com.lootpets.service.BoostService;
 import com.lootpets.service.EggService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
@@ -25,6 +27,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetService petService;
     private PetsGUI petsGUI;
     private EggService eggService;
+    private BoostService boostService;
     private int levelTask = -1;
 
     @Override
@@ -47,10 +50,13 @@ public class LootPetsPlugin extends JavaPlugin {
         slotService = new SlotService(this);
         petService = new PetService(this);
         eggService = new EggService(this, petService, petRegistry, rarityRegistry);
+        boostService = new BoostService(this, petService, petRegistry, rarityRegistry);
+        petService.addChangeListener(boostService::invalidate);
+        LootPetsAPI.init(boostService);
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
-        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry));
+        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
@@ -71,6 +77,8 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         getLogger().info("Loaded " + petRegistry.size() + " pets from definitions");
         getLogger().info("pets.yml ready");
+        getLogger().info("BoostService initialized with mode " + getConfig().getString("boosts.stacking_mode") +
+                " and cap " + getConfig().getDouble("caps.global_multiplier_max"));
     }
 
     @Override
@@ -81,6 +89,10 @@ public class LootPetsPlugin extends JavaPlugin {
         if (petService != null) {
             petService.save();
         }
+        if (boostService != null) {
+            boostService.clearAll();
+        }
+        LootPetsAPI.shutdown();
     }
 
     public FileConfiguration getLang() {
@@ -105,5 +117,9 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public EggService getEggService() {
         return eggService;
+    }
+
+    public BoostService getBoostService() {
+        return boostService;
     }
 }

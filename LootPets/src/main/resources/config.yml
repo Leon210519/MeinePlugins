@@ -42,3 +42,13 @@ gui:
   owned-range:
     start: 9
     end: 53
+
+boosts:
+  per_level: 0.02
+  star_multiplier: 1.5
+  max_stars: 5
+  stacking_mode: "ADDITIVE"
+  rarity_base_multipliers: {}
+
+caps:
+  global_multiplier_max: 6.0

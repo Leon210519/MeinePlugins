@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "com.lootpets"
-version = "0.3.0"
+version = "0.5.0"
 
 repositories {
     mavenCentral()
