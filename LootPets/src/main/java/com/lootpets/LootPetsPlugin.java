@@ -4,6 +4,8 @@ import com.lootpets.api.LootPetsAPI;
 import com.lootpets.command.LootPetsAdminCommand;
 import com.lootpets.command.PetsCommand;
 import com.lootpets.gui.PetsGUI;
+import com.lootpets.gui.AlbumGUI;
+import com.lootpets.gui.CompareGUI;
 import com.lootpets.listener.EggListener;
 import com.lootpets.service.BoostService;
 import com.lootpets.service.EggService;
@@ -32,6 +34,8 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetRegistry petRegistry;
     private PetService petService;
     private PetsGUI petsGUI;
+    private AlbumGUI albumGUI;
+    private CompareGUI compareGUI;
     private EggService eggService;
     private BoostService boostService;
     private PreviewService previewService;
@@ -72,12 +76,16 @@ public class LootPetsPlugin extends JavaPlugin {
         });
         LootPetsAPI.init(boostService);
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
+        albumGUI = new AlbumGUI(this, petRegistry, petService);
+        compareGUI = new CompareGUI(this, petRegistry, petService);
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
         Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
+        getServer().getPluginManager().registerEvents(albumGUI, this);
+        getServer().getPluginManager().registerEvents(compareGUI, this);
 
         if (getConfig().getBoolean("placeholders.enabled", true)) {
           if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -176,6 +184,36 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public PreviewService getPreviewService() {
         return previewService;
+    }
+
+    public PetsGUI getPetsGUI() {
+        return petsGUI;
+    }
+
+    public AlbumGUI getAlbumGUI() {
+        return albumGUI;
+    }
+
+    public CompareGUI getCompareGUI() {
+        return compareGUI;
+    }
+
+    public void reloadEverything() {
+        reloadConfig();
+        lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
+        rarityRegistry = new RarityRegistry(this);
+        petRegistry.reload();
+        boostService.clearAll();
+        previewService = new PreviewService(this, petRegistry, rarityRegistry);
+        previewService.clearAll();
+        if (papiExpansion != null) {
+            papiExpansion.unregister();
+            papiExpansion.clearAll();
+            papiExpansion = new LootPetsExpansion(this, previewService);
+            papiExpansion.register();
+        }
+        petsGUI.reset();
+        getLogger().info("Reloaded " + rarityRegistry.size() + " rarities and " + petRegistry.size() + " pets");
     }
 
     @Override

@@ -51,6 +51,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "setstars" -> handleSetStars(sender, args);
             case "calc" -> handleCalc(sender, args);
             case "preview" -> handlePreview(sender, args);
+            case "reload" -> handleReload(sender);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -185,6 +186,15 @@ public class LootPetsAdminCommand implements CommandExecutor {
         }
         petService.setStars(target.getUniqueId(), petId, stars);
         sender.sendMessage(Colors.color(plugin.getLang().getString("setstars-updated").replace("%pet%", petId).replace("%stars%", String.valueOf(stars))));
+    }
+
+    private void handleReload(CommandSender sender) {
+        if (!plugin.getConfig().getBoolean("reload.enabled", false)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("reload-disabled")));
+            return;
+        }
+        plugin.reloadEverything();
+        sender.sendMessage(Colors.color(plugin.getLang().getString("reloaded")));
     }
 
     private void handleCalc(CommandSender sender, String[] args) {
