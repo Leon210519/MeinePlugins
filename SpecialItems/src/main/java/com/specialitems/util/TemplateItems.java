@@ -165,6 +165,26 @@ public final class TemplateItems {
 
     public static Map<Rarity, List<TemplateItem>> byRarity() {
         return BY_RARITY;
+
+    }
+
+    // --- Additional helpers used by other parts of the plugin ---
+
+    public static List<TemplateItem> getAll() {
+        return new ArrayList<>(ALL);
+    }
+
+    public static int loadedCount() {
+        return ALL.size();
+    }
+
+    public static int skippedNonIntCount() {
+        return SKIPPED_NON_INT;
+    }
+
+    public static Map<Rarity, List<TemplateItem>> byRarity() {
+        return BY_RARITY;
+
     }
 
     /**
