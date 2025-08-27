@@ -1,6 +1,6 @@
 name: LootPets
 main: com.lootpets.LootPetsPlugin
-version: 0.1.0
+version: 0.2.0
 api-version: '1.21'
 softdepend:
   - SpecialItems
@@ -8,6 +8,10 @@ commands:
   pets:
     description: Open your pets GUI
     usage: /pets
+  lootpets:
+    description: Admin command for LootPets
+    usage: "/lootpets give <player> <petId> | /lootpets reset <player>"
+    permission: lootpets.admin
 permissions:
   lootpets.admin:
     default: op

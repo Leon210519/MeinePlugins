@@ -1,7 +1,9 @@
 package com.lootpets;
 
+import com.lootpets.command.LootPetsAdminCommand;
 import com.lootpets.command.PetsCommand;
 import com.lootpets.gui.PetsGUI;
+import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.service.RarityRegistry;
 import com.lootpets.service.SlotService;
@@ -17,6 +19,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private FileConfiguration lang;
     private RarityRegistry rarityRegistry;
     private SlotService slotService;
+    private PetRegistry petRegistry;
     private PetService petService;
     private PetsGUI petsGUI;
 
@@ -29,20 +32,28 @@ public class LootPetsPlugin extends JavaPlugin {
         if (!petsFile.exists()) {
             saveResource("pets.yml", false);
         }
+        File defsFile = new File(getDataFolder(), "pets_definitions.yml");
+        if (!defsFile.exists()) {
+            saveResource("pets_definitions.yml", false);
+        }
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
 
         rarityRegistry = new RarityRegistry(this);
+        petRegistry = new PetRegistry(this);
         slotService = new SlotService(this);
         petService = new PetService(this);
-        petsGUI = new PetsGUI(this, slotService);
+        petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
+        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry));
 
         if (rarityRegistry.isFallback()) {
             getLogger().warning("Registered fallback rarity");
         } else {
             getLogger().info("Imported " + rarityRegistry.size() + " rarities from SpecialItems");
         }
+        getLogger().info("Loaded " + petRegistry.size() + " pets from definitions");
+        getLogger().info("pets.yml ready");
     }
 
     public FileConfiguration getLang() {
@@ -59,5 +70,9 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public PetService getPetService() {
         return petService;
+    }
+
+    public PetRegistry getPetRegistry() {
+        return petRegistry;
     }
 }
