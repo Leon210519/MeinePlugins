@@ -64,18 +64,13 @@ public final class ItemUtil {
         }
     }
 
+    /** Converts various object representations of numbers or numeric strings
+     *  to a strict integer (no fractional part). */
     public static Integer readInt(ConfigurationSection sec, String path) {
-    if (sec == null || path == null) return null;
-    Object raw = sec.get(path);
-    return toInt(raw);
-}
-
-/** Converts various object representations of numbers or numeric strings to a strict integer (no fractional part). */
-    public static Integer readInt(ConfigurationSection sec, String path) {
-    if (sec == null || path == null) return null;
-    Object raw = sec.get(path);
-    return toInt(raw);
-}
+        if (sec == null || path == null) return null;
+        Object raw = sec.get(path);
+        return toInt(raw);
+    }
 
     /** Strict: akzeptiert nur ganze Zahlen (oder x.0) */
     public static Integer toInt(Object raw) {
@@ -117,72 +112,89 @@ public final class ItemUtil {
         while (n >= 1) { sb.append("I"); n -= 1; }
         return sb.toString();
     }
+    /**
+     * Sets the CustomModelData value using both the Bukkit API and the legacy
+     * NBT tag to maximize compatibility across server versions/resource packs.
+     */
     public static ItemStack forceSetCustomModelDataBoth(ItemStack item, int cmd) {
-    if (item == null) return null;
+        if (item == null) return null;
 
-    // A) Bukkit-API (setzt Data Component)
-    ItemMeta meta = item.getItemMeta();
-    if (meta != null) {
-        meta.setCustomModelData(cmd);
-        item.setItemMeta(meta);
-    }
-
-    // B) Legacy-NBT "CustomModelData" zusätzlich setzen (für maximale RP-Kompatibilität)
-    try {
-        Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
-        Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-
-        // getTag / new CompoundTag
-        var getTag = nms.getClass().getMethod("getTag");
-        Object tag = getTag.invoke(nms);
-        if (tag == null) {
-            Class<?> compoundTag = Class.forName("net.minecraft.nbt.CompoundTag");
-            tag = compoundTag.getConstructor().newInstance();
+        // A) Bukkit-API (setzt Data Component)
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setCustomModelData(cmd);
+            item.setItemMeta(meta);
         }
 
-        // putInt("CustomModelData", cmd)
-        var putInt = tag.getClass().getMethod("putInt", String.class, int.class);
-        putInt.invoke(tag, "CustomModelData", cmd);
+        // B) Legacy-NBT "CustomModelData" zusätzlich setzen (für maximale
+        // RP-Kompatibilität)
+        try {
+            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+            Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
 
-        var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-        setTag.invoke(nms, tag);
+            // getTag / new CompoundTag
+            var getTag = nms.getClass().getMethod("getTag");
+            Object tag = getTag.invoke(nms);
+            if (tag == null) {
+                Class<?> compoundTag = Class.forName("net.minecraft.nbt.CompoundTag");
+                tag = compoundTag.getConstructor().newInstance();
+            }
 
-        item = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
-    } catch (Throwable ignored) {
-        // macht nichts – die Data Component ist trotzdem gesetzt
-    }
-    return item;
-  }
-    public static ItemStack forceSetCustomModelDataBoth(ItemStack item, int cmd) {
-    if (item == null) return null;
+            // putInt("CustomModelData", cmd)
+            var putInt = tag.getClass().getMethod("putInt", String.class, int.class);
+            putInt.invoke(tag, "CustomModelData", cmd);
 
-    // 1) Bukkit-API -> Data Component (neu)
-    ItemMeta meta = item.getItemMeta();
-    if (meta != null) {
-        meta.setCustomModelData(cmd);
-        item.setItemMeta(meta);
-    }
+            var setTag = nms.getClass().getMethod("setTag", tag.getClass());
+            setTag.invoke(nms, tag);
 
-    // 2) Legacy-NBT zusätzlich setzen (Kompatibilität)
-    try {
-        Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
-        Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-
-        var getTag = nms.getClass().getMethod("getTag");
-        Object tag = getTag.invoke(nms);
-        if (tag == null) {
-            Class<?> compoundTag = Class.forName("net.minecraft.nbt.CompoundTag");
-            tag = compoundTag.getConstructor().newInstance();
+            item = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
+        } catch (Throwable ignored) {
+            // macht nichts – die Data Component ist trotzdem gesetzt
         }
-        var putInt = tag.getClass().getMethod("putInt", String.class, int.class);
-        putInt.invoke(tag, "CustomModelData", cmd);
+        return item;
+    }
 
-        var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-        setTag.invoke(nms, tag);
+    /** Convenience wrapper used by existing code. */
+    public static ItemStack forceSetCustomModelData(ItemStack item, int cmd) {
+        return forceSetCustomModelDataBoth(item, cmd);
+    }
 
-        item = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
-    } catch (Throwable ignored) {}
-    return item;
-  }
+    /**
+     * Reads the CustomModelData value from the item. Handles both the Bukkit
+     * data component and the legacy NBT tag (which may store floats).
+     */
+    public static Integer getCustomModelData(ItemStack item) {
+        if (item == null || item.getType().isAir()) return null;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasCustomModelData()) {
+            return meta.getCustomModelData();
+        }
+
+        // Attempt to read legacy float tag
+        try {
+            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
+            Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
+            Object tag = nms.getClass().getMethod("getTag").invoke(nms);
+            if (tag != null) {
+                var contains = tag.getClass().getMethod("contains", String.class);
+                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
+                    var get = tag.getClass().getMethod("get", String.class);
+                    Object raw = get.invoke(tag, "CustomModelData");
+                    String str;
+                    try {
+                        str = (String) raw.getClass().getMethod("asString").invoke(raw);
+                    } catch (NoSuchMethodException ex) {
+                        str = raw.toString();
+                    }
+                    try {
+                        return Integer.parseInt(str.split("[.]")[0]);
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        return null;
+    }
 
 }
