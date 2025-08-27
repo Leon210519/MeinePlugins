@@ -1,5 +1,13 @@
 default-slots: 2
 slot-permission-prefix: "lootpets.slots."
+equip-cooldown-ms: 300
+
+leveling_runtime:
+  tick_interval_seconds: 30
+  xp_per_tick: 1
+  xp_per_level: 60
+  level_cap_base: 100
+  level_cap_extra_per_star: 50
 
 eggs:
   detection:

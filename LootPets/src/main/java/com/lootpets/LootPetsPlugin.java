@@ -25,6 +25,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetService petService;
     private PetsGUI petsGUI;
     private EggService eggService;
+    private int levelTask = -1;
 
     @Override
     public void onEnable() {
@@ -52,6 +53,16 @@ public class LootPetsPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
+        getServer().getPluginManager().registerEvents(petsGUI, this);
+
+        int interval = getConfig().getInt("leveling_runtime.tick_interval_seconds", 30);
+        levelTask = getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
+            int xpPerTick = getConfig().getInt("leveling_runtime.xp_per_tick", 1);
+            int xpPerLevel = getConfig().getInt("leveling_runtime.xp_per_level", 60);
+            int baseCap = getConfig().getInt("leveling_runtime.level_cap_base", 100);
+            int extraCap = getConfig().getInt("leveling_runtime.level_cap_extra_per_star", 50);
+            getServer().getOnlinePlayers().forEach(p -> petService.addXpToActivePets(p.getUniqueId(), xpPerTick, xpPerLevel, baseCap, extraCap));
+        }, interval * 20L, interval * 20L);
 
         if (rarityRegistry.isFallback()) {
             getLogger().warning("Registered fallback rarity");
@@ -60,6 +71,16 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         getLogger().info("Loaded " + petRegistry.size() + " pets from definitions");
         getLogger().info("pets.yml ready");
+    }
+
+    @Override
+    public void onDisable() {
+        if (levelTask != -1) {
+            getServer().getScheduler().cancelTask(levelTask);
+        }
+        if (petService != null) {
+            petService.save();
+        }
     }
 
     public FileConfiguration getLang() {
@@ -86,4 +107,3 @@ public class LootPetsPlugin extends JavaPlugin {
         return eggService;
     }
 }
-
