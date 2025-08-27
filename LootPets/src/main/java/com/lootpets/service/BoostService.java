@@ -2,11 +2,15 @@ package com.lootpets.service;
 
 import com.lootpets.LootPetsPlugin;
 import com.lootpets.api.EarningType;
-import com.lootpets.model.OwnedPetState;
-import com.lootpets.model.PetDefinition;
+import com.lootpets.api.event.LootPetsApplyPostEvent;
+import com.lootpets.api.event.LootPetsApplyPreEvent;
+import com.lootpets.api.event.LootPetsMultiplierQueryEvent;
+import com.lootpets.util.DebugLogger;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -14,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Calculates pet boost multipliers with caching.
+ * Calculates pet boost multipliers with caching and event hooks.
  */
 public class BoostService {
 
@@ -22,15 +26,25 @@ public class BoostService {
     private final PetService petService;
     private final PetRegistry petRegistry;
     private final RarityRegistry rarityRegistry;
+    private final RuleService ruleService;
+    private final AuditService auditService;
     private final Map<UUID, EnumMap<EarningType, CacheEntry>> cache = new ConcurrentHashMap<>();
     private final Set<String> warned = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> applyLogged = ConcurrentHashMap.newKeySet();
     private final long ttlMillis = 4000L;
 
-    public BoostService(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry, RarityRegistry rarityRegistry) {
+    public BoostService(LootPetsPlugin plugin,
+                        PetService petService,
+                        PetRegistry petRegistry,
+                        RarityRegistry rarityRegistry,
+                        RuleService ruleService,
+                        AuditService auditService) {
         this.plugin = plugin;
         this.petService = petService;
         this.petRegistry = petRegistry;
         this.rarityRegistry = rarityRegistry;
+        this.ruleService = ruleService;
+        this.auditService = auditService;
     }
 
     private record CacheEntry(double value, long expire, BoostBreakdown breakdown) {}
@@ -56,7 +70,33 @@ public class BoostService {
      * Applies the multiplier to the given base value.
      */
     public BigDecimal apply(Player player, EarningType type, BigDecimal base) {
-        return base.multiply(BigDecimal.valueOf(getMultiplier(player, type)));
+        if (!ruleService.canApply(player)) {
+            if (applyLogged.add(player.getUniqueId())) {
+                DebugLogger.debug(plugin, "rules", "Boost apply denied for " + player.getName());
+            }
+            LootPetsApplyPostEvent post = new LootPetsApplyPostEvent(player, type, base, 1.0, base);
+            callEvent(post);
+            return base;
+        }
+        double mult = getMultiplier(player, type);
+        LootPetsApplyPreEvent pre = new LootPetsApplyPreEvent(player, type, base, mult);
+        callEvent(pre);
+        if (pre.isCancelled()) {
+            LootPetsApplyPostEvent post = new LootPetsApplyPostEvent(player, type, base, 1.0, base);
+            callEvent(post);
+            auditService.log(player, type, base, 1.0, base, null);
+            return base;
+        }
+        double finalMult = pre.getMultiplier();
+        BigDecimal result = base.multiply(BigDecimal.valueOf(finalMult));
+        LootPetsApplyPostEvent post = new LootPetsApplyPostEvent(player, type, base, finalMult, result);
+        callEvent(post);
+        BoostBreakdown bd = null;
+        if (auditService.isEnabled() && auditService.isIncludeBreakdown()) {
+            bd = getBreakdown(player, type);
+        }
+        auditService.log(player, type, base, finalMult, result, bd);
+        return result;
     }
 
     /**
@@ -85,6 +125,7 @@ public class BoostService {
     /** Clears all cached data. */
     public void clearAll() {
         cache.clear();
+        applyLogged.clear();
     }
 
     private BoostBreakdown compute(Player player, EarningType type) {
@@ -113,6 +154,7 @@ public class BoostService {
         Map<String, OwnedPetState> owned = petService.getOwnedPets(player.getUniqueId());
 
         List<BoostBreakdown.PetContribution> contributions = new ArrayList<>();
+        List<LootPetsMultiplierQueryEvent.Contribution> evContrib = new ArrayList<>();
         BigDecimal add = BigDecimal.ZERO;
         BigDecimal mul = BigDecimal.ONE;
 
@@ -151,6 +193,7 @@ public class BoostService {
             BigDecimal typed = BigDecimal.ONE.add(BigDecimal.valueOf(weight).multiply(base.subtract(BigDecimal.ONE)));
 
             contributions.add(new BoostBreakdown.PetContribution(petId, rarityId, level, stars, weight, typed));
+            evContrib.add(new LootPetsMultiplierQueryEvent.Contribution(petId, rarityId, level, stars, weight, typed.doubleValue()));
 
             if (stackingMode == StackingMode.ADDITIVE) {
                 add = add.add(typed.subtract(BigDecimal.ONE));
@@ -168,7 +211,27 @@ public class BoostService {
             finalVal = BigDecimal.ONE;
         }
 
+        LootPetsMultiplierQueryEvent event = new LootPetsMultiplierQueryEvent(player, type,
+                uncapped.doubleValue(), finalVal.doubleValue(), stackingMode, evContrib);
+        callEvent(event);
+        uncapped = BigDecimal.valueOf(event.getUncappedMultiplier());
+        finalVal = BigDecimal.valueOf(event.getCappedMultiplier());
+        if (uncapped.compareTo(BigDecimal.ONE) < 0) {
+            uncapped = BigDecimal.ONE;
+        }
+        if (finalVal.compareTo(BigDecimal.ONE) < 0) {
+            finalVal = BigDecimal.ONE;
+        }
+
         return new BoostBreakdown(Collections.unmodifiableList(contributions), stackingMode, uncapped, finalVal);
+    }
+
+    private void callEvent(Event e) {
+        try {
+            Bukkit.getPluginManager().callEvent(e);
+        } catch (Exception ex) {
+            plugin.getLogger().warning("Event error: " + ex.getMessage());
+        }
     }
 
     private void warnOnce(String msg) {

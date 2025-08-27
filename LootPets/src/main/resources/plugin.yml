@@ -12,7 +12,7 @@ softdepend:
       usage: /pets
     lootpets:
       description: Admin command for LootPets
-      usage: "/lootpets give <player> <petId> | /lootpets reset <player> | /lootpets simulateegg <player> <petId> <rarityId> | /lootpets setlevel <player> <petId> <level> | /lootpets setstars <player> <petId> <stars> | /lootpets calc <player> <type> | /lootpets preview <petId> <rarityId> | /lootpets reload"
+      usage: "/lootpets give <player> <petId> | /lootpets reset <player> | /lootpets simulateegg <player> <petId> <rarityId> | /lootpets setlevel <player> <petId> <level> | /lootpets setstars <player> <petId> <stars> | /lootpets calc <player> <type> | /lootpets preview <petId> <rarityId> | /lootpets reload | /lootpets audit on|off | /lootpets backup now | /lootpets rules test <player> [type]"
       permission: lootpets.admin
 permissions:
   lootpets.admin:
