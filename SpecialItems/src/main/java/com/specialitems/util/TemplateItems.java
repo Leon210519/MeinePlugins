@@ -80,7 +80,7 @@ public final class TemplateItems {
             }
         }
 
-        Integer cmd = readModelData(t);
+        Integer cmd = readModelData(id, t);
         if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
             ItemMeta m = it.getItemMeta();
@@ -105,13 +105,17 @@ public final class TemplateItems {
         return new TemplateItem(id, it, cmd);
     }
 
-    private static Integer readModelData(ConfigurationSection t) {
+    private static Integer readModelData(String id, ConfigurationSection t) {
         if (t == null) return null;
-        Integer v = ItemUtil.readInt(t, "custom_model_data");
-        if (v != null) return v;
-        v = ItemUtil.readInt(t, "model-data");
-        if (v != null) return v;
-        return ItemUtil.readInt(t, "model_data");
+
+        for (String path : new String[]{"custom_model_data", "model-data", "model_data"}) {
+            if (!t.contains(path)) continue;
+            Integer v = ItemUtil.readInt(t, path);
+            if (v != null) return v;
+            SKIPPED_NON_INT++;
+            Log.warn("Template '" + id + "' has non-integer CMD at '" + path + "': " + t.get(path));
+        }
+        return null;
     }
 
     private static Integer computeCmdFallback(org.bukkit.Material mat, String rarityStr) {
@@ -141,12 +145,26 @@ public final class TemplateItems {
     }
 
     public static List<TemplateItem> getByRarity(Rarity rarity) {
-        List<TemplateItem> result = new ArrayList<>();
-        for (TemplateItem t : loadAll()) {
-            Rarity r = RarityUtil.get(t.stack(), new Keys(SpecialItemsPlugin.getInstance()));
-            if (r == rarity) result.add(t);
-        }
-        return result;
+        if (ALL.isEmpty()) loadAll();
+        return new ArrayList<>(BY_RARITY.getOrDefault(rarity, Collections.emptyList()));
+    }
+
+    // --- Additional helpers used by other parts of the plugin ---
+
+    public static List<TemplateItem> getAll() {
+        return new ArrayList<>(ALL);
+    }
+
+    public static int loadedCount() {
+        return ALL.size();
+    }
+
+    public static int skippedNonIntCount() {
+        return SKIPPED_NON_INT;
+    }
+
+    public static Map<Rarity, List<TemplateItem>> byRarity() {
+        return BY_RARITY;
     }
 
     // --- Additional helpers used by other parts of the plugin ---
