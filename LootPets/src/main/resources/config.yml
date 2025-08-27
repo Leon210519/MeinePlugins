@@ -45,6 +45,24 @@ gui:
   owned-range:
     start: 9
     end: 53
+  features:
+    filters_enabled: true
+    sorting_enabled: true
+    pagination_enabled: true
+    compare_enabled: true
+    album_enabled: true
+  pagination:
+    page_size: 28
+    controls: { prev_slot: 45, next_slot: 53 }
+  sorting:
+    default: "RARITY_DESC,STARS_DESC,LEVEL_DESC,NAME_ASC"
+    modes: [ "RARITY_ASC", "RARITY_DESC", "STARS_ASC", "STARS_DESC", "LEVEL_ASC", "LEVEL_DESC", "NAME_ASC", "NAME_DESC" ]
+  filters:
+    rarity_filter: true
+    type_filter: true
+  compare:
+    max_items: 2
+    open_key: "SHIFT_LEFT_CLICK"
 
 boosts:
   per_level: 0.02
@@ -83,3 +101,14 @@ permission_tiers:
     - { min: 1.10, max: 1.25, node: "2" }
     - { min: 1.25, max: 1.50, node: "3" }
     - { min: 1.50, max: 999.0, node: "4" }
+
+album:
+  show_unknown_greyed: true
+  open_from_pets_gui: true
+
+reload:
+  enabled: true
+
+logging:
+  verbosity: "INFO"
+  debug_categories: [ "papi", "boosts", "eggs", "gui" ]
