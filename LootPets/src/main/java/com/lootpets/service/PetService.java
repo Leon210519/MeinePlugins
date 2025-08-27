@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class PetService {
 
@@ -17,11 +18,25 @@ public class PetService {
     private final LootPetsPlugin plugin;
     private final File file;
     private YamlConfiguration config;
+    private final List<Consumer<UUID>> changeListeners = new ArrayList<>();
 
     public PetService(LootPetsPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "pets.yml");
         reload();
+    }
+
+    public void addChangeListener(Consumer<UUID> listener) {
+        changeListeners.add(listener);
+    }
+
+    private void notifyChange(UUID uuid) {
+        for (Consumer<UUID> c : changeListeners) {
+            try {
+                c.accept(uuid);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     public void reload() {
@@ -162,6 +177,9 @@ public class PetService {
         sec.set("evolve_progress", progress);
         sec.set("stars", stars);
         save();
+        if (starUp) {
+            notifyChange(uuid);
+        }
         OwnedPetState state = new OwnedPetState(sec.getString("rarity", null), sec.getInt("level", 0), stars, progress, sec.getInt("xp", 0));
         return new EvolveResult(state, starUp, capped);
     }
@@ -206,6 +224,7 @@ public class PetService {
         list.add(petId);
         sec.set("active", list);
         save();
+        notifyChange(uuid);
         return true;
     }
 
@@ -220,6 +239,7 @@ public class PetService {
         }
         sec.set("active", list);
         save();
+        notifyChange(uuid);
         return true;
     }
 
@@ -230,6 +250,7 @@ public class PetService {
         }
         List<String> active = getActivePetIds(uuid, Integer.MAX_VALUE);
         boolean changed = false;
+        boolean levelChanged = false;
         for (String petId : active) {
             ConfigurationSection ps = sec.getConfigurationSection(petId);
             if (ps == null) {
@@ -237,6 +258,7 @@ public class PetService {
             }
             int xp = ps.getInt("xp", 0) + xpPerTick;
             int level = ps.getInt("level", 0);
+            int oldLevel = level;
             int stars = ps.getInt("stars", 0);
             int cap = baseCap + extraPerStar * stars;
             if (xp >= xpPerLevel && level < cap) {
@@ -250,10 +272,16 @@ public class PetService {
             }
             ps.set("xp", xp);
             ps.set("level", level);
+            if (level != oldLevel) {
+                levelChanged = true;
+            }
             changed = true;
         }
         if (changed) {
             save();
+        }
+        if (levelChanged) {
+            notifyChange(uuid);
         }
     }
 
@@ -268,6 +296,7 @@ public class PetService {
         ps.set("level", clamped);
         ps.set("xp", 0);
         save();
+        notifyChange(uuid);
         return true;
     }
 
@@ -278,6 +307,7 @@ public class PetService {
         }
         ps.set("stars", stars);
         save();
+        notifyChange(uuid);
         return true;
     }
 
@@ -288,6 +318,7 @@ public class PetService {
             sec.createSection("owned");
             sec.set("active", new ArrayList<>());
             save();
+            notifyChange(uuid);
         }
     }
 
