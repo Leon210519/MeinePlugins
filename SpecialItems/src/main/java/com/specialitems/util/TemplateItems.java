@@ -19,12 +19,20 @@ public final class TemplateItems {
     private TemplateItems() {}
 
     private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
+    private static List<TemplateItem> ALL = new ArrayList<>();
+    private static int SKIPPED_NON_INT = 0;
+    private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         BY_MAT_NAME.clear();
+        BY_RARITY.clear();
+        SKIPPED_NON_INT = 0;
         var sec = Configs.templates.getConfigurationSection("templates");
-        if (sec == null) return list;
+        if (sec == null) {
+            ALL = list;
+            return list;
+        }
         List<String> keys = new ArrayList<>(sec.getKeys(false));
         Collections.sort(keys);
         for (String key : keys) {
@@ -39,8 +47,13 @@ public final class TemplateItems {
                     String k = it.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
                     BY_MAT_NAME.put(k, tmpl);
                 }
+                try {
+                    Rarity r = RarityUtil.get(it, new Keys(SpecialItemsPlugin.getInstance()));
+                    if (r != null) BY_RARITY.computeIfAbsent(r, k -> new ArrayList<>()).add(tmpl);
+                } catch (Throwable ignored) {}
             }
         }
+        ALL = list;
         return list;
     }
 
@@ -67,7 +80,7 @@ public final class TemplateItems {
             }
         }
 
-        Integer cmd = readModelData(t);
+        Integer cmd = readModelData(id, t);
         if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
             ItemMeta m = it.getItemMeta();
@@ -92,13 +105,17 @@ public final class TemplateItems {
         return new TemplateItem(id, it, cmd);
     }
 
-    private static Integer readModelData(ConfigurationSection t) {
+    private static Integer readModelData(String id, ConfigurationSection t) {
         if (t == null) return null;
-        Integer v = ItemUtil.readInt(t, "custom_model_data");
-        if (v != null) return v;
-        v = ItemUtil.readInt(t, "model-data");
-        if (v != null) return v;
-        return ItemUtil.readInt(t, "model_data");
+
+        for (String path : new String[]{"custom_model_data", "model-data", "model_data"}) {
+            if (!t.contains(path)) continue;
+            Integer v = ItemUtil.readInt(t, path);
+            if (v != null) return v;
+            SKIPPED_NON_INT++;
+            Log.warn("Template '" + id + "' has non-integer CMD at '" + path + "': " + t.get(path));
+        }
+        return null;
     }
 
     private static Integer computeCmdFallback(org.bukkit.Material mat, String rarityStr) {
@@ -128,12 +145,26 @@ public final class TemplateItems {
     }
 
     public static List<TemplateItem> getByRarity(Rarity rarity) {
-        List<TemplateItem> result = new ArrayList<>();
-        for (TemplateItem t : loadAll()) {
-            Rarity r = RarityUtil.get(t.stack(), new Keys(SpecialItemsPlugin.getInstance()));
-            if (r == rarity) result.add(t);
-        }
-        return result;
+        if (ALL.isEmpty()) loadAll();
+        return new ArrayList<>(BY_RARITY.getOrDefault(rarity, Collections.emptyList()));
+    }
+
+    // --- Additional helpers used by other parts of the plugin ---
+
+    public static List<TemplateItem> getAll() {
+        return new ArrayList<>(ALL);
+    }
+
+    public static int loadedCount() {
+        return ALL.size();
+    }
+
+    public static int skippedNonIntCount() {
+        return SKIPPED_NON_INT;
+    }
+
+    public static Map<Rarity, List<TemplateItem>> byRarity() {
+        return BY_RARITY;
     }
 
     /**
