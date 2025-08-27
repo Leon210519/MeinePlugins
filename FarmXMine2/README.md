@@ -4,7 +4,7 @@ Paper plugin for Minecraft 1.21.4 providing per-player fake block breaking and l
 
 ## Building
 
-Requires JDK 17 and Gradle 8+.
+Requires JDK 21 and Gradle 8+.
 
 ```
 cd FarmXMine2
