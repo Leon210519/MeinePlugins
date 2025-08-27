@@ -10,6 +10,7 @@ import com.specialitems.listeners.GuiListener;
 import com.specialitems.listeners.BinListener;
 import com.specialitems.listeners.JoinFixListener;
 import com.specialitems.listeners.InventorySanityListener;
+import com.specialitems.listeners.GiveInterceptListener;
 import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
 import com.specialitems.util.TemplateItems;
@@ -62,6 +63,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new JoinFixListener(), this);
             getServer().getPluginManager().registerEvents(new InventorySanityListener(), this);
             getServer().getPluginManager().registerEvents(new BinListener(this), this);
+            getServer().getPluginManager().registerEvents(new GiveInterceptListener(), this);
         } catch (Throwable t) {
             Log.warn("Listener registration failed: " + t.getMessage());
         }
