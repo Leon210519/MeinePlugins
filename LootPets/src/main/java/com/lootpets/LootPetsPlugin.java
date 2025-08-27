@@ -3,6 +3,8 @@ package com.lootpets;
 import com.lootpets.command.LootPetsAdminCommand;
 import com.lootpets.command.PetsCommand;
 import com.lootpets.gui.PetsGUI;
+import com.lootpets.listener.EggListener;
+import com.lootpets.service.EggService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.service.RarityRegistry;
@@ -22,6 +24,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetRegistry petRegistry;
     private PetService petService;
     private PetsGUI petsGUI;
+    private EggService eggService;
 
     @Override
     public void onEnable() {
@@ -42,10 +45,13 @@ public class LootPetsPlugin extends JavaPlugin {
         petRegistry = new PetRegistry(this);
         slotService = new SlotService(this);
         petService = new PetService(this);
+        eggService = new EggService(this, petService, petRegistry, rarityRegistry);
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
         Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry));
+
+        getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
 
         if (rarityRegistry.isFallback()) {
             getLogger().warning("Registered fallback rarity");
@@ -75,4 +81,9 @@ public class LootPetsPlugin extends JavaPlugin {
     public PetRegistry getPetRegistry() {
         return petRegistry;
     }
+
+    public EggService getEggService() {
+        return eggService;
+    }
 }
+

@@ -1,6 +1,23 @@
 default-slots: 2
 slot-permission-prefix: "lootpets.slots."
 
+eggs:
+  detection:
+    strategy: PDC
+    namespace: lootpets
+    keys:
+      type: type
+      rarity: rarity
+    match:
+      name_prefix: "Pet Egg:"
+      lore_contains: "LootPets Egg"
+  consume_on_redeem: true
+  sfx:
+    unlocked: ""
+    duplicate: ""
+  messages:
+    enabled: true
+
 gui:
   title: "&6Pets"
   rows: 6

@@ -1,10 +1,12 @@
 package com.lootpets.gui;
 
 import com.lootpets.LootPetsPlugin;
+import com.lootpets.model.OwnedPetState;
 import com.lootpets.model.PetDefinition;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.service.SlotService;
+import com.lootpets.service.RarityRegistry;
 import com.lootpets.util.Colors;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,6 +18,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class PetsGUI {
 
@@ -54,9 +57,9 @@ public class PetsGUI {
         int start = cfg.getInt("gui.owned-range.start");
         int end = cfg.getInt("gui.owned-range.end");
         int capacity = Math.max(0, end - start + 1);
-        List<String> owned = petService.getOwnedPetIds(player.getUniqueId());
+        Map<String, OwnedPetState> owned = petService.getOwnedPets(player.getUniqueId());
         int placed = 0;
-        for (String id : owned) {
+        for (Map.Entry<String, OwnedPetState> entry : owned.entrySet()) {
             if (placed >= capacity) {
                 if (!overflowWarned) {
                     overflowWarned = true;
@@ -64,6 +67,8 @@ public class PetsGUI {
                 }
                 break;
             }
+            String id = entry.getKey();
+            OwnedPetState state = entry.getValue();
             PetDefinition def = petRegistry.byId(id);
             if (def == null) {
                 continue;
@@ -74,9 +79,22 @@ public class PetsGUI {
                 if (def.iconCustomModelData() != null) {
                     meta.setCustomModelData(def.iconCustomModelData());
                 }
-                meta.setDisplayName(Colors.color(def.displayName()));
+                String name = def.displayName();
+                if (state.rarity() != null) {
+                    RarityRegistry.Rarity rr = plugin.getRarityRegistry().getRarities().get(state.rarity());
+                    if (rr != null) {
+                        name = rr.color() + Colors.color(name);
+                    } else {
+                        name = Colors.color(name);
+                    }
+                } else {
+                    name = Colors.color(name);
+                }
+                meta.setDisplayName(name);
                 List<String> lore = new ArrayList<>();
-                lore.add(Colors.color(lang.getString("owned-lore")));
+                lore.add(Colors.color("&7Rarity: " + (state.rarity() == null ? "?" : state.rarity())));
+                lore.add(Colors.color("&7Stars: " + "★".repeat(state.stars())));
+                lore.add(Colors.color("&7Evolve: " + state.evolveProgress() + "/5"));
                 meta.setLore(lore);
                 icon.setItemMeta(meta);
             }
@@ -97,3 +115,4 @@ public class PetsGUI {
         return stack;
     }
 }
+
