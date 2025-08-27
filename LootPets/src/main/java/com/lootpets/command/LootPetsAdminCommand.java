@@ -6,6 +6,7 @@ import com.lootpets.model.OwnedPetState;
 import com.lootpets.model.PetDefinition;
 import com.lootpets.service.BoostBreakdown;
 import com.lootpets.service.BoostService;
+import com.lootpets.service.PreviewService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.util.Colors;
@@ -18,6 +19,7 @@ import org.bukkit.entity.Player;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Locale;
 
 public class LootPetsAdminCommand implements CommandExecutor {
 
@@ -25,12 +27,14 @@ public class LootPetsAdminCommand implements CommandExecutor {
     private final PetService petService;
     private final PetRegistry petRegistry;
     private final BoostService boostService;
+    private final PreviewService previewService;
 
-    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry, BoostService boostService) {
+    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry, BoostService boostService, PreviewService previewService) {
         this.plugin = plugin;
         this.petService = petService;
         this.petRegistry = petRegistry;
         this.boostService = boostService;
+        this.previewService = previewService;
     }
 
     @Override
@@ -46,6 +50,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "setlevel" -> handleSetLevel(sender, args);
             case "setstars" -> handleSetStars(sender, args);
             case "calc" -> handleCalc(sender, args);
+            case "preview" -> handlePreview(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -215,6 +220,39 @@ public class LootPetsAdminCommand implements CommandExecutor {
                 .replace("%uncapped%", format(bd.uncappedResult()))));
         sender.sendMessage(Colors.color(plugin.getLang().getString("calc-final")
                 .replace("%final%", format(bd.finalMultiplier()))));
+    }
+
+    private void handlePreview(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("preview-usage")));
+            return;
+        }
+        String petInput = args[1];
+        String rarityInput = args[2];
+        String petId = previewService.resolvePetId(petInput);
+        if (petId == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
+            return;
+        }
+        String rarityId = previewService.resolveRarityId(rarityInput);
+        if (rarityId == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-rarity")));
+            return;
+        }
+        String header = plugin.getLang().getString("preview-header", "")
+                .replace("%pet%", petId)
+                .replace("%rarity%", rarityId);
+        sender.sendMessage(Colors.color(header));
+        for (var type : previewService.getShowTypes()) {
+            PreviewService.Range range = previewService.getRange(petId, rarityId, type);
+            String formatted = previewService.formatRange(type, range);
+            String raw = previewService.formatRawRange(range);
+            String line = plugin.getLang().getString("preview-entry", "{type}: {formatted} ({raw})")
+                    .replace("%type%", type.name().toLowerCase(Locale.ROOT))
+                    .replace("%formatted%", formatted)
+                    .replace("%raw%", raw);
+            sender.sendMessage(Colors.color(line));
+        }
     }
 
     private String format(double d) {

@@ -20,6 +20,9 @@ eggs:
       name_prefix: "Pet Egg:"
       lore_contains: "LootPets Egg"
   consume_on_redeem: true
+  redeem_block_in_creative: false
+  redeem_world_blacklist: []
+  redeem_cooldown_millis: 300
   sfx:
     unlocked: ""
     duplicate: ""
@@ -61,6 +64,14 @@ placeholders:
     star_symbol: "★"
     list_delimiter: ", "
     colorize_names: true
+
+preview:
+  show_types:
+    - "earnings_lootfactory"
+    - "earnings_sell"
+  format_percent: true
+  template: "{min} – {max}"
+  cap_multiplier: 6.0
 
 permission_tiers:
   enabled: false

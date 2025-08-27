@@ -76,6 +76,9 @@ public class PetRegistry {
         }
         this.pets = Collections.unmodifiableMap(map);
         plugin.getLogger().info("Loaded " + pets.size() + " pets");
+        if (plugin.getPreviewService() != null) {
+            plugin.getPreviewService().clearAll();
+        }
     }
 
     public Collection<PetDefinition> all() {

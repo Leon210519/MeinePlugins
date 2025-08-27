@@ -6,6 +6,7 @@ import com.lootpets.model.OwnedPetState;
 import com.lootpets.model.PetDefinition;
 import com.lootpets.util.Colors;
 import com.lootpets.service.BoostBreakdown;
+import com.lootpets.service.PreviewService;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,6 +26,7 @@ public class LootPetsExpansion extends PlaceholderExpansion {
     private final PetRegistry petRegistry;
     private final SlotService slotService;
     private final RarityRegistry rarityRegistry;
+    private final PreviewService previewService;
     private final Map<UUID, Map<String, CacheEntry>> cache = new ConcurrentHashMap<>();
     private final long ttlMillis = 3000L;
 
@@ -36,8 +38,9 @@ public class LootPetsExpansion extends PlaceholderExpansion {
 
     private record CacheEntry(String value, long expire) {}
 
-    public LootPetsExpansion(LootPetsPlugin plugin) {
+    public LootPetsExpansion(LootPetsPlugin plugin, PreviewService previewService) {
         this.plugin = plugin;
+        this.previewService = previewService;
         this.boostService = plugin.getBoostService();
         this.petService = plugin.getPetService();
         this.petRegistry = plugin.getPetRegistry();
@@ -75,24 +78,34 @@ public class LootPetsExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public String onPlaceholderRequest(Player player, String identifier) {
-        if (player == null || identifier == null) {
-            return "";
-        }
-        long now = System.currentTimeMillis();
-        Map<String, CacheEntry> map = cache.computeIfAbsent(player.getUniqueId(), k -> new ConcurrentHashMap<>());
-        CacheEntry entry = map.get(identifier);
-        if (entry != null && entry.expire > now) {
-            return entry.value;
-        }
-        String value = compute(player, identifier);
-        map.put(identifier, new CacheEntry(value, now + ttlMillis));
-        return value;
-    }
+      public String onPlaceholderRequest(Player player, String identifier) {
+          if (identifier == null) {
+              return "";
+          }
+          // preview placeholders are static and do not require a player
+          if (identifier.startsWith("preview_boost_raw_range_")) {
+              return handlePreviewRaw(identifier.substring("preview_boost_raw_range_".length()));
+          }
+          if (identifier.startsWith("preview_boost_range_")) {
+              return handlePreviewFormatted(identifier.substring("preview_boost_range_".length()));
+          }
+          if (player == null) {
+              return "";
+          }
+          long now = System.currentTimeMillis();
+          Map<String, CacheEntry> map = cache.computeIfAbsent(player.getUniqueId(), k -> new ConcurrentHashMap<>());
+          CacheEntry entry = map.get(identifier);
+          if (entry != null && entry.expire > now) {
+              return entry.value;
+          }
+          String value = compute(player, identifier);
+          map.put(identifier, new CacheEntry(value, now + ttlMillis));
+          return value;
+      }
 
-    private String compute(Player player, String identifier) {
-        try {
-            if (identifier.startsWith("boost_percent_")) {
+      private String compute(Player player, String identifier) {
+          try {
+              if (identifier.startsWith("boost_percent_")) {
                 String t = identifier.substring("boost_percent_".length());
                 Optional<EarningType> type = EarningType.parse(t);
                 if (type.isEmpty()) return "";
@@ -185,15 +198,37 @@ public class LootPetsExpansion extends PlaceholderExpansion {
                 int extra = plugin.getConfig().getInt("leveling_runtime.level_cap_extra_per_star", 50);
                 int cap = base + extra * st.stars();
                 return String.valueOf(cap);
-            }
-            if (identifier.startsWith("level_")) {
-                String id = identifier.substring("level_".length());
-                OwnedPetState st = petService.getOwnedPets(player.getUniqueId()).get(id);
-                if (st == null) return "";
-                return String.valueOf(st.level());
-            }
-        } catch (Exception ignored) {
-        }
-        return "";
-    }
-}
+      }
+      if (identifier.startsWith("level_")) {
+                  String id = identifier.substring("level_".length());
+                  OwnedPetState st = petService.getOwnedPets(player.getUniqueId()).get(id);
+                  if (st == null) return "";
+                  return String.valueOf(st.level());
+              }
+          } catch (Exception ignored) {
+          }
+          return "";
+      }
+
+      private String handlePreviewFormatted(String params) {
+          String[] parts = params.split("_");
+          if (parts.length < 3) return "";
+          String petId = previewService.resolvePetId(parts[0]);
+          String rarityId = previewService.resolveRarityId(parts[1]);
+          Optional<EarningType> type = EarningType.parse(parts[2]);
+          if (petId == null || rarityId == null || type.isEmpty()) return "";
+          PreviewService.Range range = previewService.getRange(petId, rarityId, type.get());
+          return previewService.formatRange(type.get(), range);
+      }
+
+      private String handlePreviewRaw(String params) {
+          String[] parts = params.split("_");
+          if (parts.length < 3) return "";
+          String petId = previewService.resolvePetId(parts[0]);
+          String rarityId = previewService.resolveRarityId(parts[1]);
+          Optional<EarningType> type = EarningType.parse(parts[2]);
+          if (petId == null || rarityId == null || type.isEmpty()) return "";
+          PreviewService.Range range = previewService.getRange(petId, rarityId, type.get());
+          return previewService.formatRawRange(range);
+      }
+  }
