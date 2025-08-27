@@ -122,8 +122,8 @@ public final class GuiItemUtil {
             lore.add(ChatColor.GOLD + "Unbreakable");
             meta.setLore(lore);
             display.setItemMeta(meta);
-            ItemUtil.normalizeCustomModelData(display);
         }
+        ItemUtil.normalizeCustomModelData(display);
         return display;
     }
 }
