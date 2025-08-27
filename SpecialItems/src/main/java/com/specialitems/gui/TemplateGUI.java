@@ -13,10 +13,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -45,18 +41,6 @@ public final class TemplateGUI {
             }
         }
         return ORDER.length - 1;
-    }
-    private static ItemStack tagWithTemplateId(ItemStack stack, String templateId) {
-    if (stack == null || templateId == null) return stack;
-    ItemStack copy = stack.clone();
-    ItemMeta meta = copy.getItemMeta();
-    if (meta != null) {
-        PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_template_id");
-        pdc.set(key, PersistentDataType.STRING, templateId);
-        copy.setItemMeta(meta);
-    }
-    return copy;
     }
     public static void open(Player p, int page) {
         if (!p.hasPermission("specialitems.admin")) {
@@ -102,8 +86,6 @@ public final class TemplateGUI {
                 if (col < 0 || col > 7) continue;
                 ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), t.stack());
                 if (display == null) display = t.stack().clone();
-                // <<NEU: Template-ID im GUI-Item hinterlegen>>
-                display = tagWithTemplateId(display, t.id());
                 inv.setItem(slotOf(rowIndex, col), display);
             }
         }
