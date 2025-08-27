@@ -20,14 +20,14 @@ public final class TemplateItems {
 
     private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
     private static List<TemplateItem> ALL = new ArrayList<>();
-    private static int SKIPPED_NON_INT = 0;
+    private static int NORMALIZED_NON_INT = 0;
     private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         BY_MAT_NAME.clear();
         BY_RARITY.clear();
-        SKIPPED_NON_INT = 0;
+        NORMALIZED_NON_INT = 0;
         var sec = Configs.templates.getConfigurationSection("templates");
         if (sec == null) {
             ALL = list;
@@ -86,7 +86,7 @@ public final class TemplateItems {
             ItemMeta m = it.getItemMeta();
             if (m != null) {
                 // Always write CMD as an integer via the Bukkit API
-                it = ItemUtil.forceSetCustomModelDataBoth(it, cmd);
+                it = ItemUtil.forceSetCustomModelData(it, cmd);
             }
         }
 
@@ -110,10 +110,31 @@ public final class TemplateItems {
 
         for (String path : new String[]{"custom_model_data", "model-data", "model_data"}) {
             if (!t.contains(path)) continue;
-            Integer v = ItemUtil.readInt(t, path);
-            if (v != null) return v;
-            SKIPPED_NON_INT++;
-            Log.warn("Template '" + id + "' has non-integer CMD at '" + path + "': " + t.get(path));
+            if (t.isInt(path)) {
+                return t.getInt(path);
+            }
+            if (t.isDouble(path)) {
+                int val = (int) Math.floor(t.getDouble(path));
+                NORMALIZED_NON_INT++;
+                Log.warn("CustomModelData for " + id + " was non-integer, normalized to " + val);
+                return val;
+            }
+            String raw = t.getString(path);
+            if (raw != null) {
+                try {
+                    return Integer.parseInt(raw.trim());
+                } catch (NumberFormatException ex) {
+                    try {
+                        double d = Double.parseDouble(raw.trim());
+                        int val = (int) Math.floor(d);
+                        NORMALIZED_NON_INT++;
+                        Log.warn("CustomModelData for " + id + " was non-integer, normalized to " + val);
+                        return val;
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+            NORMALIZED_NON_INT++;
+            Log.warn("Template '" + id + "' has invalid CMD at '" + path + "': " + t.get(path));
         }
         return null;
     }
@@ -159,8 +180,8 @@ public final class TemplateItems {
         return ALL.size();
     }
 
-    public static int skippedNonIntCount() {
-        return SKIPPED_NON_INT;
+    public static int normalizedNonIntCount() {
+        return NORMALIZED_NON_INT;
     }
 
     public static Map<Rarity, List<TemplateItem>> byRarity() {
@@ -224,7 +245,7 @@ public final class TemplateItems {
         // Finally apply the integer value from the template
         Integer val = (tmeta.hasCustomModelData() ? tmeta.getCustomModelData() : null);
         if (val == null) return false;
-        item = ItemUtil.forceSetCustomModelDataBoth(item, val);
+        item = ItemUtil.forceSetCustomModelData(item, val);
         return true;
 
      }
