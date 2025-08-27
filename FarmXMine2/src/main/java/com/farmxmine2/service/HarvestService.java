@@ -86,7 +86,7 @@ public class HarvestService {
         }
 
         // earliest cooldown and inflight gates
-        if (cooldownService.isCooling(id, key)) {
+        if (cooldownService.isCooling(key)) {
             if (isCrop) {
                 sendAirVisual(p, loc);
             } else {
@@ -140,7 +140,7 @@ public class HarvestService {
             e.setDropItems(false);
             e.setExpToDrop(0);
             long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
-            cooldownService.start(id, key, endMs);
+            cooldownService.start(key, endMs);
 
             if (isCrop) {
                 sendAirVisual(p, loc);
@@ -174,7 +174,7 @@ public class HarvestService {
                     }
                     p.sendBlockChange(loc, restore);
                 } finally {
-                    cooldownService.end(id, key);
+                    cooldownService.end(key);
                 }
             }, config.getRespawnSeconds() * 20L);
         } finally {
@@ -196,7 +196,7 @@ public class HarvestService {
             return;
         }
         BlockKey key = BlockKey.of(b);
-        if (cooldownService.isCooling(p.getUniqueId(), key)) {
+        if (cooldownService.isCooling(key)) {
             e.setCancelled(true);
             if (isCrop) {
                 sendAirVisual(p, b.getLocation());
@@ -217,7 +217,7 @@ public class HarvestService {
             return;
         }
         BlockKey key = BlockKey.of(b);
-        if (cooldownService.isCooling(p.getUniqueId(), key)) {
+        if (cooldownService.isCooling(key)) {
             e.setCancelled(true);
             if (isCrop) {
                 sendAirVisual(p, b.getLocation());
