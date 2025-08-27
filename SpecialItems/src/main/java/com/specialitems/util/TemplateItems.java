@@ -165,6 +165,7 @@ public final class TemplateItems {
 
     public static Map<Rarity, List<TemplateItem>> byRarity() {
         return BY_RARITY;
+
     }
 
     // --- Additional helpers used by other parts of the plugin ---
@@ -183,6 +184,7 @@ public final class TemplateItems {
 
     public static Map<Rarity, List<TemplateItem>> byRarity() {
         return BY_RARITY;
+
     }
 
     /**
