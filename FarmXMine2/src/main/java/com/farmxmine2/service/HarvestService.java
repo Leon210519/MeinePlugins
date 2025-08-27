@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -134,6 +133,8 @@ public class HarvestService {
             return;
         }
 
+        BlockData snapshot = b.getBlockData();
+
         try {
             // cancel vanilla break and start cooldown
             e.setCancelled(true);
@@ -142,10 +143,10 @@ public class HarvestService {
             long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
             cooldownService.start(id, key, endMs);
 
-            if (isCrop) {
-                sendAirVisual(p, loc);
-            } else {
-                sendStoneVisual(p, loc);
+            b.setType(Material.AIR, false);
+            BlockData air = Bukkit.createBlockData(Material.AIR);
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                online.sendBlockChange(loc, air);
             }
 
             // drops already determined before cooldown
@@ -161,18 +162,10 @@ public class HarvestService {
             // restoration after cooldown
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 try {
-                    if (!p.isOnline()) {
-                        return;
+                    loc.getBlock().setBlockData(snapshot, false);
+                    for (Player online : Bukkit.getOnlinePlayers()) {
+                        online.sendBlockChange(loc, snapshot);
                     }
-                    BlockData restore = loc.getWorld().getBlockAt(loc).getBlockData();
-                    if (isCrop) {
-                        if (!(restore instanceof Ageable) || ((Ageable) restore).getAge() < ((Ageable) restore).getMaximumAge()) {
-                            Ageable full = (Ageable) Bukkit.createBlockData(mat);
-                            full.setAge(full.getMaximumAge());
-                            restore = full;
-                        }
-                    }
-                    p.sendBlockChange(loc, restore);
                 } finally {
                     cooldownService.end(id, key);
                 }
