@@ -10,7 +10,6 @@ import com.specialitems.util.Configs;
 import com.specialitems.util.ItemUtil;
 import com.specialitems.util.Tagger;
 import com.specialitems.util.TemplateItems;
-import com.specialitems.util.GuiItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -89,12 +88,10 @@ public class SiCommand implements CommandExecutor {
                 }
                 TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(tid, tsec);
                 if (tmpl != null) {
-                    ItemStack give = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), tmpl.stack());
-                    if (give == null) {
-                        give = tmpl.stack().clone();
-                    }
-                    if (tmpl.customModelData() != null) {
-                        ItemUtil.forceSetCustomModelData(give, tmpl.customModelData());
+                    ItemStack give = tmpl.stack().clone();
+                    Integer cmdVal = tmpl.customModelData();
+                    if (cmdVal != null) {
+                        ItemUtil.forceSetCustomModelData(give, cmdVal);
                     }
                     ItemUtil.normalizeCustomModelData(give);
                     target.getInventory().addItem(give);
