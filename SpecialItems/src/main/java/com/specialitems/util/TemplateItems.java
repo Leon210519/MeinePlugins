@@ -226,5 +226,7 @@ public final class TemplateItems {
         if (val == null) return false;
         item = ItemUtil.forceSetCustomModelDataBoth(item, val);
         return true;
+
      }
+
 }
