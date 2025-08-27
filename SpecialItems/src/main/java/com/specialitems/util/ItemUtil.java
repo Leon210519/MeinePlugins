@@ -17,6 +17,30 @@ public final class ItemUtil {
 
     private ItemUtil() {}
 
+    private static Class<?> findClass(String... names) throws ClassNotFoundException {
+        for (String name : names) {
+            try {
+                return Class.forName(name);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        throw new ClassNotFoundException(names[0]);
+    }
+
+    private static Class<?> dataComponentsClass() throws ClassNotFoundException {
+        return findClass(
+                "net.minecraft.core.component.DataComponents",
+                "net.minecraft.world.item.component.DataComponents"
+        );
+    }
+
+    private static Class<?> dataComponentTypeClass() throws ClassNotFoundException {
+        return findClass(
+                "net.minecraft.core.component.DataComponentType",
+                "net.minecraft.world.item.component.DataComponentType"
+        );
+    }
+
     public static ItemStack withEffect(ItemStack item, String effectId, int level) {
         if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
@@ -167,14 +191,15 @@ public final class ItemUtil {
 
             // Remove data component entry if present (1.20+)
             try {
-                Class<?> comps = Class.forName("net.minecraft.world.item.component.DataComponents");
+                Class<?> comps = dataComponentsClass();
+                Class<?> typeCls = dataComponentTypeClass();
                 Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
-                var has = nms.getClass().getMethod("has", type.getClass());
+                var has = nms.getClass().getMethod("has", typeCls);
                 if ((Boolean) has.invoke(nms, type)) {
-                    var get = nms.getClass().getMethod("get", type.getClass());
+                    var get = nms.getClass().getMethod("get", typeCls);
                     Object val = get.invoke(nms, type);
                     if (cmd == null && val instanceof Integer v) cmd = v;
-                    var remove = nms.getClass().getMethod("remove", type.getClass());
+                    var remove = nms.getClass().getMethod("remove", typeCls);
                     remove.invoke(nms, type);
                     changed = true;
                 }
