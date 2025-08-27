@@ -7,6 +7,7 @@ import com.specialitems.leveling.LevelMath;
 import com.specialitems.leveling.LevelOverviewGUI;
 import com.specialitems.leveling.ToolClass;
 import com.specialitems.util.Configs;
+import com.specialitems.util.GuiItemUtil;
 import com.specialitems.util.ItemUtil;
 import com.specialitems.util.Tagger;
 import com.specialitems.util.TemplateItems;
@@ -91,6 +92,8 @@ public class SiCommand implements CommandExecutor {
                     ItemStack give = tmpl.stack().clone();
                     ItemUtil.forceSetCustomModelData(give, tmpl.customModelData());
                     ItemUtil.normalizeCustomModelData(give);
+                    ItemStack display = GuiItemUtil.forDisplay(SpecialItemsPlugin.getInstance(), give);
+                    if (display != null) give = display;
                     target.getInventory().addItem(give);
                 }
                 sender.sendMessage(ChatColor.GREEN + "Gave " + ChatColor.YELLOW + tid + ChatColor.GREEN + " to " + ChatColor.YELLOW + target.getName());
