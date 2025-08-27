@@ -154,7 +154,11 @@ public class HarvestService {
             b.setType(Material.AIR, false);
             BlockData air = Bukkit.createBlockData(Material.AIR);
             for (Player online : Bukkit.getOnlinePlayers()) {
-                online.sendBlockChange(loc, air);
+                if (online.getUniqueId().equals(id)) {
+                    sendStoneVisual(online, loc);
+                } else {
+                    online.sendBlockChange(loc, air);
+                }
             }
 
             // drops already determined before cooldown
