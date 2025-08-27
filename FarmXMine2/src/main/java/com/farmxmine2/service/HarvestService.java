@@ -42,7 +42,7 @@ public class HarvestService {
     }
 
     public void handleBlockBreak(Player p, Block b, BlockBreakEvent e) {
-        if (b.getWorld() == null || !b.getWorld().getName().equalsIgnoreCase(config.getMainWorld())) {
+        if (b.getWorld() == null || !config.isWorldAllowed(b.getWorld().getName())) {
             return;
         }
 
@@ -175,7 +175,7 @@ public class HarvestService {
     }
 
     public void handleBlockDamage(Player p, Block b, BlockDamageEvent e) {
-        if (b.getWorld() == null || !b.getWorld().getName().equalsIgnoreCase(config.getMainWorld())) {
+        if (b.getWorld() == null || !config.isWorldAllowed(b.getWorld().getName())) {
             return;
         }
         Material type = b.getType();
@@ -196,7 +196,7 @@ public class HarvestService {
     }
 
     public void handleLeftClick(Player p, Block b, PlayerInteractEvent e) {
-        if (b.getWorld() == null || !b.getWorld().getName().equalsIgnoreCase(config.getMainWorld())) {
+        if (b.getWorld() == null || !config.isWorldAllowed(b.getWorld().getName())) {
             return;
         }
         Material type = b.getType();
