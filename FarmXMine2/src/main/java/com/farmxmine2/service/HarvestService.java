@@ -92,13 +92,14 @@ public class HarvestService {
             }
         }
 
-        // earliest cooldown and inflight gates
+        if (isOre) {
+            handleOreBreak(p, b, e, loc, mat, tool, key, id);
+            return;
+        }
+
+        // Farming logic (unchanged)
         if (cooldownService.isCooling(key)) {
-            if (isCrop) {
-                sendAirVisual(p, loc);
-            } else {
-                sendStoneVisual(p, loc);
-            }
+            sendAirVisual(p, loc);
             e.setCancelled(true);
             e.setDropItems(false);
             e.setExpToDrop(0);
@@ -107,11 +108,7 @@ public class HarvestService {
 
         Set<BlockKey> inflightSet = inflight.computeIfAbsent(id, u -> ConcurrentHashMap.newKeySet());
         if (!inflightSet.add(key)) {
-            if (isCrop) {
-                sendAirVisual(p, loc);
-            } else {
-                sendStoneVisual(p, loc);
-            }
+            sendAirVisual(p, loc);
             e.setCancelled(true);
             e.setDropItems(false);
             e.setExpToDrop(0);
@@ -119,15 +116,7 @@ public class HarvestService {
         }
 
         // determine drops before starting cooldown
-        Collection<ItemStack> drops;
-        if (isOre) {
-            boolean hasPickaxe = Materials.hasPickaxe(tool);
-            boolean mineable = Materials.isMineableByPickaxe(mat);
-            boolean correctTool = hasPickaxe && mineable;
-            drops = correctTool ? b.getDrops(tool, p) : Collections.emptyList();
-        } else {
-            drops = mainProduceOnly(b, tool, p);
-        }
+        Collection<ItemStack> drops = mainProduceOnly(b, tool, p);
         if (drops.isEmpty()) {
             String msg = plugin.color(plugin.getMessages().getString("invalid-harvest", "&cYour tool cannot harvest this block."));
             p.sendMessage(msg);
@@ -161,11 +150,7 @@ public class HarvestService {
             ItemUtil.giveAll(p, drops);
 
             // add XP only on success
-            if (isOre) {
-                levelService.addXp(p, TrackType.MINE);
-            } else if (isCrop) {
-                levelService.addXp(p, TrackType.FARM);
-            }
+            levelService.addXp(p, TrackType.FARM);
 
             // restoration after cooldown
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -176,6 +161,77 @@ public class HarvestService {
                     }
                 } finally {
                     cooldownService.end(key);
+                }
+            }, config.getRespawnSeconds() * 20L);
+        } finally {
+            inflightSet.remove(key);
+            if (inflightSet.isEmpty()) {
+                inflight.remove(id);
+            }
+        }
+    }
+
+    private void handleOreBreak(Player p, Block b, BlockBreakEvent e, Location loc, Material mat, ItemStack tool, BlockKey key, UUID id) {
+        // per-player cooldown gate
+        if (cooldownService.isCooling(id, key)) {
+            sendStoneVisual(p, loc);
+            e.setCancelled(true);
+            e.setDropItems(false);
+            e.setExpToDrop(0);
+            return;
+        }
+
+        Set<BlockKey> inflightSet = inflight.computeIfAbsent(id, u -> ConcurrentHashMap.newKeySet());
+        if (!inflightSet.add(key)) {
+            sendStoneVisual(p, loc);
+            e.setCancelled(true);
+            e.setDropItems(false);
+            e.setExpToDrop(0);
+            return;
+        }
+
+        Collection<ItemStack> drops;
+        boolean hasPickaxe = Materials.hasPickaxe(tool);
+        boolean mineable = Materials.isMineableByPickaxe(mat);
+        boolean correctTool = hasPickaxe && mineable;
+        drops = correctTool ? b.getDrops(tool, p) : Collections.emptyList();
+        if (drops.isEmpty()) {
+            String msg = plugin.color(plugin.getMessages().getString("invalid-harvest", "&cYour tool cannot harvest this block."));
+            p.sendMessage(msg);
+            e.setCancelled(true);
+            e.setDropItems(false);
+            e.setExpToDrop(0);
+            inflightSet.remove(key);
+            if (inflightSet.isEmpty()) {
+                inflight.remove(id);
+            }
+            return;
+        }
+
+        BlockData snapshot = b.getBlockData();
+
+        try {
+            // cancel vanilla break and start cooldown
+            e.setCancelled(true);
+            e.setDropItems(false);
+            e.setExpToDrop(0);
+            long endMs = System.currentTimeMillis() + config.getRespawnSeconds() * 1000L;
+            cooldownService.start(id, key, endMs);
+
+            sendStoneVisual(p, loc);
+
+            // drops already determined before cooldown
+            ItemUtil.giveAll(p, drops);
+
+            // add XP only on success
+            levelService.addXp(p, TrackType.MINE);
+
+            // restoration after cooldown
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                try {
+                    Visuals.show(plugin, p, loc, snapshot);
+                } finally {
+                    cooldownService.end(id, key);
                 }
             }, config.getRespawnSeconds() * 20L);
         } finally {
@@ -197,13 +253,14 @@ public class HarvestService {
             return;
         }
         BlockKey key = BlockKey.of(b);
-        if (cooldownService.isCooling(key)) {
-            e.setCancelled(true);
-            if (isCrop) {
-                sendAirVisual(p, b.getLocation());
-            } else {
+        if (isOre) {
+            if (cooldownService.isCooling(p.getUniqueId(), key)) {
+                e.setCancelled(true);
                 sendStoneVisual(p, b.getLocation());
             }
+        } else if (isCrop && cooldownService.isCooling(key)) {
+            e.setCancelled(true);
+            sendAirVisual(p, b.getLocation());
         }
     }
 
@@ -218,13 +275,14 @@ public class HarvestService {
             return;
         }
         BlockKey key = BlockKey.of(b);
-        if (cooldownService.isCooling(key)) {
-            e.setCancelled(true);
-            if (isCrop) {
-                sendAirVisual(p, b.getLocation());
-            } else {
+        if (isOre) {
+            if (cooldownService.isCooling(p.getUniqueId(), key)) {
+                e.setCancelled(true);
                 sendStoneVisual(p, b.getLocation());
             }
+        } else if (isCrop && cooldownService.isCooling(key)) {
+            e.setCancelled(true);
+            sendAirVisual(p, b.getLocation());
         }
     }
 

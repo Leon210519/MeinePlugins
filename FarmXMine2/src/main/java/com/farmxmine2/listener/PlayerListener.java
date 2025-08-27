@@ -35,6 +35,7 @@ public class PlayerListener implements Listener {
         Player p = event.getPlayer();
         storage.save(p.getUniqueId(), levelService.getStats(p.getUniqueId()));
         levelService.remove(p.getUniqueId());
+        cooldownService.clear(p.getUniqueId());
     }
 
     @EventHandler
