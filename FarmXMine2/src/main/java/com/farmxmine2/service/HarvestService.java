@@ -111,6 +111,29 @@ public class HarvestService {
             return;
         }
 
+        // determine drops before starting cooldown
+        Collection<ItemStack> drops;
+        if (isOre) {
+            boolean hasPickaxe = Materials.hasPickaxe(tool);
+            boolean mineable = Materials.isMineableByPickaxe(mat);
+            boolean correctTool = hasPickaxe && mineable;
+            drops = correctTool ? b.getDrops(tool, p) : Collections.emptyList();
+        } else {
+            drops = mainProduceOnly(b, tool, p);
+        }
+        if (drops.isEmpty()) {
+            String msg = plugin.color(plugin.getMessages().getString("invalid-harvest", "&cYour tool cannot harvest this block."));
+            p.sendMessage(msg);
+            e.setCancelled(true);
+            e.setDropItems(false);
+            e.setExpToDrop(0);
+            inflightSet.remove(key);
+            if (inflightSet.isEmpty()) {
+                inflight.remove(id);
+            }
+            return;
+        }
+
         try {
             // cancel vanilla break and start cooldown
             e.setCancelled(true);
@@ -125,25 +148,13 @@ public class HarvestService {
                 sendStoneVisual(p, loc);
             }
 
-            // compute drops independent of visuals
-            Collection<ItemStack> drops;
-            if (isOre) {
-                boolean hasPickaxe = Materials.hasPickaxe(tool);
-                boolean mineable = Materials.isMineableByPickaxe(mat);
-                boolean correctTool = hasPickaxe && mineable;
-                drops = correctTool ? b.getDrops(tool, p) : java.util.Collections.emptyList();
-            } else {
-                drops = mainProduceOnly(b, tool, p);
-            }
-
-            if (!drops.isEmpty()) {
-                ItemUtil.giveAll(p, drops);
-            }
+            // drops already determined before cooldown
+            ItemUtil.giveAll(p, drops);
 
             // add XP only on success
-            if (isOre && !drops.isEmpty()) {
+            if (isOre) {
                 levelService.addXp(p, TrackType.MINE);
-            } else if (isCrop && !drops.isEmpty()) {
+            } else if (isCrop) {
                 levelService.addXp(p, TrackType.FARM);
             }
 
