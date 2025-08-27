@@ -89,10 +89,7 @@ public class SiCommand implements CommandExecutor {
                 TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(tid, tsec);
                 if (tmpl != null) {
                     ItemStack give = tmpl.stack().clone();
-                    Integer cmdVal = tmpl.customModelData();
-                    if (cmdVal != null) {
-                        ItemUtil.forceSetCustomModelData(give, cmdVal);
-                    }
+                    ItemUtil.forceSetCustomModelData(give, tmpl.customModelData());
                     ItemUtil.normalizeCustomModelData(give);
                     target.getInventory().addItem(give);
                 }
