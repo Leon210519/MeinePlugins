@@ -78,11 +78,34 @@ public class PetService {
                 } else {
                     for (String pid : sec.getConfigurationSection("owned").getKeys(false)) {
                         ConfigurationSection ps = sec.getConfigurationSection("owned." + pid);
-                        if (ps != null && !ps.isInt("xp")) {
-                            ps.set("xp", 0);
-                            changed = true;
+                        if (ps != null) {
+                            if (!ps.isInt("xp")) {
+                                ps.set("xp", 0);
+                                changed = true;
+                            }
+                            if (!ps.isSet("suffix")) {
+                                ps.set("suffix", null);
+                                changed = true;
+                            }
                         }
                     }
+                }
+                if (!sec.isInt("shards")) {
+                    sec.set("shards", 0);
+                    changed = true;
+                }
+                if (!sec.isInt("rename_tokens")) {
+                    sec.set("rename_tokens", 0);
+                    changed = true;
+                }
+                ConfigurationSection cos = sec.getConfigurationSection("cosmetics");
+                if (cos == null) {
+                    cos = sec.createSection("cosmetics");
+                    changed = true;
+                }
+                if (!cos.isSet("album_frame_style")) {
+                    cos.set("album_frame_style", null);
+                    changed = true;
                 }
                 List<String> act = sec.getStringList("active");
                 if (act == null) {
@@ -111,6 +134,10 @@ public class PetService {
             ConfigurationSection section = players.createSection(uuid.toString());
             section.createSection("owned");
             section.set("active", new ArrayList<>());
+            section.set("shards", 0);
+            section.set("rename_tokens", 0);
+            ConfigurationSection cos = section.createSection("cosmetics");
+            cos.set("album_frame_style", null);
             save();
         }
     }
@@ -131,7 +158,8 @@ public class PetService {
             int stars = ps.getInt("stars", 0);
             int progress = ps.getInt("evolve_progress", 0);
             int xp = ps.getInt("xp", 0);
-            map.put(id, new OwnedPetState(rarity, level, stars, progress, xp));
+            String suffix = ps.getString("suffix", null);
+            map.put(id, new OwnedPetState(rarity, level, stars, progress, xp, suffix));
         }
         return Collections.unmodifiableMap(map);
     }
@@ -151,6 +179,7 @@ public class PetService {
         ps.set("stars", 0);
         ps.set("evolve_progress", 0);
         ps.set("xp", 0);
+        ps.set("suffix", null);
         save();
         return true;
     }
@@ -180,7 +209,7 @@ public class PetService {
         if (starUp) {
             notifyChange(uuid);
         }
-        OwnedPetState state = new OwnedPetState(sec.getString("rarity", null), sec.getInt("level", 0), stars, progress, sec.getInt("xp", 0));
+        OwnedPetState state = new OwnedPetState(sec.getString("rarity", null), sec.getInt("level", 0), stars, progress, sec.getInt("xp", 0), sec.getString("suffix", null));
         return new EvolveResult(state, starUp, capped);
     }
 
@@ -309,6 +338,143 @@ public class PetService {
         save();
         notifyChange(uuid);
         return true;
+    }
+
+    public boolean addXp(UUID uuid, String petId, int amount, int xpPerLevel, int baseCap, int extraPerStar) {
+        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
+        if (ps == null) {
+            return false;
+        }
+        int xp = ps.getInt("xp", 0) + Math.max(0, amount);
+        int level = ps.getInt("level", 0);
+        int stars = ps.getInt("stars", 0);
+        int cap = baseCap + extraPerStar * stars;
+        boolean levelChanged = false;
+        if (xp >= xpPerLevel && level < cap) {
+            int gained = xp / xpPerLevel;
+            xp = xp % xpPerLevel;
+            level += gained;
+            if (level > cap) {
+                level = cap;
+                xp = 0;
+            }
+            levelChanged = true;
+        }
+        ps.set("xp", xp);
+        ps.set("level", level);
+        save();
+        if (levelChanged) {
+            notifyChange(uuid);
+        }
+        return true;
+    }
+
+    public int getShards(UUID uuid) {
+        ensurePlayerNode(uuid);
+        return config.getInt("players." + uuid + ".shards", 0);
+    }
+
+    public void addShards(UUID uuid, int amount) {
+        ensurePlayerNode(uuid);
+        int cur = getShards(uuid);
+        config.set("players." + uuid + ".shards", Math.max(0, cur + amount));
+        save();
+    }
+
+    public boolean spendShards(UUID uuid, int amount) {
+        ensurePlayerNode(uuid);
+        int cur = getShards(uuid);
+        if (cur < amount) {
+            return false;
+        }
+        config.set("players." + uuid + ".shards", cur - amount);
+        save();
+        return true;
+    }
+
+    public int getRenameTokens(UUID uuid) {
+        ensurePlayerNode(uuid);
+        return config.getInt("players." + uuid + ".rename_tokens", 0);
+    }
+
+    public void addRenameTokens(UUID uuid, int amount) {
+        ensurePlayerNode(uuid);
+        int cur = getRenameTokens(uuid);
+        config.set("players." + uuid + ".rename_tokens", Math.max(0, cur + amount));
+        save();
+    }
+
+    public boolean consumeRenameToken(UUID uuid) {
+        ensurePlayerNode(uuid);
+        int cur = getRenameTokens(uuid);
+        if (cur <= 0) {
+            return false;
+        }
+        config.set("players." + uuid + ".rename_tokens", cur - 1);
+        save();
+        return true;
+    }
+
+    public String getAlbumFrameStyle(UUID uuid) {
+        ensurePlayerNode(uuid);
+        ConfigurationSection cos = config.getConfigurationSection("players." + uuid + ".cosmetics");
+        return cos != null ? cos.getString("album_frame_style", null) : null;
+    }
+
+    public void setAlbumFrameStyle(UUID uuid, String style) {
+        ensurePlayerNode(uuid);
+        ConfigurationSection cos = config.getConfigurationSection("players." + uuid + ".cosmetics");
+        if (cos == null) {
+            cos = config.createSection("players." + uuid + ".cosmetics");
+        }
+        cos.set("album_frame_style", style);
+        save();
+    }
+
+    public String getSuffix(UUID uuid, String petId) {
+        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
+        if (ps == null) {
+            return null;
+        }
+        return ps.getString("suffix", null);
+    }
+
+    public void setSuffix(UUID uuid, String petId, String suffix) {
+        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
+        if (ps == null) {
+            return;
+        }
+        ps.set("suffix", suffix);
+        save();
+    }
+
+    public int getDailyBuys(UUID uuid, String today, String itemId) {
+        ensurePlayerNode(uuid);
+        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".limits_daily");
+        if (sec == null || !today.equals(sec.getString("date"))) {
+            return 0;
+        }
+        ConfigurationSection buys = sec.getConfigurationSection("buys");
+        if (buys == null) {
+            return 0;
+        }
+        return buys.getInt(itemId, 0);
+    }
+
+    public void incrementDailyBuys(UUID uuid, String today, String itemId) {
+        ensurePlayerNode(uuid);
+        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".limits_daily");
+        if (sec == null) {
+            sec = config.createSection("players." + uuid + ".limits_daily");
+        }
+        if (!today.equals(sec.getString("date"))) {
+            sec.set("date", today);
+            sec.createSection("buys");
+        }
+        ConfigurationSection buys = sec.getConfigurationSection("buys");
+        int cur = buys.getInt(itemId, 0);
+        buys.set(itemId, cur + 1);
+        save();
     }
 
     public void reset(UUID uuid) {

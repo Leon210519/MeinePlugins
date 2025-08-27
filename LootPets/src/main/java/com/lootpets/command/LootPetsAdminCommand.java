@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Locale;
+import java.util.Arrays;
 
 public class LootPetsAdminCommand implements CommandExecutor {
 
@@ -52,6 +53,10 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "calc" -> handleCalc(sender, args);
             case "preview" -> handlePreview(sender, args);
             case "reload" -> handleReload(sender);
+            case "shards" -> handleShards(sender, args);
+            case "renametoken" -> handleRenameToken(sender, args);
+            case "suffix" -> handleSuffix(sender, args);
+            case "clearsuffix" -> handleClearSuffix(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -186,6 +191,124 @@ public class LootPetsAdminCommand implements CommandExecutor {
         }
         petService.setStars(target.getUniqueId(), petId, stars);
         sender.sendMessage(Colors.color(plugin.getLang().getString("setstars-updated").replace("%pet%", petId).replace("%stars%", String.valueOf(stars))));
+    }
+
+    private void handleShards(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        switch (args[2].toLowerCase()) {
+            case "show" -> {
+                int amt = petService.getShards(target.getUniqueId());
+                sender.sendMessage(Colors.color(plugin.getLang().getString("shard-balance").replace("%amount%", String.valueOf(amt))));
+            }
+            case "add", "set" -> {
+                if (args.length < 4) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+                    return;
+                }
+                int amount;
+                try {
+                    amount = Integer.parseInt(args[3]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+                    return;
+                }
+                amount = Math.max(0, amount);
+                if (args[2].equalsIgnoreCase("add")) {
+                    petService.addShards(target.getUniqueId(), amount);
+                } else {
+                    int cur = petService.getShards(target.getUniqueId());
+                    petService.addShards(target.getUniqueId(), amount - cur);
+                }
+                int amt = petService.getShards(target.getUniqueId());
+                sender.sendMessage(Colors.color(plugin.getLang().getString("shard-balance").replace("%amount%", String.valueOf(amt))));
+            }
+            default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+        }
+    }
+
+    private void handleRenameToken(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        int amount;
+        try {
+            amount = Integer.parseInt(args[3]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        amount = Math.max(0, amount);
+        if (args[2].equalsIgnoreCase("add")) {
+            petService.addRenameTokens(target.getUniqueId(), amount);
+        } else if (args[2].equalsIgnoreCase("set")) {
+            int cur = petService.getRenameTokens(target.getUniqueId());
+            petService.addRenameTokens(target.getUniqueId(), amount - cur);
+        } else {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        sender.sendMessage(Colors.color("Tokens: " + petService.getRenameTokens(target.getUniqueId())));
+    }
+
+    private void handleSuffix(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        String petId = args[2];
+        if (!petService.getOwnedPets(target.getUniqueId()).containsKey(petId)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
+            return;
+        }
+        String suffix = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+        if (plugin.getConfig().getBoolean("shards.cosmetics.disallowed_colors_in_suffix", true)) {
+            suffix = suffix.replaceAll("(?i)&[0-9A-FK-OR]", "");
+        }
+        int max = plugin.getConfig().getInt("shards.cosmetics.max_suffix_length", 16);
+        if (suffix.length() > max) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("rename-invalid-length").replace("%max%", String.valueOf(max))));
+            return;
+        }
+        petService.setSuffix(target.getUniqueId(), petId, suffix);
+        sender.sendMessage(Colors.color(plugin.getLang().getString("rename-success")));
+    }
+
+    private void handleClearSuffix(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        String petId = args[2];
+        if (!petService.getOwnedPets(target.getUniqueId()).containsKey(petId)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
+            return;
+        }
+        petService.setSuffix(target.getUniqueId(), petId, null);
+        sender.sendMessage(Colors.color(plugin.getLang().getString("rename-cleared")));
     }
 
     private void handleReload(CommandSender sender) {

@@ -75,7 +75,7 @@ public class PetsGUI implements Listener {
                     if (def == null && missingWarned.add(id)) {
                         DebugLogger.debug(plugin, "gui", "Missing pet definition for id " + id);
                     }
-                    inv.setItem(index, petIcon(def, st, true));
+                    inv.setItem(index, petIcon(player, def, st, true));
                 } else {
                     inv.setItem(index, empty);
                 }
@@ -170,7 +170,7 @@ public class PetsGUI implements Listener {
                 DebugLogger.debug(plugin, "gui", "Missing pet definition for id " + id);
             }
             int slot = start + placed;
-            inv.setItem(slot, petIcon(def, st, false));
+            inv.setItem(slot, petIcon(player, def, st, false));
             state.ownedSlots.put(slot, id);
             placed++;
         }
@@ -190,6 +190,7 @@ public class PetsGUI implements Listener {
         int typeSlot = 48;
         int compareSlot = 49;
         int albumSlot = 50;
+        int shopSlot = 51;
         if (sortingEnabled) {
             String mode = state.sortIndex >= 0 && state.sortIndex < cfg.getStringList("gui.sorting.modes").size()
                     ? cfg.getStringList("gui.sorting.modes").get(state.sortIndex)
@@ -212,6 +213,10 @@ public class PetsGUI implements Listener {
         }
         if (cfg.getBoolean("album.open_from_pets_gui", true) && cfg.getBoolean("gui.features.album_enabled", true)) {
             inv.setItem(albumSlot, item(Material.CHEST, Colors.color(lang.getString("album-button"))));
+        }
+        if (plugin.getConfig().getBoolean("shards.shop.gui.open_from_pets_gui", true)
+                && plugin.getConfig().getBoolean("shards.shop.enabled", true)) {
+            inv.setItem(shopSlot, item(Material.EMERALD, Colors.color(lang.getString("shop-button"))));
         }
 
         return inv;
@@ -288,6 +293,10 @@ public class PetsGUI implements Listener {
             plugin.getAlbumGUI().open(player);
             return;
         }
+        if (slot == shopSlot && plugin.getShardShopGUI() != null) {
+            plugin.getShardShopGUI().open(player);
+            return;
+        }
 
         List<Integer> active = cfg.getIntegerList("gui.active-slot-indices");
         int limit = slotService.getMaxSlots(player);
@@ -311,6 +320,10 @@ public class PetsGUI implements Listener {
         }
         String petId = state.ownedSlots.get(slot);
         if (petId != null) {
+            if (plugin.getShardShopGUI() != null && plugin.getShardShopGUI().handlePetSelect(player, petId)) {
+                player.openInventory(build(player));
+                return;
+            }
             boolean openKey = cfg.getString("gui.compare.open_key", "SHIFT_LEFT_CLICK").equalsIgnoreCase("SHIFT_LEFT_CLICK")
                     && event.isShiftClick() && event.isLeftClick();
             if (openKey && cfg.getBoolean("gui.features.compare_enabled", true)) {
@@ -348,7 +361,7 @@ public class PetsGUI implements Listener {
         }
     }
 
-    private ItemStack petIcon(PetDefinition def, OwnedPetState state, boolean active) {
+    private ItemStack petIcon(Player player, PetDefinition def, OwnedPetState state, boolean active) {
         Material material = def == null ? Material.BARRIER : def.iconMaterial();
         ItemStack icon = new ItemStack(material);
         ItemMeta meta = icon.getItemMeta();
@@ -366,6 +379,13 @@ public class PetsGUI implements Listener {
                 }
             } else {
                 name = Colors.color(name);
+            }
+            if (state.suffix() != null && !state.suffix().isEmpty()) {
+                name = name + " " + state.suffix();
+            }
+            String frame = petService.getAlbumFrameStyle(player.getUniqueId());
+            if (frame != null) {
+                name = "[Frame: " + frame + "] " + name;
             }
             meta.setDisplayName(name);
             List<String> lore = new ArrayList<>();

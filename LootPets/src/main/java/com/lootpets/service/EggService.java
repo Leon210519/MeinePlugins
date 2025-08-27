@@ -2,10 +2,12 @@ package com.lootpets.service;
 
 import com.lootpets.LootPetsPlugin;
 import com.lootpets.model.PetDefinition;
+import com.lootpets.model.OwnedPetState;
 import com.lootpets.util.Colors;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import java.util.Map;
 
 public class EggService {
 
@@ -34,6 +36,20 @@ public class EggService {
             }
             playSound(player, plugin.getConfig().getString("eggs.sfx.unlocked"));
             sendMessage(player, plugin.getLang().getString("egg-unlocked").replace("%pet%", def.displayName()));
+            return;
+        }
+        Map<String, OwnedPetState> owned = petService.getOwnedPets(player.getUniqueId());
+        OwnedPetState state = owned.get(petId);
+        int maxStars = plugin.getConfig().getInt("boosts.max_stars", 5);
+        if (state != null && state.stars() >= maxStars && plugin.getConfig().getBoolean("shards.enabled", true) && plugin.getConfig().getBoolean("shards.overflow.convert_when_max_stars", true)) {
+            int amount = plugin.getConfig().getInt("shards.overflow.amounts_per_rarity." + rarityId,
+                    plugin.getConfig().getInt("shards.overflow.default_amount", 1));
+            petService.addShards(player.getUniqueId(), amount);
+            if (consumeItem && hand != null) {
+                consume(player, hand);
+            }
+            playSound(player, plugin.getConfig().getString("eggs.sfx.duplicate"));
+            sendMessage(player, plugin.getLang().getString("shard-gain").replace("%amount%", String.valueOf(amount)));
             return;
         }
         PetService.EvolveResult result = petService.incrementEvolve(player.getUniqueId(), petId);

@@ -2,6 +2,7 @@ package com.lootpets.gui;
 
 import com.lootpets.LootPetsPlugin;
 import com.lootpets.model.PetDefinition;
+import com.lootpets.model.OwnedPetState;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.util.Colors;
@@ -50,6 +51,8 @@ public class AlbumGUI implements Listener {
         int end = cfg.getInt("gui.owned-range.end");
         int capacity = Math.max(0, end - start + 1);
         int placed = 0;
+        Map<String, OwnedPetState> owned = petService.getOwnedPets(player.getUniqueId());
+        String frame = petService.getAlbumFrameStyle(player.getUniqueId());
         for (Map.Entry<String, PetDefinition> entry : all.entrySet()) {
             if (placed >= capacity) {
                 if (!overflowWarned) {
@@ -61,14 +64,22 @@ public class AlbumGUI implements Listener {
             String id = entry.getKey();
             PetDefinition def = entry.getValue();
             ItemStack icon;
-            if (petService.getOwnedPets(player.getUniqueId()).containsKey(id)) {
+            OwnedPetState st = owned.get(id);
+            if (st != null) {
                 icon = new ItemStack(def.iconMaterial());
                 ItemMeta meta = icon.getItemMeta();
                 if (meta != null) {
                     if (def.iconCustomModelData() != null) {
                         meta.setCustomModelData(def.iconCustomModelData());
                     }
-                    meta.setDisplayName(Colors.color(def.displayName()));
+                    String name = def.displayName();
+                    if (st.suffix() != null && !st.suffix().isEmpty()) {
+                        name = name + " " + st.suffix();
+                    }
+                    if (frame != null) {
+                        name = "[Frame: " + frame + "] " + name;
+                    }
+                    meta.setDisplayName(Colors.color(name));
                     icon.setItemMeta(meta);
                 }
             } else {
