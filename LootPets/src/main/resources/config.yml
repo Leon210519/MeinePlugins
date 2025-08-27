@@ -112,3 +112,40 @@ reload:
 logging:
   verbosity: "INFO"
   debug_categories: [ "papi", "boosts", "eggs", "gui" ]
+
+shards:
+  enabled: true
+  overflow:
+    convert_when_max_stars: true
+    amounts_per_rarity: {}
+    default_amount: 1
+  shop:
+    enabled: true
+    gui:
+      title: "&d&lShard Shop"
+      rows: 6
+      open_from_pets_gui: true
+    items:
+      - id: "add_evolve_1"
+        type: "EVOLVE_PROGRESS"
+        cost: 3
+      - id: "add_xp_10"
+        type: "ADD_XP"
+        xp_amount: 10
+        cost: 2
+      - id: "rename_token"
+        type: "RENAME_TOKEN"
+        cost: 10
+      - id: "frame_style_red"
+        type: "ALBUM_FRAME"
+        style: "RED"
+        cost: 5
+  cosmetics:
+    allow_custom_suffix: true
+    max_suffix_length: 16
+    disallowed_colors_in_suffix: true
+  limits:
+    max_evolve_buys_per_day: 5
+    max_xp_buys_per_day: 20
+  safety:
+    shop_click_cooldown_millis: 250

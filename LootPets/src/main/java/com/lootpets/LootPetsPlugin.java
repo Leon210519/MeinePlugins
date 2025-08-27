@@ -6,6 +6,7 @@ import com.lootpets.command.PetsCommand;
 import com.lootpets.gui.PetsGUI;
 import com.lootpets.gui.AlbumGUI;
 import com.lootpets.gui.CompareGUI;
+import com.lootpets.gui.ShardShopGUI;
 import com.lootpets.listener.EggListener;
 import com.lootpets.service.BoostService;
 import com.lootpets.service.EggService;
@@ -36,6 +37,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetsGUI petsGUI;
     private AlbumGUI albumGUI;
     private CompareGUI compareGUI;
+    private ShardShopGUI shardShopGUI;
     private EggService eggService;
     private BoostService boostService;
     private PreviewService previewService;
@@ -78,6 +80,9 @@ public class LootPetsPlugin extends JavaPlugin {
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
         albumGUI = new AlbumGUI(this, petRegistry, petService);
         compareGUI = new CompareGUI(this, petRegistry, petService);
+        if (getConfig().getBoolean("shards.enabled", true) && getConfig().getBoolean("shards.shop.enabled", true)) {
+            shardShopGUI = new ShardShopGUI(this, petService);
+        }
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
         Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService));
@@ -86,6 +91,9 @@ public class LootPetsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(petsGUI, this);
         getServer().getPluginManager().registerEvents(albumGUI, this);
         getServer().getPluginManager().registerEvents(compareGUI, this);
+        if (shardShopGUI != null) {
+            getServer().getPluginManager().registerEvents(shardShopGUI, this);
+        }
 
         if (getConfig().getBoolean("placeholders.enabled", true)) {
           if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -124,6 +132,15 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         getLogger().info("Loaded " + petRegistry.size() + " pets from definitions");
         getLogger().info("pets.yml ready");
+        if (getConfig().getBoolean("shards.enabled", true)) {
+            int count = getConfig().getMapList("shards.shop.items").size();
+            getLogger().info("Shards enabled with " + count + " shop items");
+            if (getConfig().getBoolean("shards.overflow.convert_when_max_stars", true)) {
+                getLogger().info("Overflow conversion active (default " + getConfig().getInt("shards.overflow.default_amount", 1) + ")");
+            }
+        } else {
+            getLogger().info("Shards disabled");
+        }
         getLogger().info("BoostService initialized with mode " + getConfig().getString("boosts.stacking_mode") +
                 " and cap " + getConfig().getDouble("caps.global_multiplier_max"));
         getLogger().info("PreviewService initialized with types " + previewService.getShowTypes() +
@@ -196,6 +213,10 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public CompareGUI getCompareGUI() {
         return compareGUI;
+    }
+
+    public ShardShopGUI getShardShopGUI() {
+        return shardShopGUI;
     }
 
     public void reloadEverything() {

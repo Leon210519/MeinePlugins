@@ -5,6 +5,7 @@ public record OwnedPetState(
         int level,
         int stars,
         int evolveProgress,
-        int xp
+        int xp,
+        String suffix
 ) {
 }
