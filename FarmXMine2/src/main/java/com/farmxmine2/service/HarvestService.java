@@ -28,6 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Handles mining and farming harvesting while preventing real-world block changes. */
 public class HarvestService {
+    private static final Map<Material, Material> MAIN_DROPS = Map.of(
+            Material.WHEAT, Material.WHEAT,
+            Material.CARROTS, Material.CARROT,
+            Material.POTATOES, Material.POTATO,
+            Material.BEETROOTS, Material.BEETROOT,
+            Material.NETHER_WART, Material.NETHER_WART
+    );
+
     private final FarmXMine2Plugin plugin;
     private final ConfigService config;
     private final LevelService levelService;
@@ -228,7 +236,7 @@ public class HarvestService {
     }
 
     private Collection<ItemStack> mainProduceOnly(Block block, ItemStack tool, Player player) {
-        Material main = block.getType();
+        Material main = MAIN_DROPS.getOrDefault(block.getType(), block.getType());
         Collection<ItemStack> all = block.getDrops(tool, player);
         if (all.isEmpty()) return all;
         Collection<ItemStack> filtered = new ArrayList<>();
