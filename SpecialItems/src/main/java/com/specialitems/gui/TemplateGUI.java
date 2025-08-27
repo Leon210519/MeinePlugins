@@ -63,7 +63,7 @@ public final class TemplateGUI {
             p.sendMessage(ChatColor.translateAlternateColorCodes('&', Configs.msg.getString("no-permission","&cNo permission.")));
             return;
         }
-        List<TemplateItems.TemplateItem> all = TemplateItems.loadAll();
+        List<TemplateItems.TemplateItem> all = TemplateItems.getAll();
         Keys keys = new Keys(SpecialItemsPlugin.getInstance());
 
         Map<Rarity, List<TemplateItems.TemplateItem>> byRarity = new EnumMap<>(Rarity.class);
