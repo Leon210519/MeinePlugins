@@ -18,6 +18,30 @@ public final class TemplateItems {
 
     private TemplateItems() {}
 
+    private static Class<?> findClass(String... names) throws ClassNotFoundException {
+        for (String name : names) {
+            try {
+                return Class.forName(name);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        throw new ClassNotFoundException(names[0]);
+    }
+
+    private static Class<?> dataComponentsClass() throws ClassNotFoundException {
+        return findClass(
+                "net.minecraft.core.component.DataComponents",
+                "net.minecraft.world.item.component.DataComponents"
+        );
+    }
+
+    private static Class<?> dataComponentTypeClass() throws ClassNotFoundException {
+        return findClass(
+                "net.minecraft.core.component.DataComponentType",
+                "net.minecraft.world.item.component.DataComponentType"
+        );
+    }
+
     private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
     private static List<TemplateItem> ALL = new ArrayList<>();
     private static int NORMALIZED_NON_INT = 0;
@@ -215,11 +239,12 @@ public final class TemplateItems {
             Object nms = asNmsCopy.invoke(null, item);
             // Strip the data-component based field introduced in 1.20+
             try {
-                Class<?> comps = Class.forName("net.minecraft.world.item.component.DataComponents");
+                Class<?> comps = dataComponentsClass();
+                Class<?> typeCls = dataComponentTypeClass();
                 Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
-                var has = nms.getClass().getMethod("has", type.getClass());
+                var has = nms.getClass().getMethod("has", typeCls);
                 if ((Boolean) has.invoke(nms, type)) {
-                    var remove = nms.getClass().getMethod("remove", type.getClass());
+                    var remove = nms.getClass().getMethod("remove", typeCls);
                     remove.invoke(nms, type);
                     var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
                     ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
