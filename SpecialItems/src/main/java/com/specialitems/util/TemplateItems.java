@@ -19,12 +19,20 @@ public final class TemplateItems {
     private TemplateItems() {}
 
     private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
+    private static List<TemplateItem> ALL = new ArrayList<>();
+    private static int SKIPPED_NON_INT = 0;
+    private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         BY_MAT_NAME.clear();
+        BY_RARITY.clear();
+        SKIPPED_NON_INT = 0;
         var sec = Configs.templates.getConfigurationSection("templates");
-        if (sec == null) return list;
+        if (sec == null) {
+            ALL = list;
+            return list;
+        }
         List<String> keys = new ArrayList<>(sec.getKeys(false));
         Collections.sort(keys);
         for (String key : keys) {
@@ -39,8 +47,13 @@ public final class TemplateItems {
                     String k = it.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
                     BY_MAT_NAME.put(k, tmpl);
                 }
+                try {
+                    Rarity r = RarityUtil.get(it, new Keys(SpecialItemsPlugin.getInstance()));
+                    if (r != null) BY_RARITY.computeIfAbsent(r, k -> new ArrayList<>()).add(tmpl);
+                } catch (Throwable ignored) {}
             }
         }
+        ALL = list;
         return list;
     }
 
@@ -134,6 +147,24 @@ public final class TemplateItems {
             if (r == rarity) result.add(t);
         }
         return result;
+    }
+
+    // --- Additional helpers used by other parts of the plugin ---
+
+    public static List<TemplateItem> getAll() {
+        return new ArrayList<>(ALL);
+    }
+
+    public static int loadedCount() {
+        return ALL.size();
+    }
+
+    public static int skippedNonIntCount() {
+        return SKIPPED_NON_INT;
+    }
+
+    public static Map<Rarity, List<TemplateItem>> byRarity() {
+        return BY_RARITY;
     }
 
     /**
