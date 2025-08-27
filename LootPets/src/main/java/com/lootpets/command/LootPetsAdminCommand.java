@@ -32,6 +32,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
         switch (args[0].toLowerCase()) {
             case "give" -> handleGive(sender, args);
             case "reset" -> handleReset(sender, args);
+            case "simulateegg" -> handleSimulateEgg(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -53,7 +54,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
             return;
         }
-        petService.addOwnedPet(target.getUniqueId(), petId);
+        petService.addOwnedPet(target.getUniqueId(), petId, null);
         String sMsg = plugin.getLang().getString("pet-given-sender");
         String tMsg = plugin.getLang().getString("pet-given-target");
         sender.sendMessage(Colors.color(sMsg).replace("%player%", target.getName()).replace("%pet%", def.displayName()));
@@ -76,4 +77,30 @@ public class LootPetsAdminCommand implements CommandExecutor {
         sender.sendMessage(Colors.color(sMsg).replace("%player%", target.getName()));
         target.sendMessage(Colors.color(tMsg));
     }
+
+    private void handleSimulateEgg(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        String petId = args[2];
+        String rarityId = args[3];
+        PetDefinition def = petRegistry.byId(petId);
+        if (def == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
+            return;
+        }
+        if (!plugin.getRarityRegistry().getRarities().containsKey(rarityId)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-rarity")));
+            return;
+        }
+        plugin.getEggService().redeem(target, petId, rarityId, false, null);
+        sender.sendMessage(Colors.color(plugin.getLang().getString("egg-simulated").replace("%player%", target.getName())));
+    }
 }
+

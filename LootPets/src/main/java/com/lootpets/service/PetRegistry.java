@@ -7,11 +7,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Collection;
 
 public class PetRegistry {
 
@@ -32,6 +32,10 @@ public class PetRegistry {
             for (String id : petsSec.getKeys(false)) {
                 ConfigurationSection sec = petsSec.getConfigurationSection(id);
                 if (sec == null) {
+                    continue;
+                }
+                if (map.containsKey(id)) {
+                    plugin.getLogger().warning("Duplicate pet id " + id);
                     continue;
                 }
                 String displayName = sec.getString("display_name", id);
@@ -86,3 +90,4 @@ public class PetRegistry {
         return pets.size();
     }
 }
+
