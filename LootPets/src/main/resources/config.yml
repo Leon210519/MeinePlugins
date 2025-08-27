@@ -149,3 +149,26 @@ shards:
     max_xp_buys_per_day: 20
   safety:
     shop_click_cooldown_millis: 250
+
+rules:
+  equip_worlds_allow: []
+  equip_worlds_deny: []
+  leveling_worlds_allow: []
+  leveling_worlds_deny: []
+  boost_apply_worlds_allow: []
+  boost_apply_worlds_deny: []
+  disallow_in_spectator: true
+
+auditing:
+  enabled: true
+  sample_rate: 1.0
+  log_dir: "logs"
+  rotate_daily: true
+  include_breakdown: true
+
+backups:
+  enabled: true
+  interval_minutes: 60
+  keep_files: 24
+  file_prefix: "pets-backup-"
+  verify_on_load: true

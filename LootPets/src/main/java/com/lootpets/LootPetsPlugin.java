@@ -17,6 +17,9 @@ import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
 import com.lootpets.service.RarityRegistry;
 import com.lootpets.service.SlotService;
+import com.lootpets.service.RuleService;
+import com.lootpets.service.AuditService;
+import com.lootpets.service.BackupService;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -40,6 +43,9 @@ public class LootPetsPlugin extends JavaPlugin {
     private ShardShopGUI shardShopGUI;
     private EggService eggService;
     private BoostService boostService;
+    private RuleService ruleService;
+    private AuditService auditService;
+    private BackupService backupService;
     private PreviewService previewService;
     private LootPetsExpansion papiExpansion;
     private PermissionTierService permissionTierService;
@@ -58,14 +64,18 @@ public class LootPetsPlugin extends JavaPlugin {
         if (!defsFile.exists()) {
             saveResource("pets_definitions.yml", false);
         }
+        BackupService.verifyOnLoad(this);
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
 
         rarityRegistry = new RarityRegistry(this);
         petRegistry = new PetRegistry(this);
         slotService = new SlotService(this);
         petService = new PetService(this);
+        ruleService = new RuleService(this);
+        auditService = new AuditService(this);
         eggService = new EggService(this, petService, petRegistry, rarityRegistry);
-        boostService = new BoostService(this, petService, petRegistry, rarityRegistry);
+        boostService = new BoostService(this, petService, petRegistry, rarityRegistry, ruleService, auditService);
+        backupService = new BackupService(this, petService);
         previewService = new PreviewService(this, petRegistry, rarityRegistry);
         petService.addChangeListener(uuid -> {
             boostService.invalidate(uuid);
@@ -85,7 +95,7 @@ public class LootPetsPlugin extends JavaPlugin {
         }
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
-        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService));
+        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService, auditService, backupService, ruleService));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
@@ -122,7 +132,11 @@ public class LootPetsPlugin extends JavaPlugin {
             int xpPerLevel = getConfig().getInt("leveling_runtime.xp_per_level", 60);
             int baseCap = getConfig().getInt("leveling_runtime.level_cap_base", 100);
             int extraCap = getConfig().getInt("leveling_runtime.level_cap_extra_per_star", 50);
-            getServer().getOnlinePlayers().forEach(p -> petService.addXpToActivePets(p.getUniqueId(), xpPerTick, xpPerLevel, baseCap, extraCap));
+            getServer().getOnlinePlayers().forEach(p -> {
+                if (ruleService.canLevel(p)) {
+                    petService.addXpToActivePets(p.getUniqueId(), xpPerTick, xpPerLevel, baseCap, extraCap);
+                }
+            });
         }, interval * 20L, interval * 20L);
 
         if (rarityRegistry.isFallback()) {
@@ -168,6 +182,12 @@ public class LootPetsPlugin extends JavaPlugin {
         if (permissionTierService != null) {
             permissionTierService.stop();
         }
+        if (auditService != null) {
+            auditService.shutdown();
+        }
+        if (backupService != null) {
+            backupService.shutdown();
+        }
         LootPetsAPI.shutdown();
     }
 
@@ -199,6 +219,18 @@ public class LootPetsPlugin extends JavaPlugin {
         return boostService;
     }
 
+    public RuleService getRuleService() {
+        return ruleService;
+    }
+
+    public AuditService getAuditService() {
+        return auditService;
+    }
+
+    public BackupService getBackupService() {
+        return backupService;
+    }
+
     public PreviewService getPreviewService() {
         return previewService;
     }
@@ -224,6 +256,9 @@ public class LootPetsPlugin extends JavaPlugin {
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
         rarityRegistry = new RarityRegistry(this);
         petRegistry.reload();
+        ruleService.reload();
+        auditService.reload();
+        backupService.reload();
         boostService.clearAll();
         previewService = new PreviewService(this, petRegistry, rarityRegistry);
         previewService.clearAll();

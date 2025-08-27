@@ -308,6 +308,10 @@ public class PetsGUI implements Listener {
         }
         int activeIndex = active.indexOf(slot);
         if (activeIndex >= 0) {
+            if (!plugin.getRuleService().canEquip(player)) {
+                player.sendMessage(Colors.color(lang.getString("rule-equip-denied")));
+                return;
+            }
             List<String> activeIds = petService.getActivePetIds(player.getUniqueId(), Math.min(limit, active.size()));
             if (activeIndex < activeIds.size()) {
                 String petId = activeIds.get(activeIndex);
@@ -338,6 +342,10 @@ public class PetsGUI implements Listener {
                 }
                 DebugLogger.debug(plugin, "gui", player.getName() + " compare " + state.compare);
                 player.openInventory(build(player));
+                return;
+            }
+            if (!plugin.getRuleService().canEquip(player)) {
+                player.sendMessage(Colors.color(lang.getString("rule-equip-denied")));
                 return;
             }
             List<String> activeIds = petService.getActivePetIds(player.getUniqueId(), Math.min(limit, active.size()));

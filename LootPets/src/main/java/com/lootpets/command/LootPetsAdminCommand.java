@@ -9,6 +9,9 @@ import com.lootpets.service.BoostService;
 import com.lootpets.service.PreviewService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
+import com.lootpets.service.AuditService;
+import com.lootpets.service.BackupService;
+import com.lootpets.service.RuleService;
 import com.lootpets.util.Colors;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -29,13 +32,22 @@ public class LootPetsAdminCommand implements CommandExecutor {
     private final PetRegistry petRegistry;
     private final BoostService boostService;
     private final PreviewService previewService;
+    private final AuditService auditService;
+    private final BackupService backupService;
+    private final RuleService ruleService;
 
-    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry, BoostService boostService, PreviewService previewService) {
+    public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry,
+                                BoostService boostService, PreviewService previewService,
+                                AuditService auditService, BackupService backupService,
+                                RuleService ruleService) {
         this.plugin = plugin;
         this.petService = petService;
         this.petRegistry = petRegistry;
         this.boostService = boostService;
         this.previewService = previewService;
+        this.auditService = auditService;
+        this.backupService = backupService;
+        this.ruleService = ruleService;
     }
 
     @Override
@@ -57,6 +69,9 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "renametoken" -> handleRenameToken(sender, args);
             case "suffix" -> handleSuffix(sender, args);
             case "clearsuffix" -> handleClearSuffix(sender, args);
+            case "audit" -> handleAudit(sender, args);
+            case "backup" -> handleBackup(sender, args);
+            case "rules" -> handleRules(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -309,6 +324,70 @@ public class LootPetsAdminCommand implements CommandExecutor {
         }
         petService.setSuffix(target.getUniqueId(), petId, null);
         sender.sendMessage(Colors.color(plugin.getLang().getString("rename-cleared")));
+    }
+
+    private void handleAudit(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        String mode = args[1].toLowerCase(Locale.ROOT);
+        if (mode.equals("on")) {
+            auditService.setRuntimeEnabled(true);
+        } else if (mode.equals("off")) {
+            auditService.setRuntimeEnabled(false);
+        } else {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        String msg = plugin.getLang().getString("audit-toggled")
+                .replace("%state%", mode);
+        sender.sendMessage(Colors.color(msg));
+    }
+
+    private void handleBackup(CommandSender sender, String[] args) {
+        if (args.length < 2 || !args[1].equalsIgnoreCase("now")) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        String file = backupService.backupNow();
+        String msg = plugin.getLang().getString("backup-created")
+                .replace("%file%", file == null ? "-" : file);
+        sender.sendMessage(Colors.color(msg));
+    }
+
+    private void handleRules(CommandSender sender, String[] args) {
+        if (args.length < 3 || !args[1].equalsIgnoreCase("test")) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[2]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        EarningType type = null;
+        if (args.length >= 4) {
+            Optional<EarningType> opt = EarningType.parse(args[3]);
+            if (opt.isEmpty()) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("calc-unknown-type")));
+                return;
+            }
+            type = opt.get();
+        }
+        String allow = plugin.getLang().getString("rules-allow", "allow");
+        String deny = plugin.getLang().getString("rules-deny", "deny");
+        String equip = ruleService.canEquip(target) ? allow : deny;
+        String level = ruleService.canLevel(target) ? allow : deny;
+        String apply = ruleService.canApply(target) ? allow : deny;
+        String msg = plugin.getLang().getString("rules-test")
+                .replace("%player%", target.getName())
+                .replace("%world%", target.getWorld().getName())
+                .replace("%type%", type == null ? "-" : type.name())
+                .replace("%equip%", equip)
+                .replace("%leveling%", level)
+                .replace("%boost%", apply);
+        sender.sendMessage(Colors.color(msg));
     }
 
     private void handleReload(CommandSender sender) {
