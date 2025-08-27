@@ -1,5 +1,4 @@
 prefix: "&aFarmxMine&7"
 level-up: "&aFarmxMine&7: &f%track%&7 leveled up to &a%level%&7!"
 reloaded: "&aConfig reloaded."
-cooldown: "&cWait &f%seconds%s &cbefore harvesting again."
 wrong-tool: "&cYou need a %tool% to harvest this block."
