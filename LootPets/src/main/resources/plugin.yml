@@ -6,14 +6,14 @@ softdepend:
   - SpecialItems
   - PlaceholderAPI
   - Vault
-commands:
-  pets:
-    description: Open your pets GUI
-    usage: /pets
-  lootpets:
-    description: Admin command for LootPets
-    usage: "/lootpets give <player> <petId> | /lootpets reset <player> | /lootpets simulateegg <player> <petId> <rarityId> | /lootpets setlevel <player> <petId> <level> | /lootpets setstars <player> <petId> <stars> | /lootpets calc <player> <type>"
-    permission: lootpets.admin
+  commands:
+    pets:
+      description: Open your pets GUI
+      usage: /pets
+    lootpets:
+      description: Admin command for LootPets
+      usage: "/lootpets give <player> <petId> | /lootpets reset <player> | /lootpets simulateegg <player> <petId> <rarityId> | /lootpets setlevel <player> <petId> <level> | /lootpets setstars <player> <petId> <stars> | /lootpets calc <player> <type> | /lootpets preview <petId> <rarityId>"
+      permission: lootpets.admin
 permissions:
   lootpets.admin:
     default: op

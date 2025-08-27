@@ -8,6 +8,7 @@ import com.lootpets.listener.EggListener;
 import com.lootpets.service.BoostService;
 import com.lootpets.service.EggService;
 import com.lootpets.service.LootPetsExpansion;
+import com.lootpets.service.PreviewService;
 import com.lootpets.service.PermissionTierService;
 import com.lootpets.service.PetRegistry;
 import com.lootpets.service.PetService;
@@ -33,6 +34,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private PetsGUI petsGUI;
     private EggService eggService;
     private BoostService boostService;
+    private PreviewService previewService;
     private LootPetsExpansion papiExpansion;
     private PermissionTierService permissionTierService;
     private int levelTask = -1;
@@ -58,6 +60,7 @@ public class LootPetsPlugin extends JavaPlugin {
         petService = new PetService(this);
         eggService = new EggService(this, petService, petRegistry, rarityRegistry);
         boostService = new BoostService(this, petService, petRegistry, rarityRegistry);
+        previewService = new PreviewService(this, petRegistry, rarityRegistry);
         petService.addChangeListener(uuid -> {
             boostService.invalidate(uuid);
             if (papiExpansion != null) {
@@ -71,15 +74,15 @@ public class LootPetsPlugin extends JavaPlugin {
         petsGUI = new PetsGUI(this, slotService, petService, petRegistry);
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
-        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService));
+        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
 
         if (getConfig().getBoolean("placeholders.enabled", true)) {
-            if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-                papiExpansion = new LootPetsExpansion(this);
-                papiExpansion.register();
+          if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+              papiExpansion = new LootPetsExpansion(this, previewService);
+              papiExpansion.register();
             } else {
                 getLogger().info("PAPI not found, placeholders disabled");
             }
@@ -115,6 +118,8 @@ public class LootPetsPlugin extends JavaPlugin {
         getLogger().info("pets.yml ready");
         getLogger().info("BoostService initialized with mode " + getConfig().getString("boosts.stacking_mode") +
                 " and cap " + getConfig().getDouble("caps.global_multiplier_max"));
+        getLogger().info("PreviewService initialized with types " + previewService.getShowTypes() +
+                " and display cap " + getConfig().getDouble("preview.cap_multiplier", 6.0));
     }
 
     @Override
@@ -127,6 +132,9 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         if (boostService != null) {
             boostService.clearAll();
+        }
+        if (previewService != null) {
+            previewService.clearAll();
         }
         if (papiExpansion != null) {
             papiExpansion.unregister();
@@ -164,5 +172,17 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public BoostService getBoostService() {
         return boostService;
+    }
+
+    public PreviewService getPreviewService() {
+        return previewService;
+    }
+
+    @Override
+    public void reloadConfig() {
+        super.reloadConfig();
+        if (previewService != null) {
+            previewService.clearAll();
+        }
     }
 }
