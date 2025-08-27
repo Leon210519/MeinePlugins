@@ -4,12 +4,7 @@ import com.specialitems.bin.Bin;
 import com.specialitems.gui.BinGUI;
 import com.specialitems.gui.TemplateGUI;
 import com.specialitems.util.Configs;
-import com.specialitems.util.TemplateItems;
-import com.specialitems.util.ItemUtil;
-import com.specialitems.SpecialItemsPlugin;
 import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -83,53 +78,9 @@ public class GuiListener implements Listener {
         } else if (raw == 8) { // next
             TemplateGUI.open(p, page + 1);
             return;
-        } else if (raw == 35 || raw == 44 || raw == 53) {
-            return; // decorative navigation column
         }
 
-        // Item click -> give
-        ItemStack clicked = e.getCurrentItem();
-        if (clicked == null || !clicked.hasItemMeta()) return;
-
-        // Template-ID aus dem Slot lesen
-        String templateId = null;
-        try {
-            var meta = clicked.getItemMeta();
-            var pdc = meta.getPersistentDataContainer();
-            var key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_template_id");
-            templateId = pdc.get(key, PersistentDataType.STRING);
-        } catch (Throwable ignored) {}
-
-        if (templateId == null) {
-            p.sendMessage(ChatColor.RED + "No template id bound to this item.");
-            return;
-        }
-
-        // Template neu aufbauen
-        var tsec = Configs.templates.getConfigurationSection("templates." + templateId);
-        if (tsec == null) {
-            p.sendMessage(ChatColor.RED + "Template not found: " + templateId);
-            return;
-        }
-        TemplateItems.TemplateItem tmpl = TemplateItems.buildFrom(templateId, tsec);
-        if (tmpl == null) {
-            p.sendMessage(ChatColor.RED + "Failed to build template: " + templateId);
-            return;
-        }
-
-        // CMD auf beiden Pfaden (Component + Legacy) erzwingen
-        Integer cmd = tmpl.customModelData();
-        if (cmd == null && tmpl.stack().hasItemMeta() && tmpl.stack().getItemMeta().hasCustomModelData()) {
-            cmd = tmpl.stack().getItemMeta().getCustomModelData();
-        }
-        if (cmd == null) cmd = 0; // not expected, aber schützen
-
-        ItemStack give = ItemUtil.forceSetCustomModelDataBoth(tmpl.stack(), cmd);
-
-        // letzte Sicherheit: TemplateMeta anwenden (räumt Altlasten)
-        TemplateItems.applyTemplateMeta(give);
-
-        p.getInventory().addItem(give);
-        p.sendMessage(ChatColor.GREEN + "Given: " + ChatColor.YELLOW + templateId);
+        // Read-only: clicking template entries has no effect
+        return;
     }
 }
