@@ -93,8 +93,10 @@ public class SiCommand implements CommandExecutor {
                     if (give == null) {
                         give = tmpl.stack().clone();
                     }
-                    // Ensure any legacy floating point CMD tags are normalized
-                    TemplateItems.applyTemplateMeta(give);
+                    if (tmpl.customModelData() != null) {
+                        ItemUtil.forceSetCustomModelData(give, tmpl.customModelData());
+                    }
+                    ItemUtil.normalizeCustomModelData(give);
                     target.getInventory().addItem(give);
                 }
                 sender.sendMessage(ChatColor.GREEN + "Gave " + ChatColor.YELLOW + tid + ChatColor.GREEN + " to " + ChatColor.YELLOW + target.getName());
