@@ -1,6 +1,6 @@
 general:
   respawn_seconds: 20
-  main_world: "world"
+  allowed_worlds: ["world"]
   override_cancelled: true
 mining:
   enabled: true

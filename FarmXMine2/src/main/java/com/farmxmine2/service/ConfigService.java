@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 public class ConfigService {
     private final FarmXMine2Plugin plugin;
     private int respawnSeconds;
-    private String mainWorld;
+    /** Allowed world names in lowercase */
+    private Set<String> allowedWorlds;
     private boolean overrideCancelled;
     private boolean miningEnabled;
     private String miningRequireTool;
@@ -35,7 +36,14 @@ public class ConfigService {
         plugin.saveDefaultConfig();
         FileConfiguration cfg = plugin.getConfig();
         respawnSeconds = cfg.getInt("general.respawn_seconds");
-        mainWorld = cfg.getString("general.main_world", "world");
+        allowedWorlds = cfg.getStringList("general.allowed_worlds").stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+        if (allowedWorlds.isEmpty()) {
+            String single = cfg.getString("general.main_world", "world");
+            allowedWorlds = new java.util.HashSet<>();
+            allowedWorlds.add(single.toLowerCase());
+        }
         overrideCancelled = cfg.getBoolean("general.override_cancelled");
         miningEnabled = cfg.getBoolean("mining.enabled");
         miningRequireTool = cfg.getString("mining.require_tool", "PICKAXE");
@@ -66,7 +74,10 @@ public class ConfigService {
     }
 
     public int getRespawnSeconds() { return respawnSeconds; }
-    public String getMainWorld() { return mainWorld; }
+    public Set<String> getAllowedWorlds() { return allowedWorlds; }
+    public boolean isWorldAllowed(String worldName) {
+        return allowedWorlds.contains(worldName.toLowerCase());
+    }
     public boolean isOverrideCancelled() { return overrideCancelled; }
     public boolean isMiningEnabled() { return miningEnabled; }
     public String getMiningRequireTool() { return miningRequireTool; }
