@@ -1,6 +1,5 @@
 package com.specialitems.debug;
 
-import com.specialitems.util.CmdFixer;
 import com.specialitems.util.ItemUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -18,9 +17,12 @@ public final class SiCmdFix implements CommandExecutor {
         ItemStack it = p.getInventory().getItemInMainHand();
         if (it == null || it.getType().isAir()) { p.sendMessage("Hold an item."); return true; }
 
-        CmdFixer.normalize(it);
+        boolean changed = ItemUtil.normalizeCustomModelData(it);
+        if (changed) {
+            p.getInventory().setItemInMainHand(it);
+        }
         Integer val = ItemUtil.getCustomModelData(it);
-        p.sendMessage("CustomModelData: " + (val == null ? "none" : val));
+        p.sendMessage("CustomModelData: " + (val == null ? "none" : val) + (changed ? " (fixed)" : ""));
         return true;
     }
 }

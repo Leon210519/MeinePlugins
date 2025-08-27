@@ -47,7 +47,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
             // Load configs/messages if your Configs helper does that.
             Configs.load(this);
             TemplateItems.loadAll();
-            Log.info("Loaded " + TemplateItems.loadedCount() + " templates; skipped " + TemplateItems.skippedNonIntCount() + " due to invalid CMD.");
+            Log.info("Loaded " + TemplateItems.loadedCount() + " templates; normalized " + TemplateItems.normalizedNonIntCount() + " CMD values.");
             Log.info("Rarities with sets: " + TemplateItems.byRarity().keySet());
         } catch (Throwable t) {
             Log.warn("Configs.load failed: " + t.getMessage());

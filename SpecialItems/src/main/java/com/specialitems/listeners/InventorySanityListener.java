@@ -1,6 +1,6 @@
 package com.specialitems.listeners;
 
-import com.specialitems.util.CmdFixer;
+import com.specialitems.util.ItemUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,20 +14,23 @@ public final class InventorySanityListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e) {
         ItemStack current = e.getCurrentItem();
-        ItemStack normCurrent = CmdFixer.normalize(current);
-        if (normCurrent != current) e.setCurrentItem(normCurrent);
+        if (ItemUtil.normalizeCustomModelData(current)) {
+            e.setCurrentItem(current);
+        }
 
         ItemStack cursor = e.getCursor();
-        ItemStack normCursor = CmdFixer.normalize(cursor);
-        if (normCursor != cursor) e.setCursor(normCursor);
+        if (ItemUtil.normalizeCustomModelData(cursor)) {
+            e.setCursor(cursor);
+        }
     }
 
     @EventHandler
     public void onItemHeld(PlayerItemHeldEvent e) {
         Player p = e.getPlayer();
         ItemStack item = p.getInventory().getItem(e.getNewSlot());
-        ItemStack norm = CmdFixer.normalize(item);
-        if (norm != item) p.getInventory().setItem(e.getNewSlot(), norm);
+        if (ItemUtil.normalizeCustomModelData(item)) {
+            p.getInventory().setItem(e.getNewSlot(), item);
+        }
     }
 }
 
