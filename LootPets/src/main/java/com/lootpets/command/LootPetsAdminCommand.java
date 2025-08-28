@@ -17,6 +17,7 @@ import com.lootpets.service.TraceService;
 import com.lootpets.service.ConfigValidator;
 import com.lootpets.service.ConfigValidator.ValidatorResult;
 import com.lootpets.service.ConfigValidator.Severity;
+import com.lootpets.service.SimulatorService;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
@@ -46,11 +47,12 @@ public class LootPetsAdminCommand implements CommandExecutor {
     private final RuleService ruleService;
     private final DebugService debugService;
     private final TraceService traceService;
+    private final SimulatorService simulatorService;
 
     public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry,
                                 BoostService boostService, PreviewService previewService,
                                 AuditService auditService, BackupService backupService,
-                                RuleService ruleService) {
+                                RuleService ruleService, SimulatorService simulatorService) {
         this.plugin = plugin;
         this.petService = petService;
         this.petRegistry = petRegistry;
@@ -61,6 +63,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
         this.ruleService = ruleService;
         this.debugService = plugin.getDebugService();
         this.traceService = plugin.getTraceService();
+        this.simulatorService = simulatorService;
     }
 
     @Override
@@ -91,6 +94,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "inspect" -> handleInspect(sender, args);
             case "dump" -> handleDump(sender, args);
             case "trace" -> handleTrace(sender, args);
+            case "simulate" -> handleSimulate(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -819,5 +823,381 @@ public class LootPetsAdminCommand implements CommandExecutor {
             }
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
+    }
+
+    // --- simulator commands ---
+    private long lastSimulate = 0L;
+
+    private void handleSimulate(CommandSender sender, String[] args) {
+        if (!plugin.getConfig().getBoolean("simulator.enabled", true)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long throttle = plugin.getConfig().getLong("simulator.safety.throttle_millis", 250L);
+        if (now - lastSimulate < throttle) {
+            return;
+        }
+        lastSimulate = now;
+        if (args.length < 2) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        String sub = args[1].toLowerCase(Locale.ROOT);
+        String[] rest = Arrays.copyOfRange(args, 2, args.length);
+        switch (sub) {
+            case "one" -> simulateOne(sender, rest);
+            case "combo" -> simulateCombo(sender, rest);
+            case "sweep" -> simulateSweep(sender, rest);
+            case "tune" -> simulateTune(sender, rest);
+            case "presets" -> simulatePresets(sender, rest);
+            case "export" -> simulateExport(sender, rest);
+            default -> sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+        }
+    }
+
+    private void simulateOne(CommandSender sender, String[] args) {
+        if (args.length < 4) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        String petId = args[0].trim();
+        String rarityId = args[1].trim().toUpperCase(Locale.ROOT);
+        PetDefinition def = petRegistry.byId(petId);
+        if (def == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-unknown-pet")));
+            return;
+        }
+        if (!plugin.getRarityRegistry().getRarities().containsKey(rarityId)) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-unknown-rarity")));
+            return;
+        }
+        int level;
+        int stars;
+        try {
+            level = Integer.parseInt(args[2]);
+            stars = Integer.parseInt(args[3]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        List<EarningType> types = new ArrayList<>();
+        if (args.length >= 5) {
+            EarningType.parse(args[4]).ifPresent(types::add);
+        } else {
+            for (String t : plugin.getConfig().getStringList("simulator.default_types")) {
+                EarningType.parse(t).ifPresent(types::add);
+            }
+        }
+        SimulatorService.PetSpec spec = new SimulatorService.PetSpec(petId, rarityId, level, stars);
+        List<String> lines = new ArrayList<>();
+        String header = plugin.getLang().getString("sim-one-header")
+                .replace("%pet%", def.displayName())
+                .replace("%rarity%", rarityId)
+                .replace("%level%", String.valueOf(level))
+                .replace("%stars%", String.valueOf(stars));
+        lines.add(header);
+        for (EarningType t : types) {
+            SimulatorService.ComboResult res = simulatorService.simulateOne(spec, t);
+            double typed = res.contributions().isEmpty() ? 1.0 : res.contributions().get(0).typedFactor().doubleValue();
+            String line = plugin.getLang().getString("sim-one-line")
+                    .replace("%type%", t.weightKey())
+                    .replace("%typed%", fmtRaw(typed))
+                    .replace("%uncapped%", fmtRaw(res.uncapped().doubleValue()))
+                    .replace("%capped%", fmtRaw(res.capped().doubleValue()));
+            lines.add(line);
+            debugService.debug("boosts", "sim one " + petId + " " + rarityId + " L" + level + " S" + stars + " " + t + " -> " + res.capped());
+        }
+        sendLines(sender, lines);
+    }
+
+    private void simulateCombo(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        Optional<EarningType> opt = EarningType.parse(args[0]);
+        if (opt.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        EarningType type = opt.get();
+        int max = plugin.getConfig().getInt("simulator.max_combo_size", 6);
+        List<SimulatorService.PetSpec> specs = new ArrayList<>();
+        for (int i = 1; i < args.length && specs.size() < max; i++) {
+            String[] parts = args[i].split(":");
+            if (parts.length != 4) {
+                continue;
+            }
+            String petId = parts[0];
+            PetDefinition def = petRegistry.byId(petId);
+            if (def == null) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-unknown-pet")));
+                return;
+            }
+            String rarityId = parts[1].toUpperCase(Locale.ROOT);
+            if (!plugin.getRarityRegistry().getRarities().containsKey(rarityId)) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-unknown-rarity")));
+                return;
+            }
+            try {
+                int level = Integer.parseInt(parts[2]);
+                int stars = Integer.parseInt(parts[3]);
+                specs.add(new SimulatorService.PetSpec(petId, rarityId, level, stars));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        SimulatorService.ComboResult res = simulatorService.simulate(specs, type);
+        List<String> lines = new ArrayList<>();
+        lines.add(plugin.getLang().getString("sim-combo-header").replace("%type%", type.weightKey()));
+        for (BoostBreakdown.PetContribution pc : res.contributions()) {
+            lines.add(plugin.getLang().getString("sim-combo-entry")
+                    .replace("%pet%", pc.petId())
+                    .replace("%rarity%", pc.rarityId())
+                    .replace("%level%", String.valueOf(pc.level()))
+                    .replace("%stars%", String.valueOf(pc.stars()))
+                    .replace("%typed%", fmtRaw(pc.typedFactor().doubleValue())));
+        }
+        lines.add(plugin.getLang().getString("sim-combo-result")
+                .replace("%uncapped%", fmtRaw(res.uncapped().doubleValue()))
+                .replace("%capped%", fmtRaw(res.capped().doubleValue())));
+        debugService.debug("boosts", "sim combo size=" + specs.size() + " " + type + " -> " + res.capped());
+        sendLines(sender, lines);
+    }
+
+    private void simulateSweep(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        String petId = args[0];
+        String rarityId = args[1].toUpperCase(Locale.ROOT);
+        Optional<EarningType> opt = EarningType.parse(args[2]);
+        if (opt.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        EarningType type = opt.get();
+        int lFrom = plugin.getConfig().getInt("simulator.sweep.levels.from", 0);
+        int lTo = plugin.getConfig().getInt("simulator.sweep.levels.to", 350);
+        int lStep = plugin.getConfig().getInt("simulator.sweep.levels.step", 10);
+        int sFrom = plugin.getConfig().getInt("simulator.sweep.stars.from", 0);
+        int sTo = plugin.getConfig().getInt("simulator.sweep.stars.to", 5);
+        int sStep = plugin.getConfig().getInt("simulator.sweep.stars.step", 1);
+        boolean csv = false;
+        for (int i = 3; i < args.length; i++) {
+            String a = args[i];
+            if (a.startsWith("levels=")) {
+                String[] p = a.substring(7).split(":");
+                if (p.length == 3) {
+                    lFrom = Integer.parseInt(p[0]);
+                    lTo = Integer.parseInt(p[1]);
+                    lStep = Integer.parseInt(p[2]);
+                }
+            } else if (a.startsWith("stars=")) {
+                String[] p = a.substring(6).split(":");
+                if (p.length == 3) {
+                    sFrom = Integer.parseInt(p[0]);
+                    sTo = Integer.parseInt(p[1]);
+                    sStep = Integer.parseInt(p[2]);
+                }
+            } else if (a.equalsIgnoreCase("csv")) {
+                csv = true;
+            }
+        }
+        int maxPoints = plugin.getConfig().getInt("simulator.sweep.max_points", 2000);
+        List<SimulatorService.SweepPoint> pts = simulatorService.sweep(petId, rarityId, type,
+                lFrom, lTo, lStep, sFrom, sTo, sStep, maxPoints);
+        if (pts.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        List<Double> finals = pts.stream().map(p -> p.capped().doubleValue()).sorted().toList();
+        double min = finals.get(0);
+        double max = finals.get(finals.size() - 1);
+        double median = finals.get(finals.size() / 2);
+        sender.sendMessage(Colors.color(plugin.getLang().getString("sim-sweep-summary")
+                .replace("%type%", type.weightKey())
+                .replace("%min%", fmtRaw(min))
+                .replace("%median%", fmtRaw(median))
+                .replace("%max%", fmtRaw(max))));
+        if (csv) {
+            try {
+                File dir = new File(plugin.getDataFolder(), plugin.getConfig().getString("simulator.output_dir", "diagnostics/sim"));
+                dir.mkdirs();
+                File file = new File(dir, petId + "-" + rarityId + "-" + type.weightKey() + "-" + System.currentTimeMillis() + ".csv");
+                try (FileWriter fw = new FileWriter(file, StandardCharsets.UTF_8)) {
+                    fw.write("level,stars,typed,final_uncapped,final_capped\n");
+                    for (SimulatorService.SweepPoint p : pts) {
+                        fw.write(p.level() + "," + p.stars() + "," + fmtRaw(p.typed().doubleValue()) + "," +
+                                fmtRaw(p.uncapped().doubleValue()) + "," + fmtRaw(p.capped().doubleValue()) + "\n");
+                    }
+                }
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-file-saved")
+                        .replace("%file%", file.getName())));
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void simulateTune(CommandSender sender, String[] args) {
+        if (args.length < 1) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        String mode = args[0].toLowerCase(Locale.ROOT);
+        if (mode.equals("perlevel")) {
+            if (args.length < 5) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            String petId = args[1];
+            String rarityId = args[2].toUpperCase(Locale.ROOT);
+            Optional<EarningType> opt = EarningType.parse(args[3]);
+            if (opt.isEmpty()) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            double target;
+            try {
+                target = Double.parseDouble(args[4]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            int level = 0;
+            int stars = 0;
+            for (int i = 5; i < args.length; i++) {
+                if (args[i].startsWith("level=")) level = Integer.parseInt(args[i].substring(6));
+                if (args[i].startsWith("stars=")) stars = Integer.parseInt(args[i].substring(6));
+            }
+            var cfg = plugin.getConfig();
+            int steps = cfg.getInt("simulator.tuning.search_steps", 24);
+            double min = cfg.getDouble("simulator.tuning.per_level_min", 0.001);
+            double max = cfg.getDouble("simulator.tuning.per_level_max", 0.03);
+            OptionalDouble val = simulatorService.tunePerLevel(petId, rarityId, opt.get(), target, level, stars, steps, min, max);
+            if (val.isPresent()) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-tune-found")
+                        .replace("%key%", "per_level")
+                        .replace("%value%", fmtRaw(val.getAsDouble()))
+                        .replace("%error%", fmtRaw(0.0))));
+            }
+        } else if (mode.equals("starmult")) {
+            if (args.length < 5) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            String petId = args[1];
+            String rarityId = args[2].toUpperCase(Locale.ROOT);
+            Optional<EarningType> opt = EarningType.parse(args[3]);
+            if (opt.isEmpty()) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            double target;
+            try {
+                target = Double.parseDouble(args[4]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+                return;
+            }
+            int level = 0;
+            int stars = 0;
+            for (int i = 5; i < args.length; i++) {
+                if (args[i].startsWith("level=")) level = Integer.parseInt(args[i].substring(6));
+                if (args[i].startsWith("stars=")) stars = Integer.parseInt(args[i].substring(6));
+            }
+            var cfg = plugin.getConfig();
+            int steps = cfg.getInt("simulator.tuning.search_steps", 24);
+            double min = cfg.getDouble("simulator.tuning.star_multiplier_min", 1.10);
+            double max = cfg.getDouble("simulator.tuning.star_multiplier_max", 1.60);
+            OptionalDouble val = simulatorService.tuneStarMultiplier(petId, rarityId, opt.get(), target, level, stars, steps, min, max);
+            if (val.isPresent()) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("sim-tune-found")
+                        .replace("%key%", "star_multiplier")
+                        .replace("%value%", fmtRaw(val.getAsDouble()))
+                        .replace("%error%", fmtRaw(0.0))));
+            }
+        }
+    }
+
+    private void simulatePresets(CommandSender sender, String[] args) {
+        if (args.length < 1) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        Optional<EarningType> opt = EarningType.parse(args[0]);
+        if (opt.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        EarningType type = opt.get();
+        var rarities = plugin.getRarityRegistry().getRarities();
+        List<String> lines = new ArrayList<>();
+        for (String rid : rarities.keySet()) {
+            SimulatorService.PetSpec early = new SimulatorService.PetSpec("", rid, 25, 0);
+            SimulatorService.PetSpec mid = new SimulatorService.PetSpec("", rid, 100, 2);
+            SimulatorService.PetSpec late = new SimulatorService.PetSpec("", rid, 250, 4);
+            SimulatorService.ComboResult r1 = simulatorService.simulateOne(early, type);
+            SimulatorService.ComboResult r2 = simulatorService.simulateOne(mid, type);
+            SimulatorService.ComboResult r3 = simulatorService.simulateOne(late, type);
+            lines.add(rid + ": " + fmtRaw(r1.capped().doubleValue()) + " / " + fmtRaw(r2.capped().doubleValue()) + " / " + fmtRaw(r3.capped().doubleValue()));
+        }
+        sendLines(sender, lines);
+    }
+
+    private void simulateExport(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        String petId = args[0];
+        String rarityId = args[1].toUpperCase(Locale.ROOT);
+        Optional<EarningType> opt = EarningType.parse(args[2]);
+        if (opt.isEmpty()) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+            return;
+        }
+        EarningType type = opt.get();
+        File dir = new File(plugin.getDataFolder(), plugin.getConfig().getString("simulator.output_dir", "diagnostics/sim"));
+        dir.mkdirs();
+        File file = new File(dir, petId + "-" + rarityId + "-" + type.weightKey() + "-" + System.currentTimeMillis() + ".json");
+        Map<String, Object> root = new LinkedHashMap<>();
+        root.put("petId", petId);
+        root.put("rarityId", rarityId);
+        root.put("type", type.weightKey());
+        try (FileWriter fw = new FileWriter(file, StandardCharsets.UTF_8)) {
+            fw.write("{\n");
+            for (Iterator<Map.Entry<String, Object>> it = root.entrySet().iterator(); it.hasNext(); ) {
+                var e = it.next();
+                fw.write("  \"" + e.getKey() + "\": \"" + e.getValue() + "\"");
+                if (it.hasNext()) fw.write(",");
+                fw.write("\n");
+            }
+            fw.write("}\n");
+        } catch (IOException ignored) {
+        }
+        sender.sendMessage(Colors.color(plugin.getLang().getString("sim-file-saved")
+                .replace("%file%", file.getName())));
+    }
+
+    private void sendLines(CommandSender sender, List<String> lines) {
+        int max = plugin.getConfig().getInt("simulator.safety.max_console_lines", 200);
+        if (lines.size() > max) {
+            for (int i = 0; i < max; i++) {
+                sender.sendMessage(Colors.color(lines.get(i)));
+            }
+            sender.sendMessage(Colors.color(plugin.getLang().getString("sim-more-lines")
+                    .replace("%extra%", String.valueOf(lines.size() - max))));
+        } else {
+            for (String s : lines) {
+                sender.sendMessage(Colors.color(s));
+            }
+        }
+    }
+
+    private String fmtRaw(double d) {
+        int dec = plugin.getConfig().getInt("simulator.format.raw_decimals", 3);
+        return String.format(Locale.US, "%1$ ." + dec + "f", d).trim();
     }
 }
