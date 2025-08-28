@@ -229,7 +229,7 @@ public class PetService implements Listener {
                 capped = true;
             }
         }
-        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), stars, progress, st.xp(), st.suffix());
+        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), st.xp(), stars, progress, st.suffix());
         putOwned(data, petId, ns);
         markDirty(uuid);
         if (starUp) notifyChange(uuid);
@@ -293,7 +293,7 @@ public class PetService implements Listener {
                     xp = 0;
                 }
             }
-            OwnedPetState ns = new OwnedPetState(st.rarity(), level, stars, st.evolveProgress(), xp, st.suffix());
+            OwnedPetState ns = new OwnedPetState(st.rarity(), level, xp, stars, st.evolveProgress(), st.suffix());
             putOwned(data, petId, ns);
             if (level != oldLevel) levelChanged = true;
             if (plugin.getTraceService() != null && level != oldLevel) {
@@ -315,7 +315,7 @@ public class PetService implements Listener {
         if (st == null) return false;
         int cap = baseCap + extraPerStar * st.stars();
         int clamped = Math.max(0, Math.min(level, cap));
-        OwnedPetState ns = new OwnedPetState(st.rarity(), clamped, st.stars(), st.evolveProgress(), 0, st.suffix());
+        OwnedPetState ns = new OwnedPetState(st.rarity(), clamped, 0, st.stars(), st.evolveProgress(), st.suffix());
         putOwned(data, petId, ns);
         markDirty(uuid);
         notifyChange(uuid);
@@ -326,7 +326,7 @@ public class PetService implements Listener {
         PlayerData data = load(uuid);
         OwnedPetState st = owned(data, petId);
         if (st == null) return false;
-        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), stars, st.evolveProgress(), st.xp(), st.suffix());
+        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), st.xp(), stars, st.evolveProgress(), st.suffix());
         putOwned(data, petId, ns);
         markDirty(uuid);
         notifyChange(uuid);
@@ -352,7 +352,7 @@ public class PetService implements Listener {
             }
             levelChanged = true;
         }
-        OwnedPetState ns = new OwnedPetState(st.rarity(), level, stars, st.evolveProgress(), xp, st.suffix());
+        OwnedPetState ns = new OwnedPetState(st.rarity(), level, xp, stars, st.evolveProgress(), st.suffix());
         putOwned(data, petId, ns);
         markDirty(uuid);
         if (levelChanged) notifyChange(uuid);
@@ -418,7 +418,7 @@ public class PetService implements Listener {
         PlayerData data = load(uuid);
         OwnedPetState st = owned(data, petId);
         if (st == null) return;
-        putOwned(data, petId, new OwnedPetState(st.rarity(), st.level(), st.stars(), st.evolveProgress(), st.xp(), suffix));
+        putOwned(data, petId, new OwnedPetState(st.rarity(), st.level(), st.xp(), st.stars(), st.evolveProgress(), suffix));
         markDirty(uuid);
     }
 

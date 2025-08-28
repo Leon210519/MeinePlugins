@@ -45,7 +45,7 @@ public class YamlStorageAdapter implements StorageAdapter {
                 int progress = ps.getInt("evolve_progress", 0);
                 int xp = ps.getInt("xp", 0);
                 String suffix = ps.getString("suffix", null);
-                data.owned.put(id, new OwnedPetState(rarity, level, stars, progress, xp, suffix));
+                data.owned.put(id, new OwnedPetState(rarity, level, xp, stars, progress, suffix));
             }
         }
         data.active.addAll(sec.getStringList("active"));
