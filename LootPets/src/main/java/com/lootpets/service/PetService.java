@@ -2,29 +2,144 @@ package com.lootpets.service;
 
 import com.lootpets.LootPetsPlugin;
 import com.lootpets.model.OwnedPetState;
+import com.lootpets.model.PlayerData;
+import com.lootpets.storage.SqlStorageAdapter;
+import com.lootpets.storage.StorageAdapter;
+import com.lootpets.storage.YamlStorageAdapter;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
-public class PetService {
+/**
+ * PetService now delegates all persistence to a pluggable {@link StorageAdapter}
+ * while maintaining a simple read-through/write-behind cache. Public APIs and
+ * behaviour remain compatible with earlier versions.
+ */
+public class PetService implements Listener {
 
     public record EvolveResult(OwnedPetState state, boolean starUp, boolean capped) {}
 
     private final LootPetsPlugin plugin;
-    private final File file;
-    private YamlConfiguration config;
+    private final StorageAdapter storage;
+    private final ConcurrentMap<UUID, PlayerData> cache = new ConcurrentHashMap<>();
+    private final Set<UUID> dirty = ConcurrentHashMap.newKeySet();
     private final List<Consumer<UUID>> changeListeners = new ArrayList<>();
+    private final int flushInterval;
+    private final boolean preloadOnJoin;
 
     public PetService(LootPetsPlugin plugin) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), "pets.yml");
-        reload();
+        ConfigurationSection store = plugin.getConfig().getConfigurationSection("storage");
+        StorageAdapter tmp;
+        int interval = 30;
+        boolean preload = true;
+        if (store != null) {
+            String provider = store.getString("provider", "YAML");
+            interval = store.getInt("flush_interval_seconds", 30);
+            preload = store.getBoolean("preload_on_join", true);
+            try {
+                switch (provider.toUpperCase(Locale.ROOT)) {
+                    case "SQLITE" -> {
+                        String file = store.getConfigurationSection("sqlite").getString("file", "lootpets.db");
+                        String dsn = "jdbc:sqlite:" + new File(plugin.getDataFolder(), file).getPath();
+                        tmp = new SqlStorageAdapter(SqlStorageAdapter.Provider.SQLITE, dsn, "", "");
+                    }
+                    case "MYSQL" -> {
+                        ConfigurationSection my = store.getConfigurationSection("mysql");
+                        String host = my.getString("host");
+                        int port = my.getInt("port");
+                        String db = my.getString("database");
+                        String user = my.getString("user");
+                        String pass = my.getString("password");
+                        String dsn = "jdbc:mysql://" + host + ":" + port + "/" + db;
+                        tmp = new SqlStorageAdapter(SqlStorageAdapter.Provider.MYSQL, dsn, user, pass);
+                    }
+                    default -> tmp = new YamlStorageAdapter(plugin.getDataFolder());
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Falling back to YAML storage: " + e.getMessage());
+                tmp = new YamlStorageAdapter(plugin.getDataFolder());
+            }
+        } else {
+            tmp = new YamlStorageAdapter(plugin.getDataFolder());
+        }
+        this.storage = tmp;
+        this.flushInterval = interval;
+        this.preloadOnJoin = preload;
+        try {
+            storage.init();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to init storage: " + e.getMessage());
+        }
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        long ticks = flushInterval * 20L;
+        plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, this::flushAll, ticks, ticks);
+        plugin.getLogger().info("Storage provider: " + storage.getClass().getSimpleName() + ", flush interval=" + flushInterval + "s, preload=" + preloadOnJoin);
     }
+
+    // region lifecycle
+    private PlayerData load(UUID uuid) {
+        return cache.computeIfAbsent(uuid, u -> {
+            try {
+                PlayerData data = storage.loadPlayer(u);
+                return data != null ? data : new PlayerData();
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to load player " + u + ": " + e.getMessage());
+                return new PlayerData();
+            }
+        });
+    }
+
+    private void markDirty(UUID uuid) {
+        dirty.add(uuid);
+    }
+
+    public void flush(UUID uuid) {
+        PlayerData data = cache.get(uuid);
+        if (data == null) return;
+        try {
+            storage.savePlayer(uuid, data);
+            dirty.remove(uuid);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to save player " + uuid + ": " + e.getMessage());
+        }
+    }
+
+    public void flushAll() {
+        for (UUID u : new ArrayList<>(dirty)) {
+            flush(u);
+        }
+        try {
+            storage.flush();
+        } catch (Exception e) {
+            plugin.getLogger().warning("Flush failed: " + e.getMessage());
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent e) {
+        if (!preloadOnJoin) return;
+        UUID id = e.getPlayer().getUniqueId();
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> load(id));
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        UUID id = e.getPlayer().getUniqueId();
+        flush(id);
+        cache.remove(id);
+        dirty.remove(id);
+    }
+    // endregion
 
     public void addChangeListener(Consumer<UUID> listener) {
         changeListeners.add(listener);
@@ -39,159 +154,41 @@ public class PetService {
         }
     }
 
-    public void reload() {
-        this.config = YamlConfiguration.loadConfiguration(file);
-        boolean changed = false;
-        if (!config.isInt("schema")) {
-            config.set("schema", 1);
-            changed = true;
-        }
-        ConfigurationSection players = config.getConfigurationSection("players");
-        if (players == null) {
-            players = config.createSection("players");
-            changed = true;
-        } else {
-            for (String key : players.getKeys(false)) {
-                ConfigurationSection sec = players.getConfigurationSection(key);
-                if (sec == null) {
-                    continue;
-                }
-                Object ownedObj = sec.get("owned");
-                if (ownedObj instanceof List<?> list) {
-                    ConfigurationSection ownedSec = sec.createSection("owned");
-                    for (Object o : list) {
-                        if (o == null) {
-                            continue;
-                        }
-                        String id = String.valueOf(o);
-                        ConfigurationSection ps = ownedSec.createSection(id);
-                        ps.set("rarity", null);
-                        ps.set("level", 0);
-                        ps.set("stars", 0);
-                        ps.set("evolve_progress", 0);
-                        ps.set("xp", 0);
-                    }
-                    changed = true;
-                } else if (!sec.isConfigurationSection("owned")) {
-                    sec.createSection("owned");
-                    changed = true;
-                } else {
-                    for (String pid : sec.getConfigurationSection("owned").getKeys(false)) {
-                        ConfigurationSection ps = sec.getConfigurationSection("owned." + pid);
-                        if (ps != null) {
-                            if (!ps.isInt("xp")) {
-                                ps.set("xp", 0);
-                                changed = true;
-                            }
-                            if (!ps.isSet("suffix")) {
-                                ps.set("suffix", null);
-                                changed = true;
-                            }
-                        }
-                    }
-                }
-                if (!sec.isInt("shards")) {
-                    sec.set("shards", 0);
-                    changed = true;
-                }
-                if (!sec.isInt("rename_tokens")) {
-                    sec.set("rename_tokens", 0);
-                    changed = true;
-                }
-                ConfigurationSection cos = sec.getConfigurationSection("cosmetics");
-                if (cos == null) {
-                    cos = sec.createSection("cosmetics");
-                    changed = true;
-                }
-                if (!cos.isSet("album_frame_style")) {
-                    cos.set("album_frame_style", null);
-                    changed = true;
-                }
-                List<String> act = sec.getStringList("active");
-                if (act == null) {
-                    sec.set("active", new ArrayList<>());
-                    changed = true;
-                } else {
-                    LinkedHashSet<String> set = new LinkedHashSet<>(act);
-                    if (set.size() != act.size()) {
-                        sec.set("active", new ArrayList<>(set));
-                        changed = true;
-                    }
-                }
-            }
-        }
-        if (changed) {
-            save();
-        }
+    // Data helpers
+    private OwnedPetState owned(PlayerData data, String petId) {
+        return data.owned.get(petId);
     }
 
+    private void putOwned(PlayerData data, String petId, OwnedPetState state) {
+        data.owned.put(petId, state);
+    }
+
+    // region API
     public void ensurePlayerNode(UUID uuid) {
-        ConfigurationSection players = config.getConfigurationSection("players");
-        if (players == null) {
-            players = config.createSection("players");
-        }
-        if (!players.isConfigurationSection(uuid.toString())) {
-            ConfigurationSection section = players.createSection(uuid.toString());
-            section.createSection("owned");
-            section.set("active", new ArrayList<>());
-            section.set("shards", 0);
-            section.set("rename_tokens", 0);
-            ConfigurationSection cos = section.createSection("cosmetics");
-            cos.set("album_frame_style", null);
-            save();
-        }
+        load(uuid); // loading creates empty record if absent
     }
 
     public Map<String, OwnedPetState> getOwnedPets(UUID uuid) {
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".owned");
-        if (sec == null) {
-            return Collections.emptyMap();
-        }
-        Map<String, OwnedPetState> map = new LinkedHashMap<>();
-        for (String id : sec.getKeys(false)) {
-            ConfigurationSection ps = sec.getConfigurationSection(id);
-            if (ps == null) {
-                continue;
-            }
-            String rarity = ps.getString("rarity", null);
-            int level = ps.getInt("level", 0);
-            int stars = ps.getInt("stars", 0);
-            int progress = ps.getInt("evolve_progress", 0);
-            int xp = ps.getInt("xp", 0);
-            String suffix = ps.getString("suffix", null);
-            map.put(id, new OwnedPetState(rarity, level, stars, progress, xp, suffix));
-        }
-        return Collections.unmodifiableMap(map);
+        PlayerData data = load(uuid);
+        return Collections.unmodifiableMap(new LinkedHashMap<>(data.owned));
     }
 
     public boolean addOwnedPet(UUID uuid, String petId, String rarityId) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".owned");
-        if (sec == null) {
+        PlayerData data = load(uuid);
+        if (data.owned.containsKey(petId)) {
             return false;
         }
-        if (sec.isConfigurationSection(petId)) {
-            return false;
-        }
-        ConfigurationSection ps = sec.createSection(petId);
-        ps.set("rarity", rarityId);
-        ps.set("level", 0);
-        ps.set("stars", 0);
-        ps.set("evolve_progress", 0);
-        ps.set("xp", 0);
-        ps.set("suffix", null);
-        save();
+        putOwned(data, petId, new OwnedPetState(rarityId, 0, 0, 0, 0, null));
+        markDirty(uuid);
         return true;
     }
 
     public EvolveResult incrementEvolve(UUID uuid, String petId) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (sec == null) {
-            return new EvolveResult(new OwnedPetState(null, 0, 0, 0, 0), false, false);
-        }
-        int progress = sec.getInt("evolve_progress", 0) + 1;
-        int stars = sec.getInt("stars", 0);
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        if (st == null) return new EvolveResult(new OwnedPetState(null,0,0,0,0,null), false, false);
+        int progress = st.evolveProgress() + 1;
+        int stars = st.stars();
         boolean starUp = false;
         boolean capped = false;
         if (progress >= 5) {
@@ -203,111 +200,75 @@ public class PetService {
                 capped = true;
             }
         }
-        sec.set("evolve_progress", progress);
-        sec.set("stars", stars);
-        save();
-        if (starUp) {
-            notifyChange(uuid);
-        }
-        OwnedPetState state = new OwnedPetState(sec.getString("rarity", null), sec.getInt("level", 0), stars, progress, sec.getInt("xp", 0), sec.getString("suffix", null));
-        return new EvolveResult(state, starUp, capped);
+        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), stars, progress, st.xp(), st.suffix());
+        putOwned(data, petId, ns);
+        markDirty(uuid);
+        if (starUp) notifyChange(uuid);
+        return new EvolveResult(ns, starUp, capped);
     }
 
     public List<String> getActivePetIds(UUID uuid, int maxSlots) {
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid);
-        if (sec == null) {
-            return Collections.emptyList();
-        }
-        List<String> list = sec.getStringList("active");
-        if (list == null) {
-            list = new ArrayList<>();
-        }
+        PlayerData data = load(uuid);
+        List<String> list = new ArrayList<>(data.active);
         LinkedHashSet<String> set = new LinkedHashSet<>(list);
         List<String> cleaned = new ArrayList<>(set);
         if (cleaned.size() > maxSlots) {
             cleaned = new ArrayList<>(cleaned.subList(0, maxSlots));
         }
-        if (!cleaned.equals(list)) {
-            sec.set("active", cleaned);
-            save();
+        if (!cleaned.equals(data.active)) {
+            data.active.clear();
+            data.active.addAll(cleaned);
+            markDirty(uuid);
         }
         return Collections.unmodifiableList(cleaned);
     }
 
     public boolean equipPet(UUID uuid, String petId, int maxSlots) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid);
-        if (sec == null) {
-            return false;
-        }
-        List<String> list = sec.getStringList("active");
-        if (list == null) {
-            list = new ArrayList<>();
-        }
-        if (list.contains(petId)) {
-            return false;
-        }
-        if (list.size() >= maxSlots) {
-            return false;
-        }
-        list.add(petId);
-        sec.set("active", list);
-        save();
+        PlayerData data = load(uuid);
+        if (data.active.contains(petId)) return false;
+        if (data.active.size() >= maxSlots) return false;
+        data.active.add(petId);
+        markDirty(uuid);
         notifyChange(uuid);
         return true;
     }
 
     public boolean unequipPet(UUID uuid, String petId) {
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid);
-        if (sec == null) {
-            return false;
-        }
-        List<String> list = sec.getStringList("active");
-        if (list == null || !list.remove(petId)) {
-            return false;
-        }
-        sec.set("active", list);
-        save();
+        PlayerData data = load(uuid);
+        if (!data.active.remove(petId)) return false;
+        markDirty(uuid);
         notifyChange(uuid);
         return true;
     }
 
     public void addXpToActivePets(UUID uuid, int xpPerTick, int xpPerLevel, int baseCap, int extraPerStar) {
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".owned");
-        if (sec == null) {
-            return;
-        }
-        List<String> active = getActivePetIds(uuid, Integer.MAX_VALUE);
+        PlayerData data = load(uuid);
         boolean changed = false;
         boolean levelChanged = false;
-        for (String petId : active) {
-            ConfigurationSection ps = sec.getConfigurationSection(petId);
-            if (ps == null) {
-                continue;
-            }
-            int xp = ps.getInt("xp", 0) + xpPerTick;
-            int level = ps.getInt("level", 0);
-            int oldLevel = level;
-            int stars = ps.getInt("stars", 0);
+        for (String petId : data.active) {
+            OwnedPetState st = owned(data, petId);
+            if (st == null) continue;
+            int xp = st.xp() + xpPerTick;
+            int level = st.level();
+            int stars = st.stars();
             int cap = baseCap + extraPerStar * stars;
+            int oldLevel = level;
             if (xp >= xpPerLevel && level < cap) {
                 int gained = xp / xpPerLevel;
-                xp = xp % xpPerLevel;
+                xp %= xpPerLevel;
                 level += gained;
                 if (level > cap) {
                     level = cap;
                     xp = 0;
                 }
             }
-            ps.set("xp", xp);
-            ps.set("level", level);
-            if (level != oldLevel) {
-                levelChanged = true;
-            }
+            OwnedPetState ns = new OwnedPetState(st.rarity(), level, stars, st.evolveProgress(), xp, st.suffix());
+            putOwned(data, petId, ns);
+            if (level != oldLevel) levelChanged = true;
             changed = true;
         }
         if (changed) {
-            save();
+            markDirty(uuid);
         }
         if (levelChanged) {
             notifyChange(uuid);
@@ -315,44 +276,41 @@ public class PetService {
     }
 
     public boolean setLevel(UUID uuid, String petId, int level, int baseCap, int extraPerStar) {
-        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (ps == null) {
-            return false;
-        }
-        int stars = ps.getInt("stars", 0);
-        int cap = baseCap + extraPerStar * stars;
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        if (st == null) return false;
+        int cap = baseCap + extraPerStar * st.stars();
         int clamped = Math.max(0, Math.min(level, cap));
-        ps.set("level", clamped);
-        ps.set("xp", 0);
-        save();
+        OwnedPetState ns = new OwnedPetState(st.rarity(), clamped, st.stars(), st.evolveProgress(), 0, st.suffix());
+        putOwned(data, petId, ns);
+        markDirty(uuid);
         notifyChange(uuid);
         return true;
     }
 
     public boolean setStars(UUID uuid, String petId, int stars) {
-        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (ps == null) {
-            return false;
-        }
-        ps.set("stars", stars);
-        save();
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        if (st == null) return false;
+        OwnedPetState ns = new OwnedPetState(st.rarity(), st.level(), stars, st.evolveProgress(), st.xp(), st.suffix());
+        putOwned(data, petId, ns);
+        markDirty(uuid);
         notifyChange(uuid);
         return true;
     }
 
     public boolean addXp(UUID uuid, String petId, int amount, int xpPerLevel, int baseCap, int extraPerStar) {
-        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (ps == null) {
-            return false;
-        }
-        int xp = ps.getInt("xp", 0) + Math.max(0, amount);
-        int level = ps.getInt("level", 0);
-        int stars = ps.getInt("stars", 0);
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        if (st == null) return false;
+        int xp = st.xp() + Math.max(0, amount);
+        int level = st.level();
+        int stars = st.stars();
         int cap = baseCap + extraPerStar * stars;
         boolean levelChanged = false;
         if (xp >= xpPerLevel && level < cap) {
             int gained = xp / xpPerLevel;
-            xp = xp % xpPerLevel;
+            xp %= xpPerLevel;
             level += gained;
             if (level > cap) {
                 level = cap;
@@ -360,139 +318,124 @@ public class PetService {
             }
             levelChanged = true;
         }
-        ps.set("xp", xp);
-        ps.set("level", level);
-        save();
-        if (levelChanged) {
-            notifyChange(uuid);
-        }
+        OwnedPetState ns = new OwnedPetState(st.rarity(), level, stars, st.evolveProgress(), xp, st.suffix());
+        putOwned(data, petId, ns);
+        markDirty(uuid);
+        if (levelChanged) notifyChange(uuid);
         return true;
     }
 
     public int getShards(UUID uuid) {
-        ensurePlayerNode(uuid);
-        return config.getInt("players." + uuid + ".shards", 0);
+        PlayerData data = load(uuid);
+        return data.shards;
     }
 
     public void addShards(UUID uuid, int amount) {
-        ensurePlayerNode(uuid);
-        int cur = getShards(uuid);
-        config.set("players." + uuid + ".shards", Math.max(0, cur + amount));
-        save();
+        PlayerData data = load(uuid);
+        data.shards = Math.max(0, data.shards + amount);
+        markDirty(uuid);
     }
 
     public boolean spendShards(UUID uuid, int amount) {
-        ensurePlayerNode(uuid);
-        int cur = getShards(uuid);
-        if (cur < amount) {
-            return false;
-        }
-        config.set("players." + uuid + ".shards", cur - amount);
-        save();
+        PlayerData data = load(uuid);
+        if (data.shards < amount) return false;
+        data.shards -= amount;
+        markDirty(uuid);
         return true;
     }
 
     public int getRenameTokens(UUID uuid) {
-        ensurePlayerNode(uuid);
-        return config.getInt("players." + uuid + ".rename_tokens", 0);
+        PlayerData data = load(uuid);
+        return data.renameTokens;
     }
 
     public void addRenameTokens(UUID uuid, int amount) {
-        ensurePlayerNode(uuid);
-        int cur = getRenameTokens(uuid);
-        config.set("players." + uuid + ".rename_tokens", Math.max(0, cur + amount));
-        save();
+        PlayerData data = load(uuid);
+        data.renameTokens = Math.max(0, data.renameTokens + amount);
+        markDirty(uuid);
     }
 
     public boolean consumeRenameToken(UUID uuid) {
-        ensurePlayerNode(uuid);
-        int cur = getRenameTokens(uuid);
-        if (cur <= 0) {
-            return false;
-        }
-        config.set("players." + uuid + ".rename_tokens", cur - 1);
-        save();
+        PlayerData data = load(uuid);
+        if (data.renameTokens <= 0) return false;
+        data.renameTokens--;
+        markDirty(uuid);
         return true;
     }
 
     public String getAlbumFrameStyle(UUID uuid) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection cos = config.getConfigurationSection("players." + uuid + ".cosmetics");
-        return cos != null ? cos.getString("album_frame_style", null) : null;
+        PlayerData data = load(uuid);
+        return data.albumFrameStyle;
     }
 
     public void setAlbumFrameStyle(UUID uuid, String style) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection cos = config.getConfigurationSection("players." + uuid + ".cosmetics");
-        if (cos == null) {
-            cos = config.createSection("players." + uuid + ".cosmetics");
-        }
-        cos.set("album_frame_style", style);
-        save();
+        PlayerData data = load(uuid);
+        data.albumFrameStyle = style;
+        markDirty(uuid);
     }
 
     public String getSuffix(UUID uuid, String petId) {
-        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (ps == null) {
-            return null;
-        }
-        return ps.getString("suffix", null);
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        return st != null ? st.suffix() : null;
     }
 
     public void setSuffix(UUID uuid, String petId, String suffix) {
-        ConfigurationSection ps = config.getConfigurationSection("players." + uuid + ".owned." + petId);
-        if (ps == null) {
-            return;
-        }
-        ps.set("suffix", suffix);
-        save();
+        PlayerData data = load(uuid);
+        OwnedPetState st = owned(data, petId);
+        if (st == null) return;
+        putOwned(data, petId, new OwnedPetState(st.rarity(), st.level(), st.stars(), st.evolveProgress(), st.xp(), suffix));
+        markDirty(uuid);
     }
 
     public int getDailyBuys(UUID uuid, String today, String itemId) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".limits_daily");
-        if (sec == null || !today.equals(sec.getString("date"))) {
+        PlayerData data = load(uuid);
+        if (!Objects.equals(today, data.limitsDate)) {
             return 0;
         }
-        ConfigurationSection buys = sec.getConfigurationSection("buys");
-        if (buys == null) {
-            return 0;
-        }
-        return buys.getInt(itemId, 0);
+        return data.dailyLimits.getOrDefault(itemId, 0);
     }
 
     public void incrementDailyBuys(UUID uuid, String today, String itemId) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid + ".limits_daily");
-        if (sec == null) {
-            sec = config.createSection("players." + uuid + ".limits_daily");
+        PlayerData data = load(uuid);
+        if (!Objects.equals(today, data.limitsDate)) {
+            data.limitsDate = today;
+            data.dailyLimits.clear();
         }
-        if (!today.equals(sec.getString("date"))) {
-            sec.set("date", today);
-            sec.createSection("buys");
-        }
-        ConfigurationSection buys = sec.getConfigurationSection("buys");
-        int cur = buys.getInt(itemId, 0);
-        buys.set(itemId, cur + 1);
-        save();
+        data.dailyLimits.put(itemId, data.dailyLimits.getOrDefault(itemId, 0) + 1);
+        markDirty(uuid);
     }
 
     public void reset(UUID uuid) {
-        ensurePlayerNode(uuid);
-        ConfigurationSection sec = config.getConfigurationSection("players." + uuid);
-        if (sec != null) {
-            sec.createSection("owned");
-            sec.set("active", new ArrayList<>());
-            save();
-            notifyChange(uuid);
-        }
+        cache.put(uuid, new PlayerData());
+        dirty.add(uuid);
+        notifyChange(uuid);
     }
 
     public void save() {
-        try {
-            config.save(file);
-        } catch (IOException e) {
-            plugin.getLogger().warning("Failed to save pets.yml: " + e.getMessage());
+        flushAll();
+    }
+
+    // Admin helpers
+    public String getStorageInfo() {
+        return storage.getClass().getSimpleName() + ", dirty=" + dirty.size();
+    }
+
+    public void flushCommand(Player target) {
+        if (target != null) {
+            flush(target.getUniqueId());
+        } else {
+            flushAll();
         }
     }
+
+    public void verifyStorage() {
+        try {
+            Map<UUID, PlayerData> all = storage.loadAllPlayers();
+            plugin.getLogger().info("Storage contains " + all.size() + " players");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Verification failed: " + e.getMessage());
+        }
+    }
+    // endregion
 }

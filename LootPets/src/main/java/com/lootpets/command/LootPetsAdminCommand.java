@@ -72,6 +72,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "audit" -> handleAudit(sender, args);
             case "backup" -> handleBackup(sender, args);
             case "rules" -> handleRules(sender, args);
+            case "storage" -> handleStorage(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -473,5 +474,32 @@ public class LootPetsAdminCommand implements CommandExecutor {
 
     private String format(BigDecimal bd) {
         return bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+    private void handleStorage(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+            return;
+        }
+        switch (args[1].toLowerCase()) {
+            case "info" -> {
+                String info = plugin.getPetService().getStorageInfo();
+                sender.sendMessage(Colors.color(plugin.getLang().getString("storage-info").replace("%info%", info)));
+            }
+            case "flush" -> {
+                Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2]) : null;
+                plugin.getPetService().flushCommand(target);
+                sender.sendMessage(Colors.color(plugin.getLang().getString("storage-flush")));
+            }
+            case "migrate" -> {
+                // For now migration is triggered via verifyStorage placeholder
+                plugin.getPetService().verifyStorage();
+                sender.sendMessage(Colors.color(plugin.getLang().getString("storage-migrate")));
+            }
+            case "verify" -> {
+                plugin.getPetService().verifyStorage();
+                sender.sendMessage(Colors.color(plugin.getLang().getString("storage-verify")));
+            }
+            default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+        }
     }
 }
