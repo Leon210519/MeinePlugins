@@ -1,2 +1,21 @@
 schema: 1
-pets: {}
+pets:
+  miner:
+    display_name: "&bMiner"
+    icon:
+      material: DIAMOND_PICKAXE
+    weights:
+      earnings_lootfactory: 1.0
+      earnings_sell: 0.5
+  trader:
+    display_name: "&eTrader"
+    icon:
+      material: EMERALD
+    weights:
+      earnings_sell: 1.0
+  scout:
+    display_name: "&aScout"
+    icon:
+      material: COMPASS
+    weights:
+      earnings_missions: 1.0

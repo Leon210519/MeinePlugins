@@ -19,6 +19,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
+import com.lootpets.api.LootPetsAPI;
+import com.lootpets.api.EarningType;
+import java.math.BigDecimal;
 
 import java.io.File;
 import java.io.IOException;
@@ -164,11 +167,12 @@ public class FactoryManager {
                 fi.productionAccum += seconds;
                 while (fi.productionAccum >= interval) {
                     fi.productionAccum -= interval;
-                    LootFactoryPlugin.get().eco().deposit(p, yield);
+                    BigDecimal boosted = LootPetsAPI.apply(p, EarningType.EARNINGS_LOOTFACTORY, BigDecimal.valueOf(yield));
+                    LootFactoryPlugin.get().eco().deposit(p, boosted.doubleValue());
                     p.spigot().sendMessage(
                         net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
                         new net.md_5.bungee.api.chat.TextComponent(
-                            Msg.color("&a+" + cur + String.format("%.2f", yield) + " &7from &e" + def.display)
+                            Msg.color("&a+" + cur + String.format("%.2f", boosted.doubleValue()) + " &7from &e" + def.display)
                         )
                     );
                 }
