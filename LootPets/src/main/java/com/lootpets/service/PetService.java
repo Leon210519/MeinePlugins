@@ -229,6 +229,7 @@ public class PetService implements Listener {
         if (data.active.size() >= maxSlots) return false;
         data.active.add(petId);
         markDirty(uuid);
+        plugin.getTraceService().log(uuid, "equip " + petId);
         notifyChange(uuid);
         return true;
     }
@@ -237,6 +238,7 @@ public class PetService implements Listener {
         PlayerData data = load(uuid);
         if (!data.active.remove(petId)) return false;
         markDirty(uuid);
+        plugin.getTraceService().log(uuid, "unequip " + petId);
         notifyChange(uuid);
         return true;
     }
@@ -265,6 +267,9 @@ public class PetService implements Listener {
             OwnedPetState ns = new OwnedPetState(st.rarity(), level, stars, st.evolveProgress(), xp, st.suffix());
             putOwned(data, petId, ns);
             if (level != oldLevel) levelChanged = true;
+            if (plugin.getTraceService() != null && level != oldLevel) {
+                plugin.getTraceService().log(uuid, "level " + petId + " -> " + level);
+            }
             changed = true;
         }
         if (changed) {

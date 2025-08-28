@@ -158,7 +158,7 @@ public class ShardShopGUI implements Listener {
                     petService.addRenameTokens(player.getUniqueId(), 1);
                     petService.incrementDailyBuys(player.getUniqueId(), today, item.id());
                     player.sendMessage(Colors.color(plugin.getLang().getString("purchase-success")));
-                    DebugLogger.debug(plugin, "shards", player.getName() + " bought " + item.id());
+                    DebugLogger.debug(plugin, "gui", player.getName() + " bought " + item.id());
                 }
             }
             case "ALBUM_FRAME" -> {
@@ -166,7 +166,7 @@ public class ShardShopGUI implements Listener {
                     petService.setAlbumFrameStyle(player.getUniqueId(), item.style());
                     petService.incrementDailyBuys(player.getUniqueId(), today, item.id());
                     player.sendMessage(Colors.color(plugin.getLang().getString("purchase-success")));
-                    DebugLogger.debug(plugin, "shards", player.getName() + " bought " + item.id());
+                    DebugLogger.debug(plugin, "gui", player.getName() + " bought " + item.id());
                 }
             }
         }
@@ -214,7 +214,7 @@ public class ShardShopGUI implements Listener {
         if (success) {
             petService.incrementDailyBuys(player.getUniqueId(), today, item.id());
             player.sendMessage(Colors.color(plugin.getLang().getString("purchase-success")));
-            DebugLogger.debug(plugin, "shards", player.getName() + " bought " + item.id() + " for pet " + petId);
+            DebugLogger.debug(plugin, "gui", player.getName() + " bought " + item.id() + " for pet " + petId);
         }
         return true;
     }

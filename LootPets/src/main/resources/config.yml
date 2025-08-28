@@ -1,3 +1,16 @@
+debug:
+  enabled: false
+  categories:
+    gui: false
+    boosts: false
+    papi: false
+    storage: false
+    eggs: false
+    reload: false
+    validator: false
+  throttle_millis: 750
+  inspect_max_lines: 200
+
 storage:
   provider: "YAML"
   flush_interval_seconds: 30
