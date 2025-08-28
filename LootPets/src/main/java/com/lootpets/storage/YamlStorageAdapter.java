@@ -100,6 +100,8 @@ public class YamlStorageAdapter implements StorageAdapter {
         for (Map.Entry<String,Integer> e : data.dailyLimits.entrySet()) {
             buys.set(e.getKey(), e.getValue());
         }
+        data.version++;
+        data.lastUpdated = System.currentTimeMillis();
     }
 
     @Override

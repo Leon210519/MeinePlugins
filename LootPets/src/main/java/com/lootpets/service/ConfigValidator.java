@@ -100,6 +100,14 @@ public class ConfigValidator {
         if (cap <= 1.0) {
             res.add(new Issue("config.yml", "caps.global_multiplier_max", Severity.WARN, "value should be >1.0"));
         }
+        ConfigurationSection xsv = config.getConfigurationSection("cross_server");
+        if (xsv != null) {
+            boolean enabled = xsv.getBoolean("enabled", false);
+            String provider = config.getString("storage.provider", "YAML").toUpperCase(Locale.ROOT);
+            if (enabled && provider.equals("YAML")) {
+                res.add(new Issue("config.yml", "cross_server.enabled", Severity.INFO, "cross-server requires SQL storage"));
+            }
+        }
         if (fix && dirty) {
             saveWithBackup(config, file);
         }

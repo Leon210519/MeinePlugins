@@ -30,6 +30,22 @@ storage:
     allow_auto_migrate: false
     backup_yaml_before_migrate: true
     verify_counts_after_migrate: true
+
+cross_server:
+  enabled: true
+  poll_interval_seconds: 5
+  poll_jitter_millis: 400
+  max_batch_players: 200
+  clock_skew_tolerance_millis: 2000
+  idempotency_window_seconds: 20
+  conflict:
+    policy: "MERGE_PREFER_NEWER"
+    server_priority: []
+  heartbeat:
+    enabled: true
+    interval_seconds: 15
+    stale_after_seconds: 60
+    server_id: "AUTO"
 default-slots: 2
 slot-permission-prefix: "lootpets.slots."
 equip-cooldown-ms: 300
