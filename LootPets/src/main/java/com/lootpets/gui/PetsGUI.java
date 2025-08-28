@@ -190,7 +190,7 @@ public class PetsGUI implements Listener {
         int typeSlot = 48;
         int compareSlot = 49;
         int albumSlot = 50;
-        int shopSlot = 51;
+        int shopSlot = cfg.getInt("shards.shop.gui.slot", -1);
         if (sortingEnabled) {
             String mode = state.sortIndex >= 0 && state.sortIndex < cfg.getStringList("gui.sorting.modes").size()
                     ? cfg.getStringList("gui.sorting.modes").get(state.sortIndex)
@@ -214,8 +214,8 @@ public class PetsGUI implements Listener {
         if (cfg.getBoolean("album.open_from_pets_gui", true) && cfg.getBoolean("gui.features.album_enabled", true)) {
             inv.setItem(albumSlot, item(Material.CHEST, Colors.color(lang.getString("album-button"))));
         }
-        if (plugin.getConfig().getBoolean("shards.shop.gui.open_from_pets_gui", true)
-                && plugin.getConfig().getBoolean("shards.shop.enabled", true)) {
+        if (cfg.getBoolean("shards.shop.gui.open_from_pets_gui", true)
+                && cfg.getBoolean("shards.shop.enabled", true) && shopSlot >= 0) {
             inv.setItem(shopSlot, item(Material.EMERALD, Colors.color(lang.getString("shop-button"))));
         }
 
@@ -245,6 +245,7 @@ public class PetsGUI implements Listener {
         int typeSlot = 48;
         int compareSlot = 49;
         int albumSlot = 50;
+        int shopSlot = cfg.getInt("shards.shop.gui.slot", -1);
         int slot = event.getRawSlot();
 
         if (slot == prevSlot) {
@@ -293,7 +294,7 @@ public class PetsGUI implements Listener {
             plugin.getAlbumGUI().open(player);
             return;
         }
-        if (slot == shopSlot && plugin.getShardShopGUI() != null) {
+        if (shopSlot >= 0 && slot == shopSlot && plugin.getShardShopGUI() != null) {
             plugin.getShardShopGUI().open(player);
             return;
         }

@@ -51,7 +51,7 @@ public class CrossServerService {
             hbi = hbSec != null ? hbSec.getInt("interval_seconds", 15) : 15;
             sid = hbSec != null ? hbSec.getString("server_id", "AUTO") : "AUTO";
             if ("AUTO".equalsIgnoreCase(sid)) {
-                sid = plugin.getServer().getServerName() + "-" + UUID.randomUUID();
+                sid = plugin.getServer().getName() + "-" + UUID.randomUUID();
             }
             active = sec.getBoolean("enabled", false) && sqlTmp != null && sqlTmp.getProvider() != SqlStorageAdapter.Provider.SQLITE;
         }
@@ -83,7 +83,7 @@ public class CrossServerService {
         long ticks = hbInterval * 20L;
         hbTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
             try {
-                storage.heartbeat(serverId, plugin.getServer().getServerName(), bootTime);
+                storage.heartbeat(serverId, plugin.getServer().getName(), bootTime);
             } catch (Exception ignored) {}
         }, ticks, ticks).getTaskId();
     }

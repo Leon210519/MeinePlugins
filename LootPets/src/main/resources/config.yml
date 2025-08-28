@@ -173,6 +173,7 @@ shards:
       title: "&d&lShard Shop"
       rows: 6
       open_from_pets_gui: true
+      slot: 51
     items:
       - id: "add_evolve_1"
         type: "EVOLVE_PROGRESS"

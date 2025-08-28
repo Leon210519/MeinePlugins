@@ -79,7 +79,7 @@ public class SqlStorageAdapter implements StorageAdapter {
                     int stars = rs.getInt(5);
                     int prog = rs.getInt(6);
                     String suffix = rs.getString(7);
-                    data.owned.put(pid, new OwnedPetState(rid, level, stars, prog, xp, suffix));
+                    data.owned.put(pid, new OwnedPetState(rid, level, xp, stars, prog, suffix));
                 }
             }
         }

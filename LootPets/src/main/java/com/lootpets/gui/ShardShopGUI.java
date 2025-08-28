@@ -45,16 +45,19 @@ public class ShardShopGUI implements Listener {
         int rows = cfg == null ? 6 : cfg.getInt("rows", 6);
         String title = cfg == null ? "Shard Shop" : cfg.getString("title", "Shard Shop");
         Inventory inv = Bukkit.createInventory(null, rows * 9, Colors.color(title));
-        List<Map<?, ?>> list = plugin.getConfig().getMapList("shards.shop.items");
+        @SuppressWarnings("unchecked")
+        List<Map<String, ?>> list = (List<Map<String, ?>>) (List<?>) plugin.getConfig().getMapList("shards.shop.items");
         Map<Integer, ShopItem> map = new HashMap<>();
         int slot = 0;
         int shards = petService.getShards(player.getUniqueId());
         String today = LocalDate.now(ZoneOffset.UTC).toString();
-        for (Map<?, ?> m : list) {
+        for (Map<String, ?> m : list) {
             String id = String.valueOf(m.get("id"));
             String type = String.valueOf(m.get("type"));
-            int cost = ((Number) m.getOrDefault("cost", 0)).intValue();
-            int xp = ((Number) m.getOrDefault("xp_amount", 0)).intValue();
+            Object co = m.get("cost");
+            int cost = (co instanceof Number) ? ((Number) co).intValue() : 0;
+            Object xo = m.get("xp_amount");
+            int xp = (xo instanceof Number) ? ((Number) xo).intValue() : 0;
             String style = m.get("style") == null ? null : String.valueOf(m.get("style"));
             ShopItem item = new ShopItem(id, type, cost, xp, style);
             ItemStack icon = iconFor(item, shards, player, today);
