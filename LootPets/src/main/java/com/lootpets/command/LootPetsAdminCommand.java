@@ -12,15 +12,18 @@ import com.lootpets.service.PetService;
 import com.lootpets.service.AuditService;
 import com.lootpets.service.BackupService;
 import com.lootpets.service.RuleService;
+import com.lootpets.service.DebugService;
+import com.lootpets.service.TraceService;
 import com.lootpets.service.ConfigValidator;
 import com.lootpets.service.ConfigValidator.ValidatorResult;
 import com.lootpets.service.ConfigValidator.Severity;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
-import java.util.UUID;
-import java.util.HashSet;
-import java.util.List;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 import com.lootpets.util.Colors;
 import org.bukkit.Bukkit;
@@ -30,10 +33,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Locale;
-import java.util.Arrays;
 
 public class LootPetsAdminCommand implements CommandExecutor {
 
@@ -45,6 +44,8 @@ public class LootPetsAdminCommand implements CommandExecutor {
     private final AuditService auditService;
     private final BackupService backupService;
     private final RuleService ruleService;
+    private final DebugService debugService;
+    private final TraceService traceService;
 
     public LootPetsAdminCommand(LootPetsPlugin plugin, PetService petService, PetRegistry petRegistry,
                                 BoostService boostService, PreviewService previewService,
@@ -58,6 +59,8 @@ public class LootPetsAdminCommand implements CommandExecutor {
         this.auditService = auditService;
         this.backupService = backupService;
         this.ruleService = ruleService;
+        this.debugService = plugin.getDebugService();
+        this.traceService = plugin.getTraceService();
     }
 
     @Override
@@ -84,6 +87,10 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "backup" -> handleBackup(sender, args);
             case "rules" -> handleRules(sender, args);
             case "storage" -> handleStorage(sender, args);
+            case "debug" -> handleDebug(sender, args);
+            case "inspect" -> handleInspect(sender, args);
+            case "dump" -> handleDump(sender, args);
+            case "trace" -> handleTrace(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -260,6 +267,234 @@ public class LootPetsAdminCommand implements CommandExecutor {
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
     }
+
+    private void handleDebug(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("/lootpets debug on|off|cat <name> on|off|set throttle <ms>");
+            return;
+        }
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "on" -> {
+                debugService.setEnabled(true);
+                sender.sendMessage(Colors.color(plugin.getLang().getString("debug-enabled").replace("%state%", "on")));
+            }
+            case "off" -> {
+                debugService.setEnabled(false);
+                sender.sendMessage(Colors.color(plugin.getLang().getString("debug-enabled").replace("%state%", "off")));
+            }
+            case "cat" -> {
+                if (args.length < 4) {
+                    sender.sendMessage("/lootpets debug cat <name> on|off");
+                    return;
+                }
+                String cat = args[2].toLowerCase(Locale.ROOT);
+                if (!debugService.getKnownCategories().contains(cat)) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("unknown-pet")));
+                    return;
+                }
+                boolean flag = args[3].equalsIgnoreCase("on");
+                debugService.setCategory(cat, flag);
+                sender.sendMessage(Colors.color(plugin.getLang().getString("debug-cat").replace("%cat%", cat).replace("%state%", flag ? "on" : "off")));
+            }
+            case "set" -> {
+                if (args.length >= 4 && args[2].equalsIgnoreCase("throttle")) {
+                    try {
+                        long ms = Long.parseLong(args[3]);
+                        debugService.setThrottleMillis(ms);
+                        sender.sendMessage(Colors.color(plugin.getLang().getString("debug-throttle").replace("%value%", String.valueOf(ms))));
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(Colors.color(plugin.getLang().getString("setlevel-out-of-range").replace("%max%", "")));
+                    }
+                }
+            }
+            default -> sender.sendMessage("/lootpets debug on|off|cat <name> on|off|set throttle <ms>");
+        }
+    }
+
+    private void handleInspect(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("/lootpets inspect <player> [detail <petId>]");
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        int maxSlots = plugin.getSlotService().getMaxSlots(target);
+        Map<String, OwnedPetState> owned = petService.getOwnedPets(target.getUniqueId());
+        List<String> active = petService.getActivePetIds(target.getUniqueId(), maxSlots);
+        sender.sendMessage(Colors.color(plugin.getLang().getString("inspect-header")
+                .replace("%player%", target.getName())
+                .replace("%slots%", String.valueOf(maxSlots))
+                .replace("%owned%", String.valueOf(owned.size()))));
+        for (String id : active) {
+            OwnedPetState st = owned.get(id);
+            if (st != null) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("inspect-pet")
+                        .replace("%id%", id)
+                        .replace("%rarity%", String.valueOf(st.rarity()))
+                        .replace("%level%", String.valueOf(st.level()))
+                        .replace("%xp%", String.valueOf(st.xp()))
+                        .replace("%stars%", String.valueOf(st.stars()))));
+            }
+        }
+        if (args.length >= 4 && args[2].equalsIgnoreCase("detail")) {
+            String pid = args[3];
+            OwnedPetState st = owned.get(pid);
+            if (st == null) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("inspect-unknown")));
+            } else {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("inspect-pet")
+                        .replace("%id%", pid)
+                        .replace("%rarity%", String.valueOf(st.rarity()))
+                        .replace("%level%", String.valueOf(st.level()))
+                        .replace("%xp%", String.valueOf(st.xp()))
+                        .replace("%stars%", String.valueOf(st.stars()))));
+            }
+        }
+    }
+
+    private void handleDump(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("/lootpets dump player <player>|config|pets");
+            return;
+        }
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "player" -> {
+                if (args.length < 3) {
+                    sender.sendMessage("/lootpets dump player <player>");
+                    return;
+                }
+                Player target = Bukkit.getPlayerExact(args[2]);
+                if (target == null) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+                    return;
+                }
+                dumpPlayer(sender, target);
+            }
+            case "config" -> dumpConfig(sender);
+            case "pets" -> dumpPets(sender);
+            default -> sender.sendMessage("/lootpets dump player <player>|config|pets");
+        }
+    }
+
+    private void dumpPlayer(CommandSender sender, Player target) {
+        try {
+            Map<String, Object> root = new LinkedHashMap<>();
+            root.put("uuid", target.getUniqueId().toString());
+            root.put("active", petService.getActivePetIds(target.getUniqueId(), Integer.MAX_VALUE));
+            root.put("owned", petService.getOwnedPets(target.getUniqueId()));
+            root.put("shards", petService.getShards(target.getUniqueId()));
+            File file = new File(plugin.getDataFolder(), "diagnostics/dumps/player-" + target.getUniqueId() + "-" + System.currentTimeMillis() + ".json");
+            writeJson(file, root);
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-written").replace("%file%", file.getName())));
+        } catch (Exception e) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-failed")));
+        }
+    }
+
+    private void dumpConfig(CommandSender sender) {
+        try {
+            Map<String, Object> root = new LinkedHashMap<>();
+            root.put("config", plugin.getConfig().getValues(true));
+            File file = new File(plugin.getDataFolder(), "diagnostics/dumps/config-" + System.currentTimeMillis() + ".json");
+            writeJson(file, root);
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-written").replace("%file%", file.getName())));
+        } catch (Exception e) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-failed")));
+        }
+    }
+
+    private void dumpPets(CommandSender sender) {
+        try {
+            Map<String, Object> root = new LinkedHashMap<>();
+            Map<String, Object> defs = new LinkedHashMap<>();
+            for (PetDefinition def : petRegistry.all()) {
+                Map<String, Object> d = new LinkedHashMap<>();
+                d.put("icon", def.icon());
+                d.put("weights", def.weights());
+                defs.put(def.id(), d);
+            }
+            root.put("pets", defs);
+            File file = new File(plugin.getDataFolder(), "diagnostics/dumps/pets-" + System.currentTimeMillis() + ".json");
+            writeJson(file, root);
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-written").replace("%file%", file.getName())));
+        } catch (Exception e) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("dump-failed")));
+        }
+    }
+
+    private void writeJson(File file, Map<String, Object> data) throws IOException {
+        file.getParentFile().mkdirs();
+        try (FileWriter w = new FileWriter(file, StandardCharsets.UTF_8)) {
+            w.write(toJson(data));
+        }
+    }
+
+    private String toJson(Object obj) {
+        if (obj == null) return "null";
+        if (obj instanceof Map<?,?> m) {
+            StringBuilder sb = new StringBuilder("{");
+            boolean first = true;
+            for (Map.Entry<?,?> e : m.entrySet()) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append('"').append(e.getKey()).append('"').append(':').append(toJson(e.getValue()));
+            }
+            sb.append('}');
+            return sb.toString();
+        }
+        if (obj instanceof Iterable<?> it) {
+            StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (Object o : it) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append(toJson(o));
+            }
+            sb.append(']');
+            return sb.toString();
+        }
+        if (obj instanceof Number || obj instanceof Boolean) {
+            return String.valueOf(obj);
+        }
+        return '"' + obj.toString().replace("\"", "\\\"") + '"';
+    }
+
+    private void handleTrace(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("/lootpets trace <player> [seconds]|stop <player>");
+            return;
+        }
+        if (args[1].equalsIgnoreCase("stop")) {
+            if (args.length < 3) {
+                sender.sendMessage("/lootpets trace stop <player>");
+                return;
+            }
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+                return;
+            }
+            traceService.stop(target.getUniqueId(), sender);
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+            return;
+        }
+        int seconds = 10;
+        if (args.length >= 3) {
+            try { seconds = Integer.parseInt(args[2]); } catch (NumberFormatException ignored) {}
+        }
+        seconds = Math.min(60, Math.max(1, seconds));
+        traceService.start(sender, target, seconds);
+            sender.sendMessage(Colors.color(plugin.getLang().getString("trace-start")
+                    .replace("%player%", target.getName())
+                    .replace("%seconds%", String.valueOf(seconds))));
+        }
 
     private void handleRenameToken(CommandSender sender, String[] args) {
         if (args.length < 4) {

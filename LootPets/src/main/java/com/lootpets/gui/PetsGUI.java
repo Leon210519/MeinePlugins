@@ -316,6 +316,7 @@ public class PetsGUI implements Listener {
             if (activeIndex < activeIds.size()) {
                 String petId = activeIds.get(activeIndex);
                 if (petService.unequipPet(player.getUniqueId(), petId)) {
+                    DebugLogger.debug(plugin, "gui", player.getName() + " unequip " + petId);
                     lastChange.put(player.getUniqueId(), now);
                     player.openInventory(build(player));
                 }
@@ -351,6 +352,7 @@ public class PetsGUI implements Listener {
             List<String> activeIds = petService.getActivePetIds(player.getUniqueId(), Math.min(limit, active.size()));
             if (!activeIds.contains(petId)) {
                 if (petService.equipPet(player.getUniqueId(), petId, Math.min(limit, active.size()))) {
+                    DebugLogger.debug(plugin, "gui", player.getName() + " equip " + petId);
                     lastChange.put(player.getUniqueId(), now);
                     player.openInventory(build(player));
                 }

@@ -1,23 +1,19 @@
 package com.lootpets.util;
 
 import com.lootpets.LootPetsPlugin;
-import org.bukkit.configuration.file.FileConfiguration;
+import com.lootpets.service.DebugService;
 
-import java.util.List;
-
+/**
+ * Legacy wrapper maintained for backwards compatibility. Delegates to the
+ * runtime {@link DebugService} when present.
+ */
 public final class DebugLogger {
     private DebugLogger() {}
 
     public static void debug(LootPetsPlugin plugin, String category, String message) {
-        FileConfiguration cfg = plugin.getConfig();
-        String verbosity = cfg.getString("logging.verbosity", "INFO");
-        if (!"DEBUG".equalsIgnoreCase(verbosity)) {
-            return;
+        DebugService svc = plugin.getDebugService();
+        if (svc != null) {
+            svc.debug(category, message);
         }
-        List<String> cats = cfg.getStringList("logging.debug_categories");
-        if (!cats.contains(category)) {
-            return;
-        }
-        plugin.getLogger().info("[" + category + "] " + message);
     }
 }

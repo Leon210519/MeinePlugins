@@ -72,7 +72,7 @@ public class BoostService {
     public BigDecimal apply(Player player, EarningType type, BigDecimal base) {
         if (!ruleService.canApply(player)) {
             if (applyLogged.add(player.getUniqueId())) {
-                DebugLogger.debug(plugin, "rules", "Boost apply denied for " + player.getName());
+                DebugLogger.debug(plugin, "boosts", "apply denied for " + player.getName());
             }
             LootPetsApplyPostEvent post = new LootPetsApplyPostEvent(player, type, base, 1.0, base);
             callEvent(post);

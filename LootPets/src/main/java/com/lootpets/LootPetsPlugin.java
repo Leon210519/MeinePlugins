@@ -20,6 +20,8 @@ import com.lootpets.service.SlotService;
 import com.lootpets.service.RuleService;
 import com.lootpets.service.AuditService;
 import com.lootpets.service.BackupService;
+import com.lootpets.service.TraceService;
+import com.lootpets.service.DebugService;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -49,6 +51,8 @@ public class LootPetsPlugin extends JavaPlugin {
     private PreviewService previewService;
     private LootPetsExpansion papiExpansion;
     private PermissionTierService permissionTierService;
+    private DebugService debugService;
+    private TraceService traceService;
     private int levelTask = -1;
 
     @Override
@@ -66,6 +70,13 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         BackupService.verifyOnLoad(this);
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
+
+        debugService = new DebugService(this);
+        getLogger().info("Debug defaults: enabled=" + debugService.isEnabled() + ", cats=" +
+                debugService.getKnownCategories().stream().filter(debugService::isCategoryEnabled).toList() +
+                ", throttle=" + debugService.getThrottleMillis() + "ms");
+
+        traceService = new TraceService(this, debugService);
 
         rarityRegistry = new RarityRegistry(this);
         petRegistry = new PetRegistry(this);
@@ -188,6 +199,12 @@ public class LootPetsPlugin extends JavaPlugin {
         if (backupService != null) {
             backupService.shutdown();
         }
+        if (debugService != null) {
+            debugService.shutdown();
+        }
+        if (traceService != null) {
+            traceService.shutdown();
+        }
         LootPetsAPI.shutdown();
     }
 
@@ -197,6 +214,14 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public RarityRegistry getRarityRegistry() {
         return rarityRegistry;
+    }
+
+    public DebugService getDebugService() {
+        return debugService;
+    }
+
+    public TraceService getTraceService() {
+        return traceService;
     }
 
     public SlotService getSlotService() {
