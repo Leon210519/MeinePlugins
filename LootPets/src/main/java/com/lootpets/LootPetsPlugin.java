@@ -52,7 +52,8 @@ public class LootPetsPlugin extends JavaPlugin {
     private LootPetsExpansion papiExpansion;
     private PermissionTierService permissionTierService;
     private DebugService debugService;
-    private TraceService traceService;
+  private TraceService traceService;
+  private SimulatorService simulatorService;
     private int levelTask = -1;
 
     @Override
@@ -71,7 +72,7 @@ public class LootPetsPlugin extends JavaPlugin {
         BackupService.verifyOnLoad(this);
         lang = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "lang.yml"));
 
-        debugService = new DebugService(this);
+          debugService = new DebugService(this);
         getLogger().info("Debug defaults: enabled=" + debugService.isEnabled() + ", cats=" +
                 debugService.getKnownCategories().stream().filter(debugService::isCategoryEnabled).toList() +
                 ", throttle=" + debugService.getThrottleMillis() + "ms");
@@ -85,7 +86,8 @@ public class LootPetsPlugin extends JavaPlugin {
         ruleService = new RuleService(this);
         auditService = new AuditService(this);
         eggService = new EggService(this, petService, petRegistry, rarityRegistry);
-        boostService = new BoostService(this, petService, petRegistry, rarityRegistry, ruleService, auditService);
+          boostService = new BoostService(this, petService, petRegistry, rarityRegistry, ruleService, auditService);
+          simulatorService = new SimulatorService(this, petRegistry, rarityRegistry);
         backupService = new BackupService(this, petService);
         previewService = new PreviewService(this, petRegistry, rarityRegistry);
         petService.addChangeListener(uuid -> {
@@ -106,7 +108,7 @@ public class LootPetsPlugin extends JavaPlugin {
         }
 
         Objects.requireNonNull(getCommand("pets"), "pets command").setExecutor(new PetsCommand(this, petsGUI));
-        Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService, auditService, backupService, ruleService));
+          Objects.requireNonNull(getCommand("lootpets"), "lootpets command").setExecutor(new LootPetsAdminCommand(this, petService, petRegistry, boostService, previewService, auditService, backupService, ruleService, simulatorService));
 
         getServer().getPluginManager().registerEvents(new EggListener(this, eggService), this);
         getServer().getPluginManager().registerEvents(petsGUI, this);
@@ -222,6 +224,10 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public TraceService getTraceService() {
         return traceService;
+    }
+
+    public SimulatorService getSimulatorService() {
+        return simulatorService;
     }
 
     public SlotService getSlotService() {

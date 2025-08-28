@@ -204,3 +204,24 @@ backups:
   keep_files: 24
   file_prefix: "pets-backup-"
   verify_on_load: true
+
+simulator:
+  enabled: true
+  max_combo_size: 6
+  default_types: [earnings_lootfactory, earnings_sell]
+  format: { percent_decimals: 0, raw_decimals: 3 }
+  async_timeout_seconds: 10
+  output_dir: "diagnostics/sim"
+  sweep:
+    max_points: 2000
+    levels: { from: 0, to: 350, step: 10 }
+    stars: { from: 0, to: 5, step: 1 }
+  tuning:
+    search_steps: 24
+    per_level_min: 0.001
+    per_level_max: 0.03
+    star_multiplier_min: 1.10
+    star_multiplier_max: 1.60
+  safety:
+    throttle_millis: 250
+    max_console_lines: 200
