@@ -5,6 +5,8 @@ import com.lootpets.api.EarningType;
 import com.lootpets.api.event.LootPetsApplyPostEvent;
 import com.lootpets.api.event.LootPetsApplyPreEvent;
 import com.lootpets.api.event.LootPetsMultiplierQueryEvent;
+import com.lootpets.model.OwnedPetState;
+import com.lootpets.model.PetDefinition;
 import com.lootpets.util.DebugLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
