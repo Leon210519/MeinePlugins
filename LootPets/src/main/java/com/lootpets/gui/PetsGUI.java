@@ -377,9 +377,6 @@ public class PetsGUI implements Listener {
         ItemStack icon = new ItemStack(material);
         ItemMeta meta = icon.getItemMeta();
         if (meta != null) {
-            if (def != null && def.iconCustomModelData() != null) {
-                meta.setCustomModelData(def.iconCustomModelData());
-            }
             String name = def == null ? "Unknown Pet" : def.displayName();
             if (state.rarity() != null) {
                 RarityRegistry.Rarity rr = plugin.getRarityRegistry().getRarities().get(state.rarity());
@@ -409,6 +406,9 @@ public class PetsGUI implements Listener {
             lore.add(Colors.color("&7Evolve " + state.evolveProgress() + "/5"));
             lore.add(Colors.color("&7Stars: " + plugin.getConfig().getString("placeholders.format.star_symbol", "★").repeat(state.stars())));
             meta.setLore(lore);
+            if (def != null && def.iconCustomModelData() != null) {
+                meta.setCustomModelData(def.iconCustomModelData());
+            }
             icon.setItemMeta(meta);
         }
         return icon;

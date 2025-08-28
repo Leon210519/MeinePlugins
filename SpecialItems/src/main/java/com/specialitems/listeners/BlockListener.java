@@ -127,7 +127,10 @@ public class BlockListener implements Listener {
             ItemStack give = drop.clone();
             if (smelt) {
                 Material out = AutoSmelt.SMELTS.get(give.getType());
-                if (out != null) give.setType(out);
+                if (out != null) {
+                    give.setType(out);
+                    ItemUtil.normalizeCustomModelData(give);
+                }
             }
             int base = give.getAmount();
             int total = (int) Math.floor(base * enchMul * (1.0 + yieldBonus));

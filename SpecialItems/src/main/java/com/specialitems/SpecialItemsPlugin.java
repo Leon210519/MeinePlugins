@@ -105,6 +105,14 @@ public class SpecialItemsPlugin extends JavaPlugin {
             Log.warn("Command 'si_cmdfix' not found in plugin.yml!");
         }
 
+        if (getCommand("cmdprobe") != null && getCommand("cmdscan") != null) {
+            var probe = new com.specialitems.debug.CmdProbeScan();
+            getCommand("cmdprobe").setExecutor(probe);
+            getCommand("cmdscan").setExecutor(probe);
+        } else {
+            Log.warn("CmdProbe/CmdScan commands not found in plugin.yml!");
+        }
+
         // --- Leveling system (NEW) ---
         this.leveling = new LevelingService(this);
         getServer().getPluginManager().registerEvents(new LevelingListener(leveling), this);

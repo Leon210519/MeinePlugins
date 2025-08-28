@@ -69,9 +69,6 @@ public class AlbumGUI implements Listener {
                 icon = new ItemStack(def.iconMaterial());
                 ItemMeta meta = icon.getItemMeta();
                 if (meta != null) {
-                    if (def.iconCustomModelData() != null) {
-                        meta.setCustomModelData(def.iconCustomModelData());
-                    }
                     String name = def.displayName();
                     if (st.suffix() != null && !st.suffix().isEmpty()) {
                         name = name + " " + st.suffix();
@@ -80,6 +77,9 @@ public class AlbumGUI implements Listener {
                         name = "[Frame: " + frame + "] " + name;
                     }
                     meta.setDisplayName(Colors.color(name));
+                    if (def.iconCustomModelData() != null) {
+                        meta.setCustomModelData(def.iconCustomModelData());
+                    }
                     icon.setItemMeta(meta);
                 }
             } else {

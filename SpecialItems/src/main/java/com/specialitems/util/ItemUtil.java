@@ -17,30 +17,6 @@ public final class ItemUtil {
 
     private ItemUtil() {}
 
-    private static Class<?> findClass(String... names) throws ClassNotFoundException {
-        for (String name : names) {
-            try {
-                return Class.forName(name);
-            } catch (ClassNotFoundException ignored) {
-            }
-        }
-        throw new ClassNotFoundException(names[0]);
-    }
-
-    private static Class<?> dataComponentsClass() throws ClassNotFoundException {
-        return findClass(
-                "net.minecraft.core.component.DataComponents",
-                "net.minecraft.world.item.component.DataComponents"
-        );
-    }
-
-    private static Class<?> dataComponentTypeClass() throws ClassNotFoundException {
-        return findClass(
-                "net.minecraft.core.component.DataComponentType",
-                "net.minecraft.world.item.component.DataComponentType"
-        );
-    }
-
     public static ItemStack withEffect(ItemStack item, String effectId, int level) {
         if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
@@ -159,93 +135,25 @@ public final class ItemUtil {
     }
 
     /**
-     * Normalizes the CustomModelData of the given item.
-     * <ul>
-     *     <li>If no CMD is present but a template match exists, the template's
-     *     value is applied.</li>
-     *     <li>If a floating point or root-level NBT CMD is found, it is
-     *     rewritten to an integer via {@link ItemMeta}.</li>
-     * </ul>
+     * Normalizes the CustomModelData of the given item using only the Bukkit
+     * API. If the item lacks a CMD, a template lookup is attempted. When no
+     * valid value can be resolved a warning is logged.
      *
      * @param item item to normalize
      * @return {@code true} if the item was modified
      */
     public static boolean normalizeCustomModelData(ItemStack item) {
         if (item == null || item.getType().isAir()) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        if (meta.hasCustomModelData()) return false;
 
-        ItemMeta beforeMeta = item.getItemMeta();
-        if (beforeMeta == null) return false;
-
-        // If CMD missing, try to apply template
-        if (!beforeMeta.hasCustomModelData()) {
-            TemplateItems.applyTemplateMeta(item);
-            beforeMeta = item.getItemMeta();
+        boolean applied = TemplateItems.applyTemplateMeta(item);
+        if (!applied) {
+            String name = meta.hasDisplayName() ? ChatColor.stripColor(meta.getDisplayName()) : "(no name)";
+            Log.warn("Item " + item.getType() + " '" + name + "' missing valid CustomModelData");
         }
-
-        Integer cmd = beforeMeta.hasCustomModelData() ? beforeMeta.getCustomModelData() : null;
-        boolean changed = false;
-
-        try {
-            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
-            Object nms = craft.getMethod("asNMSCopy", ItemStack.class).invoke(null, item);
-
-            // Remove data component entry if present (1.20+)
-            try {
-                Class<?> comps = dataComponentsClass();
-                Class<?> typeCls = dataComponentTypeClass();
-                Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
-                var has = nms.getClass().getMethod("has", typeCls);
-                if ((Boolean) has.invoke(nms, type)) {
-                    var get = nms.getClass().getMethod("get", typeCls);
-                    Object val = get.invoke(nms, type);
-                    if (cmd == null && val instanceof Integer v) cmd = v;
-                    var remove = nms.getClass().getMethod("remove", typeCls);
-                    remove.invoke(nms, type);
-                    changed = true;
-                }
-            } catch (Throwable ignored) {}
-
-            // Legacy NBT tag
-            var getTag = nms.getClass().getMethod("getTag");
-            Object tag = getTag.invoke(nms);
-            if (tag != null) {
-                var contains = tag.getClass().getMethod("contains", String.class);
-                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
-                    var get = tag.getClass().getMethod("get", String.class);
-                    Object raw = get.invoke(tag, "CustomModelData");
-                    String str;
-                    try { str = (String) raw.getClass().getMethod("asString").invoke(raw); }
-                    catch (NoSuchMethodException ex) { str = raw.toString(); }
-                    try {
-                        int val = (int) Math.floor(Double.parseDouble(str));
-                        if (cmd == null || cmd != val) cmd = val;
-                    } catch (NumberFormatException ignored) {}
-                    var remove = tag.getClass().getMethod("remove", String.class);
-                    remove.invoke(tag, "CustomModelData");
-                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-                    setTag.invoke(nms, tag);
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                ItemStack cleaned = (ItemStack) craft.getMethod("asBukkitCopy", nms.getClass()).invoke(null, nms);
-                ItemMeta cleanedMeta = cleaned.getItemMeta();
-                if (cleanedMeta != null) item.setItemMeta(cleanedMeta);
-            }
-        } catch (Throwable ignored) {}
-
-        if (cmd != null) {
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null || !meta.hasCustomModelData() || meta.getCustomModelData() != cmd) {
-                if (meta == null) return changed;
-                meta.setCustomModelData(cmd);
-                item.setItemMeta(meta);
-                changed = true;
-            }
-        }
-
-        return changed;
+        return applied;
     }
 
 }

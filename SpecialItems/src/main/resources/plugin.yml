@@ -23,6 +23,14 @@ commands:
     description: Normalize held item CustomModelData to integer
     usage: /si_cmdfix
     permission: specialitems.debug
+  cmdprobe:
+    description: Give an item with explicit CustomModelData
+    usage: /cmdprobe <material> <cmd>
+    permission: specialitems.debug
+  cmdscan:
+    description: Scan open GUI for missing or mismatched CMD
+    usage: /cmdscan
+    permission: specialitems.debug
 permissions:
   specialitems.admin:
     description: Allows using admin SpecialItems subcommands

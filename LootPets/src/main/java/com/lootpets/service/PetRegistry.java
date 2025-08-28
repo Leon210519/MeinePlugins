@@ -52,12 +52,16 @@ public class PetRegistry {
                 }
                 Integer cmd = null;
                 if (icon.contains("custom_model_data")) {
-                    int raw = icon.getInt("custom_model_data");
-                    if (raw < 0) {
-                        plugin.getLogger().warning("Pet " + id + " has negative custom_model_data");
-                        continue;
+                    if (icon.isInt("custom_model_data")) {
+                        int raw = icon.getInt("custom_model_data");
+                        if (raw < 0) {
+                            plugin.getLogger().warning("Pet " + id + " has negative custom_model_data");
+                            continue;
+                        }
+                        cmd = raw;
+                    } else {
+                        plugin.getLogger().warning("Invalid CMD (must be int) in pets_definitions.yml at pets." + id + ".icon.custom_model_data");
                     }
-                    cmd = raw;
                 }
                 Map<String, Double> weights = new LinkedHashMap<>();
                 ConfigurationSection weightsSec = sec.getConfigurationSection("weights");

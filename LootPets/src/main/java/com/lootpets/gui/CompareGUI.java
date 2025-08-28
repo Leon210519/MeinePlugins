@@ -79,9 +79,6 @@ public class CompareGUI implements Listener {
         ItemStack icon = new ItemStack(material);
         ItemMeta meta = icon.getItemMeta();
         if (meta != null) {
-            if (def != null && def.iconCustomModelData() != null) {
-                meta.setCustomModelData(def.iconCustomModelData());
-            }
             String name = def == null ? "Unknown" : def.displayName();
             if (state != null && state.rarity() != null) {
                 var rr = plugin.getRarityRegistry().getRarities().get(state.rarity());
@@ -108,6 +105,9 @@ public class CompareGUI implements Listener {
                 }
             }
             meta.setLore(lore);
+            if (def != null && def.iconCustomModelData() != null) {
+                meta.setCustomModelData(def.iconCustomModelData());
+            }
             icon.setItemMeta(meta);
         }
         return icon;
