@@ -18,40 +18,16 @@ public final class TemplateItems {
 
     private TemplateItems() {}
 
-    private static Class<?> findClass(String... names) throws ClassNotFoundException {
-        for (String name : names) {
-            try {
-                return Class.forName(name);
-            } catch (ClassNotFoundException ignored) {
-            }
-        }
-        throw new ClassNotFoundException(names[0]);
-    }
-
-    private static Class<?> dataComponentsClass() throws ClassNotFoundException {
-        return findClass(
-                "net.minecraft.core.component.DataComponents",
-                "net.minecraft.world.item.component.DataComponents"
-        );
-    }
-
-    private static Class<?> dataComponentTypeClass() throws ClassNotFoundException {
-        return findClass(
-                "net.minecraft.core.component.DataComponentType",
-                "net.minecraft.world.item.component.DataComponentType"
-        );
-    }
-
     private static final Map<String, TemplateItem> BY_MAT_NAME = new HashMap<>();
     private static List<TemplateItem> ALL = new ArrayList<>();
-    private static int NORMALIZED_NON_INT = 0;
+    private static int INVALID_CMD = 0;
     private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
         BY_MAT_NAME.clear();
         BY_RARITY.clear();
-        NORMALIZED_NON_INT = 0;
+        INVALID_CMD = 0;
         var sec = Configs.templates.getConfigurationSection("templates");
         if (sec == null) {
             ALL = list;
@@ -112,6 +88,8 @@ public final class TemplateItems {
                 // Always write CMD as an integer via the Bukkit API
                 it = ItemUtil.forceSetCustomModelData(it, cmd);
             }
+        } else {
+            Log.warn("Template '" + id + "' did not provide CustomModelData");
         }
 
         try {
@@ -137,28 +115,9 @@ public final class TemplateItems {
             if (t.isInt(path)) {
                 return t.getInt(path);
             }
-            if (t.isDouble(path)) {
-                int val = (int) Math.floor(t.getDouble(path));
-                NORMALIZED_NON_INT++;
-                Log.warn("CustomModelData for " + id + " was non-integer, normalized to " + val);
-                return val;
-            }
-            String raw = t.getString(path);
-            if (raw != null) {
-                try {
-                    return Integer.parseInt(raw.trim());
-                } catch (NumberFormatException ex) {
-                    try {
-                        double d = Double.parseDouble(raw.trim());
-                        int val = (int) Math.floor(d);
-                        NORMALIZED_NON_INT++;
-                        Log.warn("CustomModelData for " + id + " was non-integer, normalized to " + val);
-                        return val;
-                    } catch (NumberFormatException ignored) {}
-                }
-            }
-            NORMALIZED_NON_INT++;
-            Log.warn("Template '" + id + "' has invalid CMD at '" + path + "': " + t.get(path));
+            INVALID_CMD++;
+            Log.warn("Template '" + id + "' has invalid CMD (must be int) at '" + path + "'");
+            return null;
         }
         return null;
     }
@@ -205,7 +164,7 @@ public final class TemplateItems {
     }
 
     public static int normalizedNonIntCount() {
-        return NORMALIZED_NON_INT;
+        return INVALID_CMD;
     }
 
     public static Map<Rarity, List<TemplateItem>> byRarity() {
@@ -215,64 +174,37 @@ public final class TemplateItems {
     /**
      * Attempts to match the given item to a template based on material and
      * display name. If a match is found the template's custom model data is
-     * applied to the item.
+     * applied to the item. If the template lacks a CMD the item is left
+     * unchanged and a warning is logged.
      *
      * @param item item to update
      * @return true if a template match was applied
      */
     public static boolean applyTemplateMeta(ItemStack item) {
-        if (item == null) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null || !meta.hasDisplayName()) return false;
-        String key = item.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
-        TemplateItem tmpl = BY_MAT_NAME.get(key);
+        TemplateItem tmpl = match(item);
         if (tmpl == null) return false;
         ItemMeta tmeta = tmpl.stack().getItemMeta();
-        if (tmeta == null || !tmeta.hasCustomModelData()) return false;
-        // Overwrite any existing CMD, removing legacy floating point values
-        meta.setCustomModelData(null);
+        if (tmeta == null || !tmeta.hasCustomModelData()) {
+            Log.warn("Template '" + tmpl.id() + "' did not provide CustomModelData");
+            return false;
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        meta.setCustomModelData(tmeta.getCustomModelData());
         item.setItemMeta(meta);
-        // Ensure the raw item components/NBT tag are cleared as well
-        try {
-            Class<?> craft = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack");
-            var asNmsCopy = craft.getMethod("asNMSCopy", ItemStack.class);
-            Object nms = asNmsCopy.invoke(null, item);
-            // Strip the data-component based field introduced in 1.20+
-            try {
-                Class<?> comps = dataComponentsClass();
-                Class<?> typeCls = dataComponentTypeClass();
-                Object type = comps.getField("CUSTOM_MODEL_DATA").get(null);
-                var has = nms.getClass().getMethod("has", typeCls);
-                if ((Boolean) has.invoke(nms, type)) {
-                    var remove = nms.getClass().getMethod("remove", typeCls);
-                    remove.invoke(nms, type);
-                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                    item.setItemMeta(cleaned.getItemMeta());
-                }
-            } catch (Throwable ignored) {}
-            // Legacy NBT tag fallback for older items
-            var getTag = nms.getClass().getMethod("getTag");
-            Object tag = getTag.invoke(nms);
-            if (tag != null) {
-                var contains = tag.getClass().getMethod("contains", String.class);
-                if ((Boolean) contains.invoke(tag, "CustomModelData")) {
-                    var remove = tag.getClass().getMethod("remove", String.class);
-                    remove.invoke(tag, "CustomModelData");
-                    var setTag = nms.getClass().getMethod("setTag", tag.getClass());
-                    setTag.invoke(nms, tag);
-                    var asBukkitCopy = craft.getMethod("asBukkitCopy", nms.getClass());
-                    ItemStack cleaned = (ItemStack) asBukkitCopy.invoke(null, nms);
-                    item.setItemMeta(cleaned.getItemMeta());
-                }
-            }
-        } catch (Throwable ignored) {}
-        // Finally apply the integer value from the template
-        Integer val = (tmeta.hasCustomModelData() ? tmeta.getCustomModelData() : null);
-        if (val == null) return false;
-        item = ItemUtil.forceSetCustomModelData(item, val);
         return true;
+    }
 
-     }
+    /**
+     * Returns the template matching the item's material and stripped display
+     * name without modifying the item.
+     */
+    public static TemplateItem match(ItemStack item) {
+        if (item == null) return null;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return null;
+        String key = item.getType().name() + "|" + ChatColor.stripColor(meta.getDisplayName());
+        return BY_MAT_NAME.get(key);
+    }
 
 }

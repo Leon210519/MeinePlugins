@@ -209,16 +209,20 @@ public class ConfigValidator {
                     res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.material", Severity.ERROR, "invalid material"));
                 }
                 if (icon.contains("custom_model_data")) {
-                    int cmd = icon.getInt("custom_model_data");
-                    if (cmd < 0) {
-                        res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.custom_model_data", Severity.ERROR, "must be >=0"));
-                        if (fix) {
-                            icon.set("custom_model_data", 0);
-                            dirty = true;
+                    if (icon.isInt("custom_model_data")) {
+                        int cmd = icon.getInt("custom_model_data");
+                        if (cmd < 0) {
+                            res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.custom_model_data", Severity.ERROR, "must be >=0"));
+                            if (fix) {
+                                icon.set("custom_model_data", 0);
+                                dirty = true;
+                            }
                         }
-                    }
-                    if (!usedCmd.add(cmd)) {
-                        res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.custom_model_data", Severity.WARN, "duplicate custom_model_data"));
+                        if (!usedCmd.add(cmd)) {
+                            res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.custom_model_data", Severity.WARN, "duplicate custom_model_data"));
+                        }
+                    } else {
+                        res.add(new Issue("pets_definitions.yml", "pets." + id + ".icon.custom_model_data", Severity.ERROR, "invalid CMD (must be int)"));
                     }
                 }
             }

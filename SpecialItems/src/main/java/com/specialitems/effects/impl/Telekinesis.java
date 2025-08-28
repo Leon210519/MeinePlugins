@@ -1,6 +1,7 @@
 package com.specialitems.effects.impl;
 
 import com.specialitems.effects.CustomEffect;
+import com.specialitems.util.ItemUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -20,13 +21,16 @@ public class Telekinesis implements CustomEffect {
     @Override
     public void onBlockBreak(Player player, ItemStack tool, BlockBreakEvent e, int level) {
         e.setDropItems(false);
-        boolean smelt = com.specialitems.util.ItemUtil.getEffectLevel(tool, "autosmelt") > 0;
+        boolean smelt = ItemUtil.getEffectLevel(tool, "autosmelt") > 0;
         Collection<ItemStack> vanilla = e.getBlock().getDrops(tool);
         for (ItemStack drop : vanilla) {
             ItemStack give = drop.clone();
             if (smelt) {
                 var out = AutoSmelt.SMELTS.get(drop.getType());
-                if (out != null) give.setType(out);
+                if (out != null) {
+                    give.setType(out);
+                    ItemUtil.normalizeCustomModelData(give);
+                }
             }
             player.getInventory().addItem(give);
         }
