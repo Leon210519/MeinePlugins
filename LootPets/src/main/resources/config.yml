@@ -1,3 +1,22 @@
+storage:
+  provider: "YAML"
+  flush_interval_seconds: 30
+  preload_on_join: true
+  sqlite:
+    file: "lootpets.db"
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "lootpets"
+    user: "root"
+    password: ""
+    pool:
+      size: 8
+      idle_seconds: 60
+  migrations:
+    allow_auto_migrate: false
+    backup_yaml_before_migrate: true
+    verify_counts_after_migrate: true
 default-slots: 2
 slot-permission-prefix: "lootpets.slots."
 equip-cooldown-ms: 300
