@@ -141,6 +141,35 @@ public class PetService implements Listener {
     }
     // endregion
 
+    public StorageAdapter getStorage() {
+        return storage;
+    }
+
+    /** Return [version,lastUpdated] for cached player. */
+    public long[] getVersion(UUID uuid) {
+        PlayerData d = cache.get(uuid);
+        if (d == null) return new long[]{0L,0L};
+        return new long[]{d.version, d.lastUpdated};
+    }
+
+    /** Replace cached data with fresh state, notifying listeners. */
+    public void replace(UUID uuid, PlayerData data) {
+        cache.put(uuid, data);
+        dirty.remove(uuid);
+        notifyChange(uuid);
+    }
+
+    /** Force reload from storage, bypassing cache. */
+    public void reload(UUID uuid) {
+        try {
+            PlayerData data = storage.loadPlayer(uuid);
+            if (data == null) data = new PlayerData();
+            replace(uuid, data);
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to reload player " + uuid + ": " + e.getMessage());
+        }
+    }
+
     public void addChangeListener(Consumer<UUID> listener) {
         changeListeners.add(listener);
     }

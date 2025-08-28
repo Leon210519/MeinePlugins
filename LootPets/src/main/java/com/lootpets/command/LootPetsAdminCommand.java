@@ -18,6 +18,7 @@ import com.lootpets.service.ConfigValidator;
 import com.lootpets.service.ConfigValidator.ValidatorResult;
 import com.lootpets.service.ConfigValidator.Severity;
 import com.lootpets.service.SimulatorService;
+import com.lootpets.service.CrossServerService;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
@@ -95,6 +96,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "dump" -> handleDump(sender, args);
             case "trace" -> handleTrace(sender, args);
             case "simulate" -> handleSimulate(sender, args);
+            case "xserver" -> handleXServer(sender, args);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
         }
         return true;
@@ -328,10 +330,12 @@ public class LootPetsAdminCommand implements CommandExecutor {
         int maxSlots = plugin.getSlotService().getMaxSlots(target);
         Map<String, OwnedPetState> owned = petService.getOwnedPets(target.getUniqueId());
         List<String> active = petService.getActivePetIds(target.getUniqueId(), maxSlots);
+        long[] ver = petService.getVersion(target.getUniqueId());
         sender.sendMessage(Colors.color(plugin.getLang().getString("inspect-header")
                 .replace("%player%", target.getName())
                 .replace("%slots%", String.valueOf(maxSlots))
                 .replace("%owned%", String.valueOf(owned.size()))));
+        sender.sendMessage("Version " + ver[0] + ", updated=" + ver[1]);
         for (String id : active) {
             OwnedPetState st = owned.get(id);
             if (st != null) {
@@ -853,6 +857,45 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "presets" -> simulatePresets(sender, rest);
             case "export" -> simulateExport(sender, rest);
             default -> sender.sendMessage(Colors.color(plugin.getLang().getString("sim-invalid")));
+        }
+    }
+
+    private void handleXServer(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("/lootpets xserver <info|resync|touch|conflicts>");
+            return;
+        }
+        CrossServerService svc = plugin.getCrossServerService();
+        switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "info" -> sender.sendMessage(svc == null ? "n/a" : svc.info());
+            case "resync" -> {
+                if (args.length < 3) {
+                    sender.sendMessage("/lootpets xserver resync <player>");
+                    return;
+                }
+                Player t = Bukkit.getPlayerExact(args[2]);
+                if (t == null) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+                    return;
+                }
+                if (svc != null) svc.resync(t.getUniqueId());
+                sender.sendMessage("resync queued");
+            }
+            case "touch" -> {
+                if (args.length < 3) {
+                    sender.sendMessage("/lootpets xserver touch <player>");
+                    return;
+                }
+                Player t = Bukkit.getPlayerExact(args[2]);
+                if (t == null) {
+                    sender.sendMessage(Colors.color(plugin.getLang().getString("player-not-found")));
+                    return;
+                }
+                if (svc != null) svc.touch(t.getUniqueId());
+                sender.sendMessage("touched");
+            }
+            case "conflicts" -> sender.sendMessage("conflicts: n/a");
+            default -> sender.sendMessage("/lootpets xserver <info|resync|touch|conflicts>");
         }
     }
 

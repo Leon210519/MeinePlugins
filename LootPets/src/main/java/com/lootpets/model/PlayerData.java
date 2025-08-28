@@ -15,4 +15,10 @@ public class PlayerData {
     public String albumFrameStyle = null;
     public String limitsDate = null;
     public Map<String, Integer> dailyLimits = new HashMap<>();
+
+    /** Optimistic concurrency version number. */
+    public int version = 0;
+
+    /** Last updated timestamp (epoch millis). */
+    public long lastUpdated = 0L;
 }

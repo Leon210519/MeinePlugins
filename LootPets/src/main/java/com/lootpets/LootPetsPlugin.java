@@ -22,6 +22,7 @@ import com.lootpets.service.AuditService;
 import com.lootpets.service.BackupService;
 import com.lootpets.service.TraceService;
 import com.lootpets.service.DebugService;
+import com.lootpets.service.CrossServerService;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -54,6 +55,7 @@ public class LootPetsPlugin extends JavaPlugin {
     private DebugService debugService;
   private TraceService traceService;
   private SimulatorService simulatorService;
+  private CrossServerService crossServerService;
     private int levelTask = -1;
 
     @Override
@@ -172,6 +174,8 @@ public class LootPetsPlugin extends JavaPlugin {
                 " and cap " + getConfig().getDouble("caps.global_multiplier_max"));
         getLogger().info("PreviewService initialized with types " + previewService.getShowTypes() +
                 " and display cap " + getConfig().getDouble("preview.cap_multiplier", 6.0));
+
+        crossServerService = new CrossServerService(this, petService, petService.getStorage());
     }
 
     @Override
@@ -207,6 +211,9 @@ public class LootPetsPlugin extends JavaPlugin {
         if (traceService != null) {
             traceService.shutdown();
         }
+        if (crossServerService != null) {
+            crossServerService.shutdown();
+        }
         LootPetsAPI.shutdown();
     }
 
@@ -228,6 +235,10 @@ public class LootPetsPlugin extends JavaPlugin {
 
     public SimulatorService getSimulatorService() {
         return simulatorService;
+    }
+
+    public CrossServerService getCrossServerService() {
+        return crossServerService;
     }
 
     public SlotService getSlotService() {
@@ -301,6 +312,10 @@ public class LootPetsPlugin extends JavaPlugin {
         }
         petsGUI.reset();
         getLogger().info("Reloaded " + rarityRegistry.size() + " rarities and " + petRegistry.size() + " pets");
+        if (crossServerService != null) {
+            crossServerService.shutdown();
+        }
+        crossServerService = new CrossServerService(this, petService, petService.getStorage());
     }
 
     @Override
