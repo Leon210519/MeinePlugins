@@ -113,8 +113,8 @@ gui:
     open_key: "SHIFT_LEFT_CLICK"
 
 boosts:
-  per_level: 0.02
-  star_multiplier: 1.5
+  per_level: 0.01
+  star_multiplier: 1.35
   max_stars: 5
   stacking_mode: "ADDITIVE"
   rarity_base_multipliers: {}

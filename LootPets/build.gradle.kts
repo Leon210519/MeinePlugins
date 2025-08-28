@@ -1,7 +1,7 @@
 plugins { java }
 
 group = "com.lootpets"
-version = "0.5.0"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -12,7 +12,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("me.clip:placeholderapi:2.11.5")
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
 }
 
 java {

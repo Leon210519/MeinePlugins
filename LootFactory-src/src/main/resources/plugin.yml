@@ -2,7 +2,7 @@ name: LootFactory
 main: com.lootfactory.LootFactoryPlugin
 version: 1.0.1
 api-version: '1.21'
-softdepend: [Vault, EconomyPlus, PlaceholderAPI, LootCrates]
+softdepend: [Vault, EconomyPlus, PlaceholderAPI, LootCrates, LootPets]
 
 
 commands:
