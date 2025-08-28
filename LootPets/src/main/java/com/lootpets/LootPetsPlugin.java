@@ -22,6 +22,7 @@ import com.lootpets.service.AuditService;
 import com.lootpets.service.BackupService;
 import com.lootpets.service.TraceService;
 import com.lootpets.service.DebugService;
+import com.lootpets.service.SimulatorService;
 import com.lootpets.service.CrossServerService;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.configuration.ConfigurationSection;
@@ -53,9 +54,9 @@ public class LootPetsPlugin extends JavaPlugin {
     private LootPetsExpansion papiExpansion;
     private PermissionTierService permissionTierService;
     private DebugService debugService;
-  private TraceService traceService;
-  private SimulatorService simulatorService;
-  private CrossServerService crossServerService;
+    private TraceService traceService;
+    private SimulatorService simulatorService;
+    private CrossServerService crossServerService;
     private int levelTask = -1;
 
     @Override
