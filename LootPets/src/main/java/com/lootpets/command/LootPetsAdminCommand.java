@@ -12,6 +12,16 @@ import com.lootpets.service.PetService;
 import com.lootpets.service.AuditService;
 import com.lootpets.service.BackupService;
 import com.lootpets.service.RuleService;
+import com.lootpets.service.ConfigValidator;
+import com.lootpets.service.ConfigValidator.ValidatorResult;
+import com.lootpets.service.ConfigValidator.Severity;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+import java.io.File;
+import java.util.UUID;
+import java.util.HashSet;
+import java.util.List;
+
 import com.lootpets.util.Colors;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -65,6 +75,7 @@ public class LootPetsAdminCommand implements CommandExecutor {
             case "calc" -> handleCalc(sender, args);
             case "preview" -> handlePreview(sender, args);
             case "reload" -> handleReload(sender);
+            case "doctor" -> handleDoctor(sender, args);
             case "shards" -> handleShards(sender, args);
             case "renametoken" -> handleRenameToken(sender, args);
             case "suffix" -> handleSuffix(sender, args);
@@ -396,8 +407,80 @@ public class LootPetsAdminCommand implements CommandExecutor {
             sender.sendMessage(Colors.color(plugin.getLang().getString("reload-disabled")));
             return;
         }
-        plugin.reloadEverything();
-        sender.sendMessage(Colors.color(plugin.getLang().getString("reloaded")));
+        sender.sendMessage(Colors.color("&7Validating configuration..."));
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            ConfigValidator validator = new ConfigValidator(plugin);
+            ValidatorResult vr = validator.validate(false);
+            File diag = validator.writeReport(vr);
+            if (vr.hasErrors()) {
+                sender.sendMessage(Colors.color("&cValidation failed. See " + diag.getName()));
+                return;
+            }
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                plugin.reloadEverything();
+                sender.sendMessage(Colors.color(plugin.getLang().getString("reloaded")));
+            });
+        });
+    }
+
+    private void handleDoctor(CommandSender sender, String[] args) {
+        ConfigValidator validator = new ConfigValidator(plugin);
+        if (args.length == 1) {
+            ValidatorResult res = validator.validate(false);
+            File diag = validator.writeReport(res);
+            sender.sendMessage(Colors.color("&7Doctor: " + res.count(Severity.ERROR) + " error(s), " + res.count(Severity.WARN) + " warn(s), " + res.count(Severity.INFO) + " info. Report: " + diag.getName()));
+            if (res.hasErrors()) {
+                sender.sendMessage(Colors.color("&cValidation failed"));
+            }
+            return;
+        }
+        switch (args[1].toLowerCase()) {
+            case "fix" -> {
+                ValidatorResult res = validator.validate(true);
+                File diag = validator.writeReport(res);
+                sender.sendMessage(Colors.color("&7Doctor: " + res.count(Severity.ERROR) + " error(s), " + res.count(Severity.WARN) + " warn(s), " + res.count(Severity.INFO) + " info. Report: " + diag.getName()));
+            }
+            case "players" -> runPlayerDoctor(sender);
+            case "export" -> {
+                validator.validate(false);
+                File out = validator.exportState();
+                sender.sendMessage(Colors.color("&7State exported to " + out.getName()));
+            }
+            default -> sender.sendMessage(Colors.color(plugin.getLang().getString("admin-usage")));
+        }
+    }
+
+    private void runPlayerDoctor(CommandSender sender) {
+        File petsFile = new File(plugin.getDataFolder(), "pets.yml");
+        if (!petsFile.exists()) {
+            sender.sendMessage(Colors.color("&cNo pets.yml found"));
+            return;
+        }
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(petsFile);
+        ConfigurationSection players = cfg.getConfigurationSection("players");
+        if (players == null) {
+            sender.sendMessage(Colors.color("&cNo player data"));
+            return;
+        }
+        sender.sendMessage(Colors.color("&7Player Owned Active Violations"));
+        int maxSlots = plugin.getConfig().getInt("default-slots", 1);
+        for (String k : players.getKeys(false)) {
+            ConfigurationSection sec = players.getConfigurationSection(k);
+            if (sec == null) continue;
+            ConfigurationSection ownedSec = sec.getConfigurationSection("owned");
+            Set<String> owned = ownedSec != null ? ownedSec.getKeys(false) : new HashSet<>();
+            List<String> active = sec.getStringList("active");
+            int violations = 0;
+            for (String a : active) {
+                if (!owned.contains(a)) {
+                    violations++;
+                }
+            }
+            if (active.size() > maxSlots) {
+                violations++;
+            }
+            sender.sendMessage(Colors.color("&7" + k.substring(0, 8) + "... " + owned.size() + " " + active.size() + " " + violations));
+        }
     }
 
     private void handleCalc(CommandSender sender, String[] args) {
