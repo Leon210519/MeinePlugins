@@ -203,7 +203,7 @@ public class PetsGUI implements Listener {
         }
         if (filtersEnabled && cfg.getBoolean("gui.filters.type_filter", true)) {
             String val = state.typeIndex == 0 ? "ALL" : types[state.typeIndex - 1].name().replace("EARNINGS_", "");
-            inv.setItem(typeSlot, item(Material.PAPER, Colors.color(lang.getString("filter-label").replace("%value%", val))));
+            inv.setItem(typeSlot, item(Material.AMETHYST_SHARD, Colors.color(lang.getString("filter-label").replace("%value%", val))));
         }
         if (cfg.getBoolean("gui.features.compare_enabled", true)) {
             String label = lang.getString("compare-button")
