@@ -76,7 +76,7 @@ public class ShardShopGUI implements Listener {
             case "ADD_XP" -> mat = Material.EXPERIENCE_BOTTLE;
             case "RENAME_TOKEN" -> mat = Material.NAME_TAG;
             case "ALBUM_FRAME" -> mat = Material.PAINTING;
-            default -> mat = Material.PAPER;
+            default -> mat = Material.AMETHYST_SHARD;
         }
         ItemStack stack = new ItemStack(mat);
         ItemMeta meta = stack.getItemMeta();
