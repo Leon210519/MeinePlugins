@@ -8,6 +8,8 @@ import org.bukkit.block.data.Ageable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -31,17 +33,22 @@ public class LevelingService {
 
     private static final int XP_PER_ACTION = 1;
 
-    private static final Set<Material> ORES = EnumSet.of(
-            Material.COAL_ORE, Material.IRON_ORE, Material.GOLD_ORE, Material.REDSTONE_ORE,
-            Material.LAPIS_ORE, Material.COPPER_ORE, Material.DIAMOND_ORE, Material.EMERALD_ORE,
-            Material.DEEPSLATE_COAL_ORE, Material.DEEPSLATE_IRON_ORE, Material.DEEPSLATE_GOLD_ORE,
-            Material.DEEPSLATE_REDSTONE_ORE, Material.DEEPSLATE_LAPIS_ORE,
-            Material.DEEPSLATE_COPPER_ORE, Material.DEEPSLATE_DIAMOND_ORE, Material.DEEPSLATE_EMERALD_ORE,
-            Material.NETHER_QUARTZ_ORE, Material.NETHER_GOLD_ORE, Material.ANCIENT_DEBRIS
-    );
-
     private static final Set<Material> CROPS = EnumSet.of(
-            Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.NETHER_WART
+            Material.WHEAT,
+            Material.CARROTS,
+            Material.POTATOES,
+            Material.BEETROOTS,
+            Material.NETHER_WART,
+            Material.SWEET_BERRY_BUSH,
+            Material.COCOA,
+            Material.PUMPKIN,
+            Material.MELON,
+            Material.PUMPKIN_STEM,
+            Material.ATTACHED_PUMPKIN_STEM,
+            Material.MELON_STEM,
+            Material.ATTACHED_MELON_STEM,
+            Material.TORCHFLOWER_CROP,
+            Material.PITCHER_CROP
     );
 
     public LevelingService(JavaPlugin plugin) {
@@ -82,6 +89,14 @@ public class LevelingService {
         if (!pdc.has(keys.XP, PersistentDataType.INTEGER)) {
             pdc.set(keys.XP, PersistentDataType.INTEGER, 0);
         }
+        ToolClass clazz = detectToolClass(item);
+        if (clazz == ToolClass.HOE) {
+            if (!pdc.has(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE)) {
+                pdc.set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, 0.0);
+            }
+        } else {
+            pdc.remove(keys.BONUS_YIELD_PCT);
+        }
         meta.setUnbreakable(true);
         try {
             meta.setEnchantmentGlintOverride(true);
@@ -109,7 +124,10 @@ public class LevelingService {
     }
 
     public double getBonusYieldPct(ItemStack item) {
-        return 0.0; // not used in this simplified system
+        ItemMeta meta = item == null ? null : item.getItemMeta();
+        if (meta == null) return 0.0;
+        Double val = meta.getPersistentDataContainer().get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+        return val == null ? 0.0 : val;
     }
 
     public ToolClass detectToolClass(ItemStack it) {
@@ -119,6 +137,8 @@ public class LevelingService {
         if (n.endsWith("_HOE")) return ToolClass.HOE;
         if (n.endsWith("_SWORD")) return ToolClass.SWORD;
         if (n.endsWith("_AXE")) return ToolClass.AXE;
+        if (n.endsWith("_HELMET") || n.endsWith("_CHESTPLATE") || n.endsWith("_LEGGINGS") || n.endsWith("_BOOTS"))
+            return ToolClass.ARMOR;
         return ToolClass.OTHER;
     }
 
@@ -128,39 +148,54 @@ public class LevelingService {
     public void grantXp(Player player, ItemStack item, int amount, ToolClass clazz) {
         if (!isSpecialItem(item)) return;
         initItem(item);
-        addXp(player, item, amount);
+        addXp(player, item, amount, clazz);
     }
 
-    private void addXp(Player player, ItemStack item, int amount) {
+    private void addXp(Player player, ItemStack item, int amount, ToolClass clazz) {
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         int level = getLevel(item);
         int xp = getXp(item) + amount;
         int needed = (int) LevelMath.neededXpFor(level);
         boolean leveled = false;
+        boolean reward = false;
         while (xp >= needed) {
             xp -= needed;
             level++;
             needed = (int) LevelMath.neededXpFor(level);
             leveled = true;
+            reward |= handleLevelReward(item, clazz); // apply reward per level gained
         }
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.INTEGER, xp);
         item.setItemMeta(meta);
         if (leveled && player != null) {
-            boolean enchanted = maybeEnchant(item, level);
             String itemName = meta.hasDisplayName() ? ChatColor.stripColor(meta.getDisplayName()) : item.getType().name();
             String msg = ChatColor.GOLD + itemName + ChatColor.GREEN + " reached level " + level;
-            if (enchanted) msg += ChatColor.AQUA + " with a bonus enchant!";
+            if (reward) msg += ChatColor.AQUA + " with a bonus enchant!";
             player.sendMessage(msg);
         }
     }
 
-    private boolean maybeEnchant(ItemStack item, int level) {
-        double chance = Math.min(1.0, 0.25 * level);
-        if (random.nextDouble() > chance) return false;
-        Enchantment ench = selectEnchant(item.getType());
-        if (ench == null) return false;
+    private boolean handleLevelReward(ItemStack item, ToolClass clazz) {
+        if (clazz == ToolClass.HOE) {
+            increaseHoeYield(item);
+            return false;
+        }
+        return maybeEnchant(item, clazz);
+    }
+
+    private boolean maybeEnchant(ItemStack item, ToolClass clazz) {
+        if (random.nextDouble() >= 0.01) return false;
+        Enchantment ench;
+        switch (clazz) {
+            case SWORD, AXE -> ench = Enchantment.SHARPNESS;
+            case PICKAXE -> ench = Enchantment.FORTUNE;
+            case ARMOR -> ench = Enchantment.PROTECTION;
+            default -> {
+                return false;
+            }
+        }
         ItemMeta meta = item.getItemMeta();
         int current = meta.getEnchantLevel(ench);
         int newLevel = Math.min(current + 1, ench.getMaxLevel());
@@ -170,14 +205,15 @@ public class LevelingService {
         return true;
     }
 
-    private Enchantment selectEnchant(Material mat) {
-        String n = mat.name();
-        if (n.endsWith("_SWORD")) return Enchantment.SHARPNESS;
-        if (n.endsWith("_HELMET") || n.endsWith("_CHESTPLATE") || n.endsWith("_LEGGINGS") || n.endsWith("_BOOTS"))
-            return Enchantment.PROTECTION;
-        if (n.endsWith("_PICKAXE") || n.endsWith("_AXE") || n.endsWith("_HOE") || n.endsWith("_SHOVEL"))
-            return Enchantment.EFFICIENCY;
-        return Enchantment.UNBREAKING;
+    private void increaseHoeYield(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        double current = 0.0;
+        Double stored = pdc.get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
+        if (stored != null) current = stored;
+        current += 2.0;
+        pdc.set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, current);
+        item.setItemMeta(meta);
     }
 
     // ---------------------------------------------------------------------
@@ -187,12 +223,32 @@ public class LevelingService {
         Player p = e.getPlayer();
         ItemStack tool = p.getInventory().getItemInMainHand();
         if (!isSpecialItem(tool)) return;
-        Material toolMat = tool.getType();
-        Material block = e.getBlock().getType();
-        if (isPickaxe(toolMat) && ORES.contains(block)) {
+        ToolClass clazz = detectToolClass(tool);
+        if (clazz == ToolClass.PICKAXE) {
             grantXp(p, tool, XP_PER_ACTION, ToolClass.PICKAXE);
-        } else if (isHoe(toolMat) && CROPS.contains(block) && isFullyGrown(e.getBlock())) {
+        } else if (clazz == ToolClass.HOE && isValidCrop(e.getBlock())) {
             grantXp(p, tool, XP_PER_ACTION, ToolClass.HOE);
+        }
+    }
+
+    public void onEntityDeath(EntityDeathEvent e) {
+        Player killer = e.getEntity().getKiller();
+        if (killer == null) return;
+        ItemStack weapon = killer.getInventory().getItemInMainHand();
+        if (!isSpecialItem(weapon)) return;
+        ToolClass clazz = detectToolClass(weapon);
+        if (clazz == ToolClass.SWORD || clazz == ToolClass.AXE) {
+            grantXp(killer, weapon, XP_PER_ACTION, clazz);
+        }
+    }
+
+    public void onEntityDamage(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player p)) return;
+        if (e.getCause() == EntityDamageEvent.DamageCause.FALL) return;
+        for (ItemStack armor : p.getInventory().getArmorContents()) {
+            if (armor != null) {
+                grantXp(p, armor, XP_PER_ACTION, ToolClass.ARMOR);
+            }
         }
     }
 
@@ -202,11 +258,12 @@ public class LevelingService {
         }
     }
 
-    private boolean isPickaxe(Material m) { return m.name().endsWith("_PICKAXE"); }
-    private boolean isHoe(Material m) { return m.name().endsWith("_HOE"); }
-
-    private boolean isFullyGrown(Block block) {
-        if (!(block.getBlockData() instanceof Ageable age)) return false;
-        return age.getAge() >= age.getMaximumAge();
+    private boolean isValidCrop(Block block) {
+        Material type = block.getType();
+        if (!CROPS.contains(type)) return false;
+        if (block.getBlockData() instanceof Ageable age) {
+            return age.getAge() >= age.getMaximumAge();
+        }
+        return true;
     }
 }
