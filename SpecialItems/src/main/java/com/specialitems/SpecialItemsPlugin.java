@@ -11,6 +11,7 @@ import com.specialitems.listeners.BinListener;
 import com.specialitems.listeners.JoinFixListener;
 import com.specialitems.listeners.InventorySanityListener;
 import com.specialitems.listeners.GiveInterceptListener;
+import com.specialitems.listeners.LoreUpdateListener;
 import com.specialitems.util.Configs;
 import com.specialitems.util.Log;
 import com.specialitems.util.TemplateItems;
@@ -116,6 +117,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
         // --- Leveling system (NEW) ---
         this.leveling = new LevelingService(this);
         getServer().getPluginManager().registerEvents(new LevelingListener(leveling), this);
+        getServer().getPluginManager().registerEvents(new LoreUpdateListener(leveling), this);
         getServer().getServicesManager().register(SpecialItemsApi.class, new SpecialItemsBridge(leveling), this, ServicePriority.Normal);
 
         // Ticker (kept from your original)

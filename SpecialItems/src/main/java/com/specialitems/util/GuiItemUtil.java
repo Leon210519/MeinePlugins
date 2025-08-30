@@ -3,8 +3,6 @@ package com.specialitems.util;
 import com.specialitems.SpecialItemsPlugin;
 import com.specialitems.effects.CustomEffect;
 import com.specialitems.effects.Effects;
-import com.specialitems.leveling.LevelMath;
-import com.specialitems.leveling.ToolClass;
 import com.specialitems.leveling.Keys;
 import com.specialitems.leveling.Rarity;
 import com.specialitems.leveling.RarityUtil;
@@ -52,24 +50,28 @@ public final class GuiItemUtil {
         boolean special = svc.isSpecialItem(it) || hasSpecialPdc(it);
         if (!special) return null;
 
-        int lvl = svc.getLevel(it);
-        double xp = svc.getXp(it);
-        double need = LevelMath.neededXpFor(lvl);
         Rarity rarity = RarityUtil.get(it, new Keys(plugin));
 
         ItemStack display = it.clone();
+        com.specialitems.util.LoreRenderer.updateItemLore(display);
         ItemMeta meta = display.getItemMeta();
         if (meta != null) {
             try { meta.removeItemFlags(ItemFlag.values()); } catch (Throwable ignored) {}
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_UNBREAKABLE);
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GOLD + "Level: " + ChatColor.YELLOW + lvl);
-            lore.add(ChatColor.GOLD + "XP: " + ChatColor.YELLOW + String.format("%.1f", xp) + ChatColor.GRAY + " / " + ChatColor.YELLOW + String.format("%.1f", need));
-            lore.add(ChatColor.GOLD + "Rarity: " + rarity.displayName());
-            if (svc.detectToolClass(it) == ToolClass.HOE) {
-                double by = svc.getBonusYieldPct(it);
-                lore.add(ChatColor.GOLD + "Bonus Yield: " + ChatColor.YELLOW + String.format("%.0f%%", by));
+            List<String> lore = meta.getLore();
+            if (lore == null) lore = new ArrayList<>();
+
+            String harvest = null;
+            for (int i = 0; i < lore.size(); i++) {
+                String s = ChatColor.stripColor(lore.get(i));
+                if (s.startsWith("Harvest Bonus:")) {
+                    harvest = lore.remove(i);
+                    break;
+                }
             }
+
+            lore.add(ChatColor.GOLD + "Rarity: " + rarity.displayName());
+            if (harvest != null) lore.add(harvest);
 
             Map<Enchantment, Integer> enchants = it.getEnchantments();
             if (!enchants.isEmpty()) {
