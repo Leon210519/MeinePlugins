@@ -104,6 +104,9 @@ public class LevelingService {
             meta.addEnchant(Enchantment.UNBREAKING, 1, true);
         }
         item.setItemMeta(meta);
+        try {
+            com.specialitems.util.LoreRenderer.updateItemLore(item);
+        } catch (Throwable ignored) {}
     }
 
     // ---------------------------------------------------------------------
@@ -169,6 +172,9 @@ public class LevelingService {
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.INTEGER, xp);
         item.setItemMeta(meta);
+        try {
+            com.specialitems.util.LoreRenderer.updateItemLore(item);
+        } catch (Throwable ignored) {}
         if (leveled && player != null) {
             String itemName = meta.hasDisplayName() ? ChatColor.stripColor(meta.getDisplayName()) : item.getType().name();
             String msg = ChatColor.GOLD + itemName + ChatColor.GREEN + " reached level " + level;
