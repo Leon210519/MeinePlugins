@@ -5,6 +5,7 @@ import com.specialitems.effects.Effects;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -154,6 +155,22 @@ public final class ItemUtil {
             Log.warn("Item " + item.getType() + " '" + name + "' missing valid CustomModelData");
         }
         return applied;
+    }
+
+    /**
+     * Returns a nicely formatted name for the given vanilla enchantment.
+     */
+    public static String prettyEnchantName(Enchantment ench) {
+        if (ench == null) return "";
+        String key = ench.getKey().getKey().toLowerCase(java.util.Locale.ROOT);
+        String[] parts = key.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (part.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return sb.toString();
     }
 
 }
