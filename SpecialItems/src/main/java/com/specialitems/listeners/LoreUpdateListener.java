@@ -1,5 +1,6 @@
 package com.specialitems.listeners;
 
+import com.specialitems.leveling.Keys;
 import com.specialitems.leveling.LevelingService;
 import com.specialitems.util.ItemLoreService;
 import com.specialitems.SpecialItemsPlugin;
@@ -12,18 +13,25 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 /** Refreshes lore displays for special items on common inventory interactions. */
 public class LoreUpdateListener implements Listener {
-    private final LevelingService svc;
+    private final Keys keys;
 
     public LoreUpdateListener(LevelingService svc) {
-        this.svc = svc;
+        this.keys = new Keys(SpecialItemsPlugin.getInstance());
+    }
+
+    private boolean isSpecial(ItemStack item) {
+        if (item == null || item.getType().isAir()) return false;
+        ItemMeta meta = item.getItemMeta();
+        return meta != null && meta.getPersistentDataContainer().has(keys.SI_ID, PersistentDataType.STRING);
     }
 
     private void refreshSlot(Inventory inv, int slot, ItemStack item) {
-        if (item == null) return;
-        if (!svc.isSpecialItem(item)) return;
+        if (!isSpecial(item)) return;
         ItemLoreService.renderLore(item, SpecialItemsPlugin.getInstance());
         inv.setItem(slot, item);
     }
@@ -45,12 +53,12 @@ public class LoreUpdateListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent e) {
         ItemStack current = e.getCurrentItem();
-        if (current != null && svc.isSpecialItem(current)) {
+        if (isSpecial(current)) {
             ItemLoreService.renderLore(current, SpecialItemsPlugin.getInstance());
             e.setCurrentItem(current);
         }
         ItemStack cursor = e.getCursor();
-        if (cursor != null && svc.isSpecialItem(cursor)) {
+        if (isSpecial(cursor)) {
             ItemLoreService.renderLore(cursor, SpecialItemsPlugin.getInstance());
             e.setCursor(cursor);
         }
@@ -61,7 +69,7 @@ public class LoreUpdateListener implements Listener {
         Player p = e.getPlayer();
         int slot = e.getNewSlot();
         ItemStack item = p.getInventory().getItem(slot);
-        if (item != null && svc.isSpecialItem(item)) {
+        if (isSpecial(item)) {
             ItemLoreService.renderLore(item, SpecialItemsPlugin.getInstance());
             p.getInventory().setItem(slot, item);
         }
@@ -70,12 +78,12 @@ public class LoreUpdateListener implements Listener {
     @EventHandler
     public void onSwap(PlayerSwapHandItemsEvent e) {
         ItemStack main = e.getMainHandItem();
-        if (main != null && svc.isSpecialItem(main)) {
+        if (isSpecial(main)) {
             ItemLoreService.renderLore(main, SpecialItemsPlugin.getInstance());
             e.setMainHandItem(main);
         }
         ItemStack off = e.getOffHandItem();
-        if (off != null && svc.isSpecialItem(off)) {
+        if (isSpecial(off)) {
             ItemLoreService.renderLore(off, SpecialItemsPlugin.getInstance());
             e.setOffHandItem(off);
         }
