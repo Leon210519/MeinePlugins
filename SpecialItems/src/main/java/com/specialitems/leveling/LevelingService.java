@@ -1,6 +1,7 @@
 package com.specialitems.leveling;
 
 import com.specialitems.util.TemplateItems;
+import com.specialitems.util.ItemLoreService;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -30,6 +31,7 @@ public class LevelingService {
 
     private final Keys keys;
     private final Random random = new Random();
+    private final JavaPlugin plugin;
 
     private static final int XP_PER_ACTION = 1;
 
@@ -52,6 +54,7 @@ public class LevelingService {
     );
 
     public LevelingService(JavaPlugin plugin) {
+        this.plugin = plugin;
         this.keys = new Keys(plugin);
     }
 
@@ -105,7 +108,7 @@ public class LevelingService {
         }
         item.setItemMeta(meta);
         try {
-            com.specialitems.util.LoreRenderer.updateItemLore(item);
+            ItemLoreService.renderLore(item, plugin);
         } catch (Throwable ignored) {}
     }
 
@@ -173,7 +176,7 @@ public class LevelingService {
         pdc.set(keys.XP, PersistentDataType.INTEGER, xp);
         item.setItemMeta(meta);
         try {
-            com.specialitems.util.LoreRenderer.updateItemLore(item);
+            ItemLoreService.renderLore(item, plugin);
         } catch (Throwable ignored) {}
         if (leveled && player != null) {
             String itemName = meta.hasDisplayName() ? ChatColor.stripColor(meta.getDisplayName()) : item.getType().name();

@@ -53,7 +53,7 @@ public final class GuiItemUtil {
         Rarity rarity = RarityUtil.get(it, new Keys(plugin));
 
         ItemStack display = it.clone();
-        com.specialitems.util.LoreRenderer.updateItemLore(display);
+        ItemLoreService.renderLore(display, plugin);
         ItemMeta meta = display.getItemMeta();
         if (meta != null) {
             try { meta.removeItemFlags(ItemFlag.values()); } catch (Throwable ignored) {}

@@ -1,7 +1,8 @@
 package com.specialitems.listeners;
 
 import com.specialitems.leveling.LevelingService;
-import com.specialitems.util.LoreRenderer;
+import com.specialitems.util.ItemLoreService;
+import com.specialitems.SpecialItemsPlugin;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,7 +24,7 @@ public class LoreUpdateListener implements Listener {
     private void refreshSlot(Inventory inv, int slot, ItemStack item) {
         if (item == null) return;
         if (!svc.isSpecialItem(item)) return;
-        LoreRenderer.updateItemLore(item);
+        ItemLoreService.renderLore(item, SpecialItemsPlugin.getInstance());
         inv.setItem(slot, item);
     }
 
@@ -45,12 +46,12 @@ public class LoreUpdateListener implements Listener {
     public void onClick(InventoryClickEvent e) {
         ItemStack current = e.getCurrentItem();
         if (current != null && svc.isSpecialItem(current)) {
-            LoreRenderer.updateItemLore(current);
+            ItemLoreService.renderLore(current, SpecialItemsPlugin.getInstance());
             e.setCurrentItem(current);
         }
         ItemStack cursor = e.getCursor();
         if (cursor != null && svc.isSpecialItem(cursor)) {
-            LoreRenderer.updateItemLore(cursor);
+            ItemLoreService.renderLore(cursor, SpecialItemsPlugin.getInstance());
             e.setCursor(cursor);
         }
     }
@@ -61,7 +62,7 @@ public class LoreUpdateListener implements Listener {
         int slot = e.getNewSlot();
         ItemStack item = p.getInventory().getItem(slot);
         if (item != null && svc.isSpecialItem(item)) {
-            LoreRenderer.updateItemLore(item);
+            ItemLoreService.renderLore(item, SpecialItemsPlugin.getInstance());
             p.getInventory().setItem(slot, item);
         }
     }
@@ -70,12 +71,12 @@ public class LoreUpdateListener implements Listener {
     public void onSwap(PlayerSwapHandItemsEvent e) {
         ItemStack main = e.getMainHandItem();
         if (main != null && svc.isSpecialItem(main)) {
-            LoreRenderer.updateItemLore(main);
+            ItemLoreService.renderLore(main, SpecialItemsPlugin.getInstance());
             e.setMainHandItem(main);
         }
         ItemStack off = e.getOffHandItem();
         if (off != null && svc.isSpecialItem(off)) {
-            LoreRenderer.updateItemLore(off);
+            ItemLoreService.renderLore(off, SpecialItemsPlugin.getInstance());
             e.setOffHandItem(off);
         }
     }
