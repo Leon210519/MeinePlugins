@@ -55,6 +55,31 @@ public final class ItemLoreService {
                 keep = true;
                 tail.add(c);
             }
+
+            // Strip out any filler lines before the magenta "Special Enchants" block and
+            // ensure the block only appears once.
+            List<Component> cleaned = new ArrayList<>();
+            boolean foundSpecial = false;
+            for (Component c : tail) {
+                String text = plain.serialize(c).trim();
+                if (!foundSpecial) {
+                    if (text.equalsIgnoreCase("Special Enchants:")) {
+                        foundSpecial = true;
+                        Component header = MiniMessage.miniMessage()
+                                .deserialize("<light_purple><bold>Special Enchants:</bold></light_purple>")
+                                .decoration(TextDecoration.ITALIC, false);
+                        cleaned.add(header);
+                    } else if (text.startsWith("Harvest Bonus:")) {
+                        cleaned.add(c.decoration(TextDecoration.ITALIC, false));
+                    } // otherwise skip filler/description lines
+                } else {
+                    if (text.equalsIgnoreCase("Special Enchants:")) {
+                        continue; // skip duplicates
+                    }
+                    cleaned.add(c.decoration(TextDecoration.ITALIC, false));
+                }
+            }
+            tail = cleaned;
         }
 
         MiniMessage mm = MiniMessage.miniMessage();
