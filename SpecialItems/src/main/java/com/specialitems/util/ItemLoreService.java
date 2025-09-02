@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -41,20 +42,22 @@ public final class ItemLoreService {
         Rarity rarity = Rarity.fromString(pdc.get(keys.RARITY, PersistentDataType.STRING));
 
         MiniMessage mm = MiniMessage.miniMessage();
+        PlainTextComponentSerializer plain = PlainTextComponentSerializer.plainText();
+
+        if (meta.hasDisplayName()) {
+            String name = plain.serialize(meta.displayName());
+            meta.displayName(styledName(mm, rarity, name).decoration(TextDecoration.ITALIC, false));
+        }
+
         List<Component> lore = new ArrayList<>();
+        lore.add(rarityLine(mm, rarity));
+        lore.add(rarityText(mm, rarity, "Level: " + level, false));
 
-        lore.add(rarityComponent(mm, rarity).decoration(TextDecoration.ITALIC, false));
-        lore.add(mm.deserialize("<gray>Level: </gray><aqua><bold>" + level + "</bold></aqua>")
-                .decoration(TextDecoration.ITALIC, false));
-
-        String bar = bar10(xp, req);
+        String bar = bar10(rarity, xp, req);
         int pct = (int) Math.round(Math.max(0.0, Math.min(1.0, xp / (double) req)) * 100.0);
-        lore.add(mm.deserialize("<gray>XP: </gray><aqua>" + xp + "/" + req + "</aqua> <dark_gray>[</dark_gray><gradient:#60A5FA:#C084FC><bold>"
-                + bar + "</bold></gradient><dark_gray>]</dark_gray> <gray>" + pct + "%</gray>")
-                .decoration(TextDecoration.ITALIC, false));
+        lore.add(rarityText(mm, rarity, "XP: " + xp + "/" + req + " [" + bar + "] " + pct + "%", false));
 
         List<Component> enchLines = new ArrayList<>();
-        PlainTextComponentSerializer plain = PlainTextComponentSerializer.plainText();
         for (NamespacedKey key : pdc.getKeys()) {
             String k = key.getKey();
             if (k == null || !k.startsWith("ench_")) continue;
@@ -68,17 +71,31 @@ public final class ItemLoreService {
                     name = ce.displayName();
                 }
             } catch (Throwable ignored) {}
-            String roman = ItemUtil.roman(Math.max(1, lvl));
-            enchLines.add(rarityText(mm, rarity, name + " " + roman, false));
+            String roman = ItemUtil.roman(Math.max(0, lvl));
+            enchLines.add(rarityText(mm, rarity, name + (roman.isEmpty() ? "" : " " + roman), false));
         }
+
+        var svc = plugin instanceof com.specialitems.SpecialItemsPlugin sp ? sp.leveling() : null;
+        if (svc != null) {
+            var clazz = svc.detectToolClass(item);
+            Enchantment ench = switch (clazz) {
+                case SWORD, AXE -> Enchantment.SHARPNESS;
+                case PICKAXE -> Enchantment.FORTUNE;
+                case ARMOR -> Enchantment.PROTECTION;
+                default -> null;
+            };
+            if (ench != null) {
+                int lvl = meta.getEnchantLevel(ench);
+                String name = ItemUtil.prettyEnchantName(ench);
+                String roman = ItemUtil.roman(Math.max(0, lvl));
+                enchLines.add(rarityText(mm, rarity, name + (roman.isEmpty() ? "" : " " + roman), false));
+            }
+        }
+
         enchLines.sort(Comparator.comparing(c -> plain.serialize(c).toLowerCase()));
         if (!enchLines.isEmpty()) {
             lore.add(rarityText(mm, rarity, "Special Enchants:", true));
             lore.addAll(enchLines);
-        }
-
-        if (meta.isUnbreakable()) {
-            lore.add(rarityText(mm, rarity, "Unbreakable", false));
         }
 
         meta.lore(lore);
@@ -98,44 +115,58 @@ public final class ItemLoreService {
         item.setItemMeta(meta);
     }
 
-    private static Component rarityComponent(MiniMessage mm, Rarity rarity) {
-        String name;
+    private static String[] colorParts(Rarity rarity) {
+        return switch (rarity) {
+            case UNCOMMON -> new String[]{"<color:#55FF55>", "</color>"};
+            case RARE -> new String[]{"<color:#55AAFF>", "</color>"};
+            case EPIC -> new String[]{"<gradient:#8A2BE2:#C084FC>", "</gradient>"};
+            case LEGENDARY -> new String[]{"<gradient:#FFA500:#FF66CC>", "</gradient>"};
+            case STARFORGED -> new String[]{"<gradient:#FF4500:#FF0000>", "</gradient>"};
+            case COMMON -> new String[]{"<gray>", "</gray>"};
+            default -> new String[]{"<gray>", "</gray>"};
+        };
+    }
+
+    private static Component rarityLine(MiniMessage mm, Rarity rarity) {
+        String name = switch (rarity) {
+            case STARFORGED -> "StarForged";
+            default -> {
+                String n = rarity.name().toLowerCase();
+                yield Character.toUpperCase(n.charAt(0)) + n.substring(1);
+            }
+        };
+        return rarityText(mm, rarity, name, true);
+    }
+
+    private static Component rarityText(MiniMessage mm, Rarity rarity, String text, boolean bold) {
+        String[] p = colorParts(rarity);
+        String content = bold ? "<bold>" + text + "</bold>" : text;
+        return mm.deserialize(p[0] + content + p[1]).decoration(TextDecoration.ITALIC, false);
+    }
+
+    private static Component styledName(MiniMessage mm, Rarity rarity, String name) {
         String prefix;
         String suffix;
         switch (rarity) {
-            case UNCOMMON -> { prefix = "<gray>Rarity: </gray><color:#55FF55><bold>"; suffix = "</bold></color>"; name = "Uncommon"; }
-            case RARE -> { prefix = "<gray>Rarity: </gray><color:#55AAFF><bold>"; suffix = "</bold></color>"; name = "Rare"; }
-            case EPIC -> { prefix = "<gray>Rarity: </gray><gradient:#8A2BE2:#C084FC><bold>"; suffix = "</bold></gradient>"; name = "Epic"; }
-            case LEGENDARY -> { prefix = "<gray>Rarity: </gray><gradient:#FFA500:#FF66CC><bold>"; suffix = "</bold></gradient>"; name = "Legendary"; }
-            case STARFORGED -> { prefix = "<gray>Rarity: </gray><gradient:#FF4500:#FF0000><bold>"; suffix = "</bold></gradient>"; name = "StarForged"; }
-            case COMMON -> { prefix = "<gray>Rarity: </gray><gray><bold>"; suffix = "</bold></gray>"; name = "Common"; }
-            default -> { prefix = "<gray>Rarity: </gray><gray><bold>"; suffix = "</bold></gray>"; name = "Common"; }
+            case COMMON -> { prefix = "<gray>"; suffix = "</gray>"; }
+            case UNCOMMON -> { prefix = "<color:#55FF55>"; suffix = "</color>"; }
+            case RARE -> { prefix = "<color:#55AAFF><bold>"; suffix = "</bold></color>"; }
+            case EPIC -> { prefix = "<gradient:#8A2BE2:#C084FC><bold>"; suffix = "</bold></gradient>"; }
+            case LEGENDARY -> { prefix = "<gradient:#FFA500:#FF66CC><bold><u>"; suffix = "</u></bold></gradient>"; }
+            case STARFORGED -> { prefix = "<gradient:#FF4500:#FF0000><bold><u>"; suffix = "</u></bold></gradient>"; }
+            default -> { prefix = "<gray>"; suffix = "</gray>"; }
         }
         return mm.deserialize(prefix + name + suffix).decoration(TextDecoration.ITALIC, false);
     }
 
-    private static Component rarityText(MiniMessage mm, Rarity rarity, String text, boolean bold) {
-        String prefix;
-        String suffix;
-        switch (rarity) {
-            case UNCOMMON -> { prefix = "<color:#55FF55>"; suffix = "</color>"; }
-            case RARE -> { prefix = "<color:#55AAFF>"; suffix = "</color>"; }
-            case EPIC -> { prefix = "<gradient:#8A2BE2:#C084FC>"; suffix = "</gradient>"; }
-            case LEGENDARY -> { prefix = "<gradient:#FFA500:#FF66CC>"; suffix = "</gradient>"; }
-            case STARFORGED -> { prefix = "<gradient:#FF4500:#FF0000>"; suffix = "</gradient>"; }
-            case COMMON -> { prefix = "<gray>"; suffix = "</gray>"; }
-            default -> { prefix = "<gray>"; suffix = "</gray>"; }
-        }
-        String content = bold ? "<bold>" + text + "</bold>" : text;
-        return mm.deserialize(prefix + content + suffix).decoration(TextDecoration.ITALIC, false);
-    }
-
-    private static String bar10(int xp, int req) {
+    private static String bar10(Rarity rarity, int xp, int req) {
         int r = Math.max(req, 1);
         double pct = Math.max(0, Math.min(1.0, xp / (double) r));
         int filled = (int) Math.round(pct * 10.0);
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) sb.append(i < filled ? '■' : '□');
+        String[] p = colorParts(rarity);
+        StringBuilder sb = new StringBuilder();
+        if (filled > 0) sb.append(p[0]).append("■".repeat(filled)).append(p[1]);
+        if (filled < 10) sb.append("<dark_gray>").append("□".repeat(10 - filled)).append("</dark_gray>");
         return sb.toString();
     }
 }
