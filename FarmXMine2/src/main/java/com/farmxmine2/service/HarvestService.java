@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import net.milkbowl.vault.economy.Economy;
 
 /** Handles mining and farming harvesting while preventing real-world block changes. */
 public class HarvestService {
@@ -152,6 +154,17 @@ public class HarvestService {
             // add XP only on success
             levelService.addXp(p, TrackType.FARM);
 
+            if (ThreadLocalRandom.current().nextDouble() < config.getArtifactDropChance()) {
+                Economy eco = plugin.getEconomy();
+                if (eco != null) {
+                    double amount = config.getArtifactEcoBoost();
+                    eco.depositPlayer(p, amount);
+                    String msg = plugin.color(plugin.getMessages().getString("artifact-found", "&aYou found an artifact!"))
+                            .replace("%amount%", String.valueOf(amount));
+                    p.sendMessage(msg);
+                }
+            }
+
             // restoration after cooldown
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 try {
@@ -225,6 +238,17 @@ public class HarvestService {
 
             // add XP only on success
             levelService.addXp(p, TrackType.MINE);
+
+            if (ThreadLocalRandom.current().nextDouble() < config.getArtifactDropChance()) {
+                Economy eco = plugin.getEconomy();
+                if (eco != null) {
+                    double amount = config.getArtifactEcoBoost();
+                    eco.depositPlayer(p, amount);
+                    String msg = plugin.color(plugin.getMessages().getString("artifact-found", "&aYou found an artifact!"))
+                            .replace("%amount%", String.valueOf(amount));
+                    p.sendMessage(msg);
+                }
+            }
 
             // restoration after cooldown
             Bukkit.getScheduler().runTaskLater(plugin, () -> {

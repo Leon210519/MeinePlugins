@@ -26,6 +26,8 @@ public class ConfigService {
     private int farmXpPer;
     private int baseXpPerLevel;
     private int xpGrowthPerLevel;
+    private double artifactDropChance;
+    private double artifactEcoBoost;
 
     public ConfigService(FarmXMine2Plugin plugin) {
         this.plugin = plugin;
@@ -71,6 +73,8 @@ public class ConfigService {
         farmXpPer = cfg.getInt("leveling.xp_per_harvest.farm");
         baseXpPerLevel = cfg.getInt("leveling.base_xp_per_level");
         xpGrowthPerLevel = cfg.getInt("leveling.xp_growth_per_level");
+        artifactDropChance = cfg.getDouble("artifact.drop_chance");
+        artifactEcoBoost = cfg.getDouble("artifact.eco_boost");
     }
 
     public int getRespawnSeconds() { return respawnSeconds; }
@@ -89,4 +93,6 @@ public class ConfigService {
     public int getFarmXpPer() { return farmXpPer; }
     public int getBaseXpPerLevel() { return baseXpPerLevel; }
     public int getXpGrowthPerLevel() { return xpGrowthPerLevel; }
+    public double getArtifactDropChance() { return artifactDropChance; }
+    public double getArtifactEcoBoost() { return artifactEcoBoost; }
 }
