@@ -18,3 +18,6 @@ leveling:
     farm: 1
   base_xp_per_level: 100
   xp_growth_per_level: 25
+artifact:
+  drop_chance: 0.05
+  eco_boost: 5.0
