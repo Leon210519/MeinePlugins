@@ -170,7 +170,7 @@ public class LevelingService {
             level++;
             needed = (int) LevelMath.neededXpFor(level);
             leveled = true;
-            reward |= handleLevelReward(item, clazz, level); // apply reward per level gained
+            reward |= handleLevelReward(meta, clazz, level); // apply reward per level gained
         }
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.INTEGER, xp);
@@ -186,15 +186,15 @@ public class LevelingService {
         }
     }
 
-    private boolean handleLevelReward(ItemStack item, ToolClass clazz, int level) {
+    private boolean handleLevelReward(ItemMeta meta, ToolClass clazz, int level) {
         if (clazz == ToolClass.HOE) {
-            updateHoeYield(item, level);
+            updateHoeYield(meta, level);
             return false;
         }
-        return maybeEnchant(item, clazz);
+        return maybeEnchant(meta, clazz);
     }
 
-    private boolean maybeEnchant(ItemStack item, ToolClass clazz) {
+    private boolean maybeEnchant(ItemMeta meta, ToolClass clazz) {
         if (random.nextDouble() >= 0.01) return false;
         Enchantment ench;
         switch (clazz) {
@@ -205,21 +205,17 @@ public class LevelingService {
                 return false;
             }
         }
-        ItemMeta meta = item.getItemMeta();
         int current = meta.getEnchantLevel(ench);
         int newLevel = Math.min(current + 1, ench.getMaxLevel());
         if (newLevel <= current) return false;
         meta.addEnchant(ench, newLevel, true);
-        item.setItemMeta(meta);
         return true;
     }
 
-    private void updateHoeYield(ItemStack item, int level) {
-        ItemMeta meta = item.getItemMeta();
+    private void updateHoeYield(ItemMeta meta, int level) {
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         double bonus = Math.max(0, (level - 1) * 2.0);
         pdc.set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, bonus);
-        item.setItemMeta(meta);
     }
 
     // ---------------------------------------------------------------------
