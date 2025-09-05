@@ -1,9 +1,11 @@
 package com.specialitems.util;
 
+import com.specialitems.SpecialItemsPlugin;
 import com.specialitems.effects.Effects;
 import com.specialitems.leveling.Keys;
 import com.specialitems.leveling.LevelMath;
 import com.specialitems.leveling.Rarity;
+import com.specialitems.leveling.ToolClass;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -46,19 +48,25 @@ public final class ItemLoreService {
 
         if (meta.hasDisplayName()) {
             String name = plain.serialize(meta.displayName());
-            meta.displayName(styledName(mm, rarity, name).decoration(TextDecoration.ITALIC, false));
+            meta.displayName(
+                    styledName(mm, rarity, name)
+                            .decoration(TextDecoration.ITALIC, false)
+                            .decoration(TextDecoration.UNDERLINED, false));
         }
 
         List<Component> lore = new ArrayList<>();
-        lore.add(labelValue(mm, "Rarity", rarityName(rarity)));
-        lore.add(labelValue(mm, "Level", String.valueOf(level)));
+        lore.add(labelValue(mm, rarity, "Rarity", rarityName(rarity)));
+        lore.add(labelValue(mm, rarity, "Level", String.valueOf(level)));
 
-        String[] p = colorParts(rarity);
-        String bar = bar10(rarity, xp, req).replace(p[0], "").replace(p[1], "");
+        String bar = bar10(rarity, xp, req);
         int pct = (int) Math.round(Math.max(0.0, Math.min(1.0, xp / (double) req)) * 100.0);
-        String xpLine = "<gray>XP: </gray><white>" + xp + "/" + req + "</white> "
-                + "<dark_gray>[</dark_gray><gradient:#60A5FA:#8B5CF6:#EC4899:#F59E0B:#60A5FA>" + bar
-                + "</gradient><dark_gray>]</dark_gray> <white>" + pct + "%</white>";
+        String[] label = accentParts(rarity);
+        String[] value = colorParts(rarity);
+        String xpLine = label[0] + "XP" + label[1]
+                + "<dark_gray>: </dark_gray>" + value[0] + xp + value[1]
+                + "<dark_gray>/</dark_gray>" + value[0] + req + value[1]
+                + " <dark_gray>[</dark_gray>" + bar + "<dark_gray>]</dark_gray> "
+                + label[0] + pct + "%" + label[1];
         lore.add(mm.deserialize(xpLine).decoration(TextDecoration.ITALIC, false));
 
         List<Component> enchLines = new ArrayList<>();
@@ -79,24 +87,24 @@ public final class ItemLoreService {
             enchLines.add(listEntry(mm, rarity, name + (roman.isEmpty() ? "" : " " + roman)));
         }
 
-        List<Component> vanillaLines = new ArrayList<>();
-        for (var entry : meta.getEnchants().entrySet()) {
-            Enchantment ench = entry.getKey();
-            int lvl = entry.getValue();
-            String name = ItemUtil.prettyEnchantName(ench);
-            String roman = ItemUtil.roman(Math.max(0, lvl));
-            vanillaLines.add(listEntry(mm, rarity, name + (roman.isEmpty() ? "" : " " + roman)));
-        }
-
         enchLines.sort(Comparator.comparing(c -> plain.serialize(c).toLowerCase()));
-        vanillaLines.sort(Comparator.comparing(c -> plain.serialize(c).toLowerCase()));
-        if (!enchLines.isEmpty()) {
-            lore.add(sectionHeading(mm, rarity, "Special Enchants:"));
-            lore.addAll(enchLines);
-        }
-        if (!vanillaLines.isEmpty()) {
-            lore.add(sectionHeading(mm, rarity, "Vanilla Enchants:"));
-            lore.addAll(vanillaLines);
+        lore.add(sectionHeading(mm, rarity, "Special Enchants:"));
+        lore.addAll(enchLines);
+
+        ToolClass tc = SpecialItemsPlugin.getInstance().leveling().detectToolClass(item);
+        if (tc == ToolClass.HOE) {
+            double bonus = pdc.getOrDefault(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, 0.0);
+            lore.add(labelValue(mm, rarity, "Bonus Yield", "+" + String.format("%.0f%%", bonus)));
+        } else {
+            var entry = meta.getEnchants().entrySet().stream().findFirst();
+            if (entry.isPresent()) {
+                Enchantment ench = entry.get().getKey();
+                int lvl = entry.get().getValue();
+                String name = ItemUtil.prettyEnchantName(ench);
+                String roman = ItemUtil.roman(Math.max(0, lvl));
+                String val = name + (roman.isEmpty() ? "" : " " + roman);
+                lore.add(labelValue(mm, rarity, "Enchantment", val));
+            }
         }
 
         if (meta.isUnbreakable()) {
@@ -160,8 +168,10 @@ public final class ItemLoreService {
         return mm.deserialize(g[0] + content + g[1]).decoration(TextDecoration.ITALIC, false);
     }
 
-    private static Component labelValue(MiniMessage mm, String label, String value) {
-        String content = "<gray>" + label + ": </gray><white>" + value + "</white>";
+    private static Component labelValue(MiniMessage mm, Rarity rarity, String label, String value) {
+        String[] l = accentParts(rarity);
+        String[] v = colorParts(rarity);
+        String content = l[0] + label + l[1] + "<dark_gray>: </dark_gray>" + v[0] + value + v[1];
         return mm.deserialize(content).decoration(TextDecoration.ITALIC, false);
     }
 
@@ -172,8 +182,8 @@ public final class ItemLoreService {
     }
 
     private static Component unbreakableLine(MiniMessage mm, Rarity rarity) {
-        String[] p = colorParts(rarity);
-        return mm.deserialize(p[0] + "Unbreakable" + p[1]).decoration(TextDecoration.ITALIC, false);
+        String[] g = accentParts(rarity);
+        return mm.deserialize(g[0] + "Unbreakable" + g[1]).decoration(TextDecoration.ITALIC, false);
     }
 
     private static Component styledName(MiniMessage mm, Rarity rarity, String name) {
@@ -188,7 +198,9 @@ public final class ItemLoreService {
             case STARFORGED -> { prefix = "<gradient:#FF4500:#FF0000><bold>"; suffix = "</bold></gradient>"; }
             default -> { prefix = "<gray>"; suffix = "</gray>"; }
         }
-        return mm.deserialize(prefix + name + suffix).decoration(TextDecoration.ITALIC, false);
+        return mm.deserialize(prefix + name + suffix)
+                .decoration(TextDecoration.ITALIC, false)
+                .decoration(TextDecoration.UNDERLINED, false);
     }
 
     private static String bar10(Rarity rarity, int xp, int req) {
