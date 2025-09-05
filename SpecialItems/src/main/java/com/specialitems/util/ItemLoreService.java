@@ -208,9 +208,9 @@ public final class ItemLoreService {
         double pct = Math.max(0, Math.min(1.0, xp / (double) r));
         int filled = (int) Math.round(pct * 10.0);
         StringBuilder sb = new StringBuilder();
-        if (filled > 0) sb.append("<gradient:#0EA5E9:#9333EA:#F472B6>")
+        if (filled > 0) sb.append("<color:#9333EA>")
                 .append("■".repeat(filled))
-                .append("</gradient>");
+                .append("</color>");
         if (filled < 10) sb.append("<dark_gray>").append("□".repeat(10 - filled)).append("</dark_gray>");
         return sb.toString();
     }

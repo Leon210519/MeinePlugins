@@ -170,7 +170,7 @@ public class LevelingService {
             level++;
             needed = (int) LevelMath.neededXpFor(level);
             leveled = true;
-            reward |= handleLevelReward(item, clazz); // apply reward per level gained
+            reward |= handleLevelReward(item, clazz, level); // apply reward per level gained
         }
         pdc.set(keys.LEVEL, PersistentDataType.INTEGER, level);
         pdc.set(keys.XP, PersistentDataType.INTEGER, xp);
@@ -186,9 +186,9 @@ public class LevelingService {
         }
     }
 
-    private boolean handleLevelReward(ItemStack item, ToolClass clazz) {
+    private boolean handleLevelReward(ItemStack item, ToolClass clazz, int level) {
         if (clazz == ToolClass.HOE) {
-            increaseHoeYield(item);
+            updateHoeYield(item, level);
             return false;
         }
         return maybeEnchant(item, clazz);
@@ -214,14 +214,11 @@ public class LevelingService {
         return true;
     }
 
-    private void increaseHoeYield(ItemStack item) {
+    private void updateHoeYield(ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        double current = 0.0;
-        Double stored = pdc.get(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE);
-        if (stored != null) current = stored;
-        current += 2.0;
-        pdc.set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, current);
+        double bonus = Math.max(0, (level - 1) * 2.0);
+        pdc.set(keys.BONUS_YIELD_PCT, PersistentDataType.DOUBLE, bonus);
         item.setItemMeta(meta);
     }
 
