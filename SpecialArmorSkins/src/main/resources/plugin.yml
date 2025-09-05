@@ -1,0 +1,14 @@
+name: SpecialArmorSkins
+main: com.lootforge.armorskins.SpecialArmorSkins
+version: 1.0.0
+api-version: 1.21
+depend: [ProtocolLib]
+commands:
+  sas:
+    description: Reload SpecialArmorSkins configuration
+    usage: /sas reload
+    permission: specialarmorskins.admin
+permissions:
+  specialarmorskins.admin:
+    description: Allows reloading SpecialArmorSkins
+    default: op
