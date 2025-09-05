@@ -5,12 +5,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-import io.papermc.paper.event.player.PlayerArmorChangeEvent;
+import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 
 public class SASListener implements Listener {
 
@@ -36,8 +37,10 @@ public class SASListener implements Listener {
     }
 
     @EventHandler
-    public void onArmor(PlayerArmorChangeEvent event) {
-        plugin.getDisplayManager().refresh(event.getPlayer());
+    public void onSlotChange(PlayerInventorySlotChangeEvent event) {
+        if (event.getSlotType() == SlotType.ARMOR) {
+            plugin.getDisplayManager().refresh(event.getPlayer());
+        }
     }
 
     @EventHandler
