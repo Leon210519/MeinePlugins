@@ -7,6 +7,7 @@ import com.farmxmine2.service.*;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -23,6 +24,7 @@ public class FarmXMine2Plugin extends JavaPlugin {
     private HarvestService harvestService;
     private CooldownService cooldownService;
     private BukkitTask autosaveTask;
+    private Economy economy;
 
     @Override
     public void onEnable() {
@@ -36,6 +38,7 @@ public class FarmXMine2Plugin extends JavaPlugin {
         levelService = new LevelService(this, storageService, configService);
         cooldownService = new CooldownService();
         harvestService = new HarvestService(this, configService, levelService, cooldownService);
+        setupEconomy();
 
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockListener(harvestService, configService), this);
@@ -71,4 +74,12 @@ public class FarmXMine2Plugin extends JavaPlugin {
     public ConfigService getConfigService() { return configService; }
     public LevelService getLevelService() { return levelService; }
     public BossBarService getBossBarService() { return bossBarService; }
+    public Economy getEconomy() { return economy; }
+
+    private void setupEconomy() {
+        var rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp != null) {
+            economy = rsp.getProvider();
+        }
+    }
 }

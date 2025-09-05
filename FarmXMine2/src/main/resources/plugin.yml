@@ -3,7 +3,7 @@ main: com.farmxmine2.FarmXMine2Plugin
 version: 0.1.0
 api-version: "1.21"
 author: "FarmXMine Team"
-softdepend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI, Vault]
 commands:
   fm2:
     description: FarmXMine2 commands
