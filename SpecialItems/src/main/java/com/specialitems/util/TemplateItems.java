@@ -110,45 +110,48 @@ public final class TemplateItems {
         }
 
         if ("legendary_chest".equals(id)) {
-            var original = it;
+            var vanilla = it;
             CustomStack cs = CustomStack.getInstance("lootforge:omega_chestplate");
             if (cs != null) {
                 ItemStack out = cs.getItemStack().clone();
-                out.setAmount(1);
-                ItemMeta srcMeta = original.getItemMeta();
-                ItemMeta dstMeta = out.getItemMeta();
-                if (srcMeta != null && dstMeta != null) {
-                    if (srcMeta.hasDisplayName()) dstMeta.setDisplayName(srcMeta.getDisplayName());
-                    if (srcMeta.hasLore()) dstMeta.setLore(srcMeta.getLore());
-                    for (var e : srcMeta.getEnchants().entrySet()) {
-                        dstMeta.addEnchant(e.getKey(), e.getValue(), true);
-                    }
-                    dstMeta.addItemFlags(srcMeta.getItemFlags().toArray(new ItemFlag[0]));
-                    dstMeta.setUnbreakable(srcMeta.isUnbreakable());
-                    if (srcMeta instanceof Damageable dSrc && dstMeta instanceof Damageable dDst) {
-                        dDst.setDamage(dSrc.getDamage());
-                    }
-                    var srcPdc = srcMeta.getPersistentDataContainer();
-                    var dstPdc = dstMeta.getPersistentDataContainer();
-                    for (NamespacedKey k : srcPdc.getKeys()) {
-                        if (srcPdc.has(k, PersistentDataType.STRING)) {
-                            dstPdc.set(k, PersistentDataType.STRING, srcPdc.get(k, PersistentDataType.STRING));
-                        } else if (srcPdc.has(k, PersistentDataType.INTEGER)) {
-                            dstPdc.set(k, PersistentDataType.INTEGER, srcPdc.get(k, PersistentDataType.INTEGER));
-                        } else if (srcPdc.has(k, PersistentDataType.LONG)) {
-                            dstPdc.set(k, PersistentDataType.LONG, srcPdc.get(k, PersistentDataType.LONG));
-                        } else if (srcPdc.has(k, PersistentDataType.DOUBLE)) {
-                            dstPdc.set(k, PersistentDataType.DOUBLE, srcPdc.get(k, PersistentDataType.DOUBLE));
-                        }
-                    }
-                    if (srcMeta.hasCustomModelData()) dstMeta.setCustomModelData(srcMeta.getCustomModelData());
-                    out.setItemMeta(dstMeta);
-                    it = out;
+                ItemMeta dst = out.getItemMeta();
+                ItemMeta src = vanilla.getItemMeta();
+                dst = copyMeta(src, dst);
+                if (src instanceof Damageable s && dst instanceof Damageable d) {
+                    d.setDamage(s.getDamage());
                 }
+                if (src != null && src.hasCustomModelData()) {
+                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                }
+                out.setItemMeta(dst);
+                out.setAmount(vanilla.getAmount());
+                it = out;
             }
         }
 
         return new TemplateItem(id, it, cmd);
+    }
+
+    private static ItemMeta copyMeta(ItemMeta src, ItemMeta dst) {
+        if (src == null || dst == null) return dst;
+        if (src.hasDisplayName()) dst.setDisplayName(src.getDisplayName());
+        if (src.hasLore()) dst.setLore(src.getLore());
+        src.getEnchants().forEach((e, l) -> dst.addEnchant(e, l, true));
+        dst.setUnbreakable(src.isUnbreakable());
+        for (ItemFlag f : src.getItemFlags()) dst.addItemFlags(f);
+        var s = src.getPersistentDataContainer();
+        var d = dst.getPersistentDataContainer();
+        for (var key : s.getKeys()) {
+            if (s.has(key, PersistentDataType.STRING))
+                d.set(key, PersistentDataType.STRING, s.get(key, PersistentDataType.STRING));
+            else if (s.has(key, PersistentDataType.INTEGER))
+                d.set(key, PersistentDataType.INTEGER, s.get(key, PersistentDataType.INTEGER));
+            else if (s.has(key, PersistentDataType.LONG))
+                d.set(key, PersistentDataType.LONG, s.get(key, PersistentDataType.LONG));
+            else if (s.has(key, PersistentDataType.DOUBLE))
+                d.set(key, PersistentDataType.DOUBLE, s.get(key, PersistentDataType.DOUBLE));
+        }
+        return dst;
     }
 
     private static Integer readModelData(String id, ConfigurationSection t) {
