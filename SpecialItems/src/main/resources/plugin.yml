@@ -3,6 +3,7 @@ main: com.specialitems.SpecialItemsPlugin
 version: 1.2.2
 api-version: 1.21
 author: You
+softdepend: [ItemsAdder]
 commands:
   si:
     description: SpecialItems command

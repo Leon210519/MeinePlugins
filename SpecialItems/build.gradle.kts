@@ -13,6 +13,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly("com.github.placeholderapi:placeholderapi:2.11.6")
+    compileOnly("com.github.LoneDev6:api:3.6.1")
 }
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(21)) } }

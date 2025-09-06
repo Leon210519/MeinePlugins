@@ -9,6 +9,11 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import dev.lone.itemsadder.api.CustomStack;
+import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -102,6 +107,45 @@ public final class TemplateItems {
                 Rarity r = Rarity.fromString(rar);
                 RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
             } catch (Throwable ignored) {}
+        }
+
+        if ("legendary_chest".equals(id)) {
+            var original = it;
+            CustomStack cs = CustomStack.getInstance("lootforge:omega_chestplate");
+            if (cs != null) {
+                ItemStack out = cs.getItemStack().clone();
+                out.setAmount(1);
+                ItemMeta srcMeta = original.getItemMeta();
+                ItemMeta dstMeta = out.getItemMeta();
+                if (srcMeta != null && dstMeta != null) {
+                    if (srcMeta.hasDisplayName()) dstMeta.setDisplayName(srcMeta.getDisplayName());
+                    if (srcMeta.hasLore()) dstMeta.setLore(srcMeta.getLore());
+                    for (var e : srcMeta.getEnchants().entrySet()) {
+                        dstMeta.addEnchant(e.getKey(), e.getValue(), true);
+                    }
+                    dstMeta.addItemFlags(srcMeta.getItemFlags().toArray(new ItemFlag[0]));
+                    dstMeta.setUnbreakable(srcMeta.isUnbreakable());
+                    if (srcMeta instanceof Damageable dSrc && dstMeta instanceof Damageable dDst) {
+                        dDst.setDamage(dSrc.getDamage());
+                    }
+                    var srcPdc = srcMeta.getPersistentDataContainer();
+                    var dstPdc = dstMeta.getPersistentDataContainer();
+                    for (NamespacedKey k : srcPdc.getKeys()) {
+                        if (srcPdc.has(k, PersistentDataType.STRING)) {
+                            dstPdc.set(k, PersistentDataType.STRING, srcPdc.get(k, PersistentDataType.STRING));
+                        } else if (srcPdc.has(k, PersistentDataType.INTEGER)) {
+                            dstPdc.set(k, PersistentDataType.INTEGER, srcPdc.get(k, PersistentDataType.INTEGER));
+                        } else if (srcPdc.has(k, PersistentDataType.LONG)) {
+                            dstPdc.set(k, PersistentDataType.LONG, srcPdc.get(k, PersistentDataType.LONG));
+                        } else if (srcPdc.has(k, PersistentDataType.DOUBLE)) {
+                            dstPdc.set(k, PersistentDataType.DOUBLE, srcPdc.get(k, PersistentDataType.DOUBLE));
+                        }
+                    }
+                    if (srcMeta.hasCustomModelData()) dstMeta.setCustomModelData(srcMeta.getCustomModelData());
+                    out.setItemMeta(dstMeta);
+                    it = out;
+                }
+            }
         }
 
         return new TemplateItem(id, it, cmd);
