@@ -1,0 +1,9 @@
+info:
+  namespace: lootforge
+items:
+  omega_chestplate:
+    display_name: "Omega Chestplate"
+    resource:
+      material: NETHERITE_CHESTPLATE
+    item:
+      custom_model_data: 2105
