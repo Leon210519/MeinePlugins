@@ -9,11 +9,6 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import dev.lone.itemsadder.api.CustomStack;
-import org.bukkit.NamespacedKey;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
@@ -62,150 +57,56 @@ public final class TemplateItems {
         return list;
     }
 
-    public static TemplateItem buildFrom(String id, ConfigurationSection t) {
+    public static TemplateItem buildFrom(String templateId, ConfigurationSection t) {
         if (t == null) return null;
         Material mat = Material.matchMaterial(t.getString("material", "STONE"));
         if (mat == null) mat = Material.STONE;
-        ItemStack it = new ItemStack(mat);
-        ItemMeta meta = it.getItemMeta();
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', t.getString("name","&fSpecial Item")));
             List<String> lore = new ArrayList<>();
             for (String l : t.getStringList("lore")) lore.add(ChatColor.translateAlternateColorCodes('&', l));
 
             meta.setLore(lore);
-            it.setItemMeta(meta);
+            item.setItemMeta(meta);
         }
 
         var enchSec = t.getConfigurationSection("enchants");
         if (enchSec != null) {
             for (String eid : enchSec.getKeys(false)) {
                 int lvl = enchSec.getInt(eid, 1);
-                it = ItemUtil.withEffect(it, eid, lvl);
+                item = ItemUtil.withEffect(item, eid, lvl);
             }
         }
 
-        Integer cmd = readModelData(id, t);
+        Integer cmd = readModelData(templateId, t);
         if (cmd == null) cmd = computeCmdFallback(mat, t.getString("rarity"));
         if (cmd != null) {
-            ItemMeta m = it.getItemMeta();
+            ItemMeta m = item.getItemMeta();
             if (m != null) {
                 // Always write CMD as an integer via the Bukkit API
-                it = ItemUtil.forceSetCustomModelData(it, cmd);
+                item = ItemUtil.forceSetCustomModelData(item, cmd);
             }
         } else {
-            Log.warn("Template '" + id + "' did not provide CustomModelData");
+            Log.warn("Template '" + templateId + "' did not provide CustomModelData");
         }
 
         try {
-            Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), it, id);
+            Tagger.tagAsSpecial(SpecialItemsPlugin.getInstance(), item, templateId);
         } catch (Throwable ignored) {}
 
         String rar = t.getString("rarity");
         if (rar != null) {
             try {
                 Rarity r = Rarity.fromString(rar);
-                RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
+                RarityUtil.set(item, new Keys(SpecialItemsPlugin.getInstance()), r);
             } catch (Throwable ignored) {}
         }
 
-        if ("legendary_chest".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_chestplate");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_helm".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_helmet");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_legs".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_leggings");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_boots".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_boots");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        }
+        item = com.specialitems.bridge.IaMapper.maybeSwap(templateId, item);
 
-        return new TemplateItem(id, it, cmd);
-    }
-
-    private static ItemMeta copyMeta(ItemMeta src, ItemMeta dst) {
-        if (src == null || dst == null) return dst;
-        if (src.hasDisplayName()) dst.setDisplayName(src.getDisplayName());
-        if (src.hasLore()) dst.setLore(src.getLore());
-        src.getEnchants().forEach((e, l) -> dst.addEnchant(e, l, true));
-        dst.setUnbreakable(src.isUnbreakable());
-        for (ItemFlag f : src.getItemFlags()) dst.addItemFlags(f);
-        var s = src.getPersistentDataContainer();
-        var d = dst.getPersistentDataContainer();
-        for (var key : s.getKeys()) {
-            if (s.has(key, PersistentDataType.STRING))
-                d.set(key, PersistentDataType.STRING, s.get(key, PersistentDataType.STRING));
-            else if (s.has(key, PersistentDataType.INTEGER))
-                d.set(key, PersistentDataType.INTEGER, s.get(key, PersistentDataType.INTEGER));
-            else if (s.has(key, PersistentDataType.LONG))
-                d.set(key, PersistentDataType.LONG, s.get(key, PersistentDataType.LONG));
-            else if (s.has(key, PersistentDataType.DOUBLE))
-                d.set(key, PersistentDataType.DOUBLE, s.get(key, PersistentDataType.DOUBLE));
-        }
-        return dst;
+        return new TemplateItem(templateId, item, cmd);
     }
 
     private static Integer readModelData(String id, ConfigurationSection t) {
