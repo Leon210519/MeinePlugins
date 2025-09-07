@@ -120,8 +120,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -138,8 +145,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -156,8 +170,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -174,8 +195,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -192,8 +220,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -210,8 +245,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -228,8 +270,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
@@ -246,8 +295,15 @@ public final class TemplateItems {
                 if (src instanceof Damageable s && dst instanceof Damageable d) {
                     d.setDamage(s.getDamage());
                 }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                if (src != null && dst != null && src.hasCustomModelData()) {
+                    try {
+                        if (!dst.hasCustomModelData()) {
+                            dst.setCustomModelData(src.getCustomModelData());
+                        } else {
+                            NamespacedKey key = new NamespacedKey(SpecialItemsPlugin.getInstance(), "si_cmd");
+                            dst.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, src.getCustomModelData());
+                        }
+                    } catch (Throwable ignored) {}
                 }
                 out.setItemMeta(dst);
                 out.setAmount(vanilla.getAmount());
