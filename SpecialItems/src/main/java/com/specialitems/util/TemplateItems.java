@@ -27,6 +27,16 @@ public final class TemplateItems {
     private static List<TemplateItem> ALL = new ArrayList<>();
     private static int INVALID_CMD = 0;
     private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
+    private static final Map<String, String> IA_ARMOR = Map.of(
+            "legendary_chest", "lootforge:omega_chestplate",
+            "legendary_helm", "lootforge:omega_helmet",
+            "legendary_legs", "lootforge:omega_leggings",
+            "legendary_boots", "lootforge:omega_boots",
+            "epic_chest", "lootforge:mythic_chestplate",
+            "epic_helm", "lootforge:mythic_helmet",
+            "epic_legs", "lootforge:mythic_leggings",
+            "epic_boots", "lootforge:mythic_boots"
+    );
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
@@ -109,153 +119,30 @@ public final class TemplateItems {
             } catch (Throwable ignored) {}
         }
 
-        if ("legendary_chest".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_chestplate");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_helm".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_helmet");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_legs".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_leggings");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("legendary_boots".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:omega_boots");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("epic_chest".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_chestplate");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("epic_helm".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_helmet");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("epic_legs".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_leggings");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
-        } else if ("epic_boots".equals(id)) {
-            var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_boots");
-            if (cs != null) {
-                ItemStack out = cs.getItemStack().clone();
-                ItemMeta dst = out.getItemMeta();
-                ItemMeta src = vanilla.getItemMeta();
-                dst = copyMeta(src, dst);
-                if (src instanceof Damageable s && dst instanceof Damageable d) {
-                    d.setDamage(s.getDamage());
-                }
-                if (src != null && src.hasCustomModelData()) {
-                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
-                }
-                out.setItemMeta(dst);
-                out.setAmount(vanilla.getAmount());
-                it = out;
-            }
+        String iaId = IA_ARMOR.get(id);
+        if (iaId != null) {
+            it = swapToIA(it, iaId);
         }
 
         return new TemplateItem(id, it, cmd);
+    }
+
+    private static ItemStack swapToIA(ItemStack vanilla, String iaId) {
+        CustomStack cs = CustomStack.getInstance(iaId);
+        if (cs == null) return vanilla;
+        ItemStack out = cs.getItemStack().clone();
+        ItemMeta dst = out.getItemMeta();
+        ItemMeta src = vanilla.getItemMeta();
+        dst = copyMeta(src, dst);
+        if (src instanceof Damageable s && dst instanceof Damageable d) {
+            d.setDamage(s.getDamage());
+        }
+        if (src != null && src.hasCustomModelData()) {
+            try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+        }
+        out.setItemMeta(dst);
+        out.setAmount(vanilla.getAmount());
+        return out;
     }
 
     private static ItemMeta copyMeta(ItemMeta src, ItemMeta dst) {
