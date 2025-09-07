@@ -27,6 +27,16 @@ public final class TemplateItems {
     private static List<TemplateItem> ALL = new ArrayList<>();
     private static int INVALID_CMD = 0;
     private static final Map<Rarity, List<TemplateItem>> BY_RARITY = new EnumMap<>(Rarity.class);
+    private static final Map<String, String> IA_ITEMS = Map.ofEntries(
+            Map.entry("legendary_chest", "lootforge:omega_chestplate"),
+            Map.entry("legendary_helm", "lootforge:omega_helmet"),
+            Map.entry("legendary_legs", "lootforge:omega_leggings"),
+            Map.entry("legendary_boots", "lootforge:omega_boots"),
+            Map.entry("epic_chest", "lootforge:mythic_chestplate"),
+            Map.entry("epic_helm", "lootforge:mythic_helmet"),
+            Map.entry("epic_legs", "lootforge:mythic_leggings"),
+            Map.entry("epic_boots", "lootforge:mythic_boots")
+    );
 
     public static java.util.List<TemplateItem> loadAll() {
         java.util.List<TemplateItem> list = new java.util.ArrayList<>();
@@ -45,6 +55,7 @@ public final class TemplateItems {
             String tid = (tsec == null ? key : tsec.getString("id", key));
             TemplateItem tmpl = buildFrom(tid, tsec);
             if (tmpl != null) {
+                warnIfMismatchedIaCmd(tid, tmpl);
                 list.add(tmpl);
                 ItemStack it = tmpl.stack();
                 ItemMeta meta = it.getItemMeta();
@@ -319,6 +330,23 @@ public final class TemplateItems {
             r.equals("STARFORGED") ? 6 : 0;
 
         return (off == 0 ? null : base + off);
+    }
+
+    private static void warnIfMismatchedIaCmd(String tid, TemplateItem tmpl) {
+        String iaId = IA_ITEMS.get(tid);
+        if (iaId == null || tmpl.customModelData() == null) return;
+        try {
+            CustomStack cs = CustomStack.getInstance(iaId);
+            if (cs == null) return;
+            ItemMeta im = cs.getItemStack().getItemMeta();
+            if (im != null && im.hasCustomModelData()) {
+                int actual = im.getCustomModelData();
+                if (actual != tmpl.customModelData()) {
+                    Log.warn("ItemsAdder stack '" + iaId + "' CMD " + actual +
+                            " does not match template '" + tid + "' CMD " + tmpl.customModelData());
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static List<TemplateItem> getByRarity(Rarity rarity) {
