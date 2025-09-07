@@ -181,6 +181,78 @@ public final class TemplateItems {
                 out.setAmount(vanilla.getAmount());
                 it = out;
             }
+        } else if ("epic_chest".equals(id)) {
+            var vanilla = it;
+            CustomStack cs = CustomStack.getInstance("lootforge:mythic_chestplate");
+            if (cs != null) {
+                ItemStack out = cs.getItemStack().clone();
+                ItemMeta dst = out.getItemMeta();
+                ItemMeta src = vanilla.getItemMeta();
+                dst = copyMeta(src, dst);
+                if (src instanceof Damageable s && dst instanceof Damageable d) {
+                    d.setDamage(s.getDamage());
+                }
+                if (src != null && src.hasCustomModelData()) {
+                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                }
+                out.setItemMeta(dst);
+                out.setAmount(vanilla.getAmount());
+                it = out;
+            }
+        } else if ("epic_helm".equals(id)) {
+            var vanilla = it;
+            CustomStack cs = CustomStack.getInstance("lootforge:mythic_helmet");
+            if (cs != null) {
+                ItemStack out = cs.getItemStack().clone();
+                ItemMeta dst = out.getItemMeta();
+                ItemMeta src = vanilla.getItemMeta();
+                dst = copyMeta(src, dst);
+                if (src instanceof Damageable s && dst instanceof Damageable d) {
+                    d.setDamage(s.getDamage());
+                }
+                if (src != null && src.hasCustomModelData()) {
+                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                }
+                out.setItemMeta(dst);
+                out.setAmount(vanilla.getAmount());
+                it = out;
+            }
+        } else if ("epic_legs".equals(id)) {
+            var vanilla = it;
+            CustomStack cs = CustomStack.getInstance("lootforge:mythic_leggings");
+            if (cs != null) {
+                ItemStack out = cs.getItemStack().clone();
+                ItemMeta dst = out.getItemMeta();
+                ItemMeta src = vanilla.getItemMeta();
+                dst = copyMeta(src, dst);
+                if (src instanceof Damageable s && dst instanceof Damageable d) {
+                    d.setDamage(s.getDamage());
+                }
+                if (src != null && src.hasCustomModelData()) {
+                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                }
+                out.setItemMeta(dst);
+                out.setAmount(vanilla.getAmount());
+                it = out;
+            }
+        } else if ("epic_boots".equals(id)) {
+            var vanilla = it;
+            CustomStack cs = CustomStack.getInstance("lootforge:mythic_boots");
+            if (cs != null) {
+                ItemStack out = cs.getItemStack().clone();
+                ItemMeta dst = out.getItemMeta();
+                ItemMeta src = vanilla.getItemMeta();
+                dst = copyMeta(src, dst);
+                if (src instanceof Damageable s && dst instanceof Damageable d) {
+                    d.setDamage(s.getDamage());
+                }
+                if (src != null && src.hasCustomModelData()) {
+                    try { dst.setCustomModelData(src.getCustomModelData()); } catch (Throwable ignored) {}
+                }
+                out.setItemMeta(dst);
+                out.setAmount(vanilla.getAmount());
+                it = out;
+            }
         }
 
         return new TemplateItem(id, it, cmd);
