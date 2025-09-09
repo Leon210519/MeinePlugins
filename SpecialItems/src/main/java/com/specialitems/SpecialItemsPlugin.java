@@ -9,7 +9,7 @@ import com.specialitems.listeners.PlayerListener;
 import com.specialitems.listeners.GuiListener;
 import com.specialitems.listeners.BinListener;
 import com.specialitems.listeners.JoinFixListener;
-import com.specialitems.listeners.InventorySanityListener;
+import com.specialitems.listeners.SiInventoryListener;
 import com.specialitems.listeners.GiveInterceptListener;
 import com.specialitems.listeners.LoreUpdateListener;
 import com.specialitems.util.Configs;
@@ -32,6 +32,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
 
     // Leveling service (new)
     private LevelingService leveling;
+    private boolean debug;
 
     public static SpecialItemsPlugin getInstance() {
         return instance;
@@ -39,6 +40,12 @@ public class SpecialItemsPlugin extends JavaPlugin {
 
     public LevelingService leveling() {
         return leveling;
+    }
+
+    public boolean isDebug() { return debug; }
+    public void setDebug(boolean flag) {
+        this.debug = flag;
+        com.specialitems.util.InventorySyncUtil.DEBUG_FORCE_UPDATE = flag;
     }
 
     @Override
@@ -62,7 +69,7 @@ public class SpecialItemsPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new GuiListener(), this);
             getServer().getPluginManager().registerEvents(new PlayerListener(), this);
             getServer().getPluginManager().registerEvents(new JoinFixListener(), this);
-            getServer().getPluginManager().registerEvents(new InventorySanityListener(), this);
+            getServer().getPluginManager().registerEvents(new SiInventoryListener(this), this);
             getServer().getPluginManager().registerEvents(new BinListener(this), this);
             getServer().getPluginManager().registerEvents(new GiveInterceptListener(), this);
         } catch (Throwable t) {

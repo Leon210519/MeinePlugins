@@ -47,6 +47,7 @@ public class SiCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/si publicinspect" + ChatColor.GRAY + " — Broadcast held item");
         sender.sendMessage(ChatColor.YELLOW + "/si retag " + ChatColor.WHITE + "[id]" + ChatColor.GRAY + " — Tag held item as Special (admin)");
         sender.sendMessage(ChatColor.YELLOW + "/si dump [hand]" + ChatColor.GRAY + " — Dump CMD and PDC of held item");
+        sender.sendMessage(ChatColor.YELLOW + "/si debug on|off" + ChatColor.GRAY + " — Toggle debug mode");
     }
 
     private static boolean requirePlayer(CommandSender sender) {
@@ -209,6 +210,24 @@ public class SiCommand implements CommandExecutor {
                 String joined = kset.isEmpty() ? "(none)" : kset.stream().map(NamespacedKey::toString)
                         .collect(Collectors.joining(", "));
                 p.sendMessage(ChatColor.GOLD + "PDC Keys: " + ChatColor.YELLOW + joined);
+                return true;
+            }
+            case "debug" -> {
+                if (!requireAdmin(sender)) return true;
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Usage: /si debug on|off");
+                    return true;
+                }
+                boolean flag;
+                if (args[1].equalsIgnoreCase("on")) flag = true;
+                else if (args[1].equalsIgnoreCase("off")) flag = false;
+                else {
+                    sender.sendMessage(ChatColor.RED + "Usage: /si debug on|off");
+                    return true;
+                }
+                SpecialItemsPlugin pl = SpecialItemsPlugin.getInstance();
+                pl.setDebug(flag);
+                sender.sendMessage(ChatColor.GREEN + "Debug mode " + (flag ? "enabled" : "disabled"));
                 return true;
             }
             case "list" -> {
