@@ -102,12 +102,7 @@ public final class TemplateItems {
         } catch (Throwable ignored) {}
 
         String rar = t.getString("rarity");
-        if (rar != null) {
-            try {
-                Rarity r = Rarity.fromString(rar);
-                RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
-            } catch (Throwable ignored) {}
-        }
+        Rarity r = Rarity.fromString(rar);
 
         if ("legendary_chest".equals(id)) {
             var vanilla = it;
@@ -311,6 +306,7 @@ public final class TemplateItems {
             }
         }
 
+        RarityUtil.set(it, new Keys(SpecialItemsPlugin.getInstance()), r);
         return new TemplateItem(id, it, cmd);
     }
 

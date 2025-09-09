@@ -6,25 +6,33 @@ import com.specialitems.gui.TemplateGUI;
 import com.specialitems.leveling.LevelMath;
 import com.specialitems.leveling.LevelOverviewGUI;
 import com.specialitems.leveling.ToolClass;
+import com.specialitems.leveling.Keys;
+import com.specialitems.leveling.Rarity;
+import com.specialitems.leveling.RarityUtil;
 import com.specialitems.util.Configs;
 import com.specialitems.util.GuiItemUtil;
 import com.specialitems.util.ItemUtil;
 import com.specialitems.util.Tagger;
 import com.specialitems.util.TemplateItems;
+import com.specialitems.util.SkinService;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SiCommand implements CommandExecutor {
 
@@ -38,6 +46,7 @@ public class SiCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/si inspect" + ChatColor.GRAY + " — Inspect held item");
         sender.sendMessage(ChatColor.YELLOW + "/si publicinspect" + ChatColor.GRAY + " — Broadcast held item");
         sender.sendMessage(ChatColor.YELLOW + "/si retag " + ChatColor.WHITE + "[id]" + ChatColor.GRAY + " — Tag held item as Special (admin)");
+        sender.sendMessage(ChatColor.YELLOW + "/si dump [hand]" + ChatColor.GRAY + " — Dump CMD and PDC of held item");
     }
 
     private static boolean requirePlayer(CommandSender sender) {
@@ -169,6 +178,37 @@ public class SiCommand implements CommandExecutor {
                     double by = pl.leveling().getBonusYieldPct(held);
                     Bukkit.broadcastMessage(ChatColor.GOLD + "✦ Bonus Yield: " + ChatColor.YELLOW + String.format("%.0f%%", by));
                 }
+                return true;
+            }
+            case "dump" -> {
+                if (!requirePlayer(sender)) return true;
+                Player p = (Player) sender;
+                ItemStack it = p.getInventory().getItemInMainHand();
+                if (it == null || it.getType().isAir()) {
+                    p.sendMessage(ChatColor.RED + "Hold an item.");
+                    return true;
+                }
+                Keys keys = new Keys(SpecialItemsPlugin.getInstance());
+                Rarity rarity = RarityUtil.get(it, keys);
+                ItemMeta meta = it.getItemMeta();
+                Integer before = (meta != null && meta.hasCustomModelData()) ? meta.getCustomModelData() : null;
+                EquipmentSlot slot = null;
+                String n = it.getType().name();
+                if (n.endsWith("_HELMET")) slot = EquipmentSlot.HEAD;
+                else if (n.endsWith("_CHESTPLATE")) slot = EquipmentSlot.CHEST;
+                else if (n.endsWith("_LEGGINGS")) slot = EquipmentSlot.LEGS;
+                else if (n.endsWith("_BOOTS")) slot = EquipmentSlot.FEET;
+                SkinService.applyForRarity(it, rarity, slot);
+                meta = it.getItemMeta();
+                Integer after = (meta != null && meta.hasCustomModelData()) ? meta.getCustomModelData() : null;
+                p.sendMessage(ChatColor.GOLD + "Material: " + ChatColor.YELLOW + it.getType());
+                p.sendMessage(ChatColor.GOLD + "Rarity: " + ChatColor.YELLOW + rarity);
+                p.sendMessage(ChatColor.GOLD + "CustomModelData: " + ChatColor.YELLOW + String.valueOf(before)
+                        + ChatColor.GRAY + " -> " + ChatColor.YELLOW + String.valueOf(after));
+                var kset = meta.getPersistentDataContainer().getKeys();
+                String joined = kset.isEmpty() ? "(none)" : kset.stream().map(NamespacedKey::toString)
+                        .collect(Collectors.joining(", "));
+                p.sendMessage(ChatColor.GOLD + "PDC Keys: " + ChatColor.YELLOW + joined);
                 return true;
             }
             case "list" -> {
