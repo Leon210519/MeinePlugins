@@ -211,7 +211,7 @@ public final class TemplateItems {
             }
         } else if ("epic_chest".equals(id)) {
             var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_chestplate");
+            CustomStack cs = CustomStack.getInstance("lootforge:epic_chestplate");
             if (cs != null) {
                 ItemStack out = cs.getItemStack().clone();
                 ItemMeta dst = out.getItemMeta();
@@ -236,7 +236,7 @@ public final class TemplateItems {
             }
         } else if ("epic_helm".equals(id)) {
             var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_helmet");
+            CustomStack cs = CustomStack.getInstance("lootforge:epic_helmet");
             if (cs != null) {
                 ItemStack out = cs.getItemStack().clone();
                 ItemMeta dst = out.getItemMeta();
@@ -261,7 +261,7 @@ public final class TemplateItems {
             }
         } else if ("epic_legs".equals(id)) {
             var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_leggings");
+            CustomStack cs = CustomStack.getInstance("lootforge:epic_leggings");
             if (cs != null) {
                 ItemStack out = cs.getItemStack().clone();
                 ItemMeta dst = out.getItemMeta();
@@ -286,7 +286,7 @@ public final class TemplateItems {
             }
         } else if ("epic_boots".equals(id)) {
             var vanilla = it;
-            CustomStack cs = CustomStack.getInstance("lootforge:mythic_boots");
+            CustomStack cs = CustomStack.getInstance("lootforge:epic_boots");
             if (cs != null) {
                 ItemStack out = cs.getItemStack().clone();
                 ItemMeta dst = out.getItemMeta();
